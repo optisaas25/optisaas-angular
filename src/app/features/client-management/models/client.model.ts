@@ -26,6 +26,19 @@ export enum StatutClient {
     DE_PASSAGE = 'De passage'
 }
 
+export enum RoleClientFamille {
+    PRINCIPAL = 'Principal',
+    MEMBRE = 'Membre'
+}
+
+export enum LienParental {
+    PARENT = 'Parent',
+    ENFANT = 'Enfant',
+    CONJOINT = 'Conjoint',
+    TUTEUR = 'Tuteur',
+    AIDANT = 'Aidant'
+}
+
 // Interfaces communes
 export interface Convention {
     actif: boolean;
@@ -36,14 +49,79 @@ export interface Convention {
     remiseOfferte?: number; // Pourcentage
 }
 
+export interface GroupeFamille {
+    role: RoleClientFamille;
+    lienParental?: LienParental; // Si membre
+    nomFamille?: string; // Auto-complete ou saisie
+    beneficiaireOptique: boolean;
+    responsableFinancier: boolean;
+    mutuellePartagee: boolean;
+    adressePartagee: boolean;
+}
+
 export interface CouvertureSociale {
     actif: boolean;
     type?: TypeCouverture;
     numeroAdhesion?: string;
 }
 
+export enum CorrectionVisuelle {
+    LUNETTES = 'Lunettes',
+    LENTILLES = 'Lentilles de contact',
+    RIEN = 'Rien'
+}
+
+export enum DureePort {
+    MOINS_1_AN = 'Moins de 1 an',
+    ENTRE_1_ET_5_ANS = '1 à 5 ans',
+    PLUS_5_ANS = 'Plus de 5 ans'
+}
+
 export interface DossierMedical {
-    antecedents?: string;
+    // Antécédents visuels
+    correctionActuelle?: CorrectionVisuelle;
+    dureePort?: DureePort;
+    traumatisme?: boolean;
+    operation?: boolean;
+    inflammation?: boolean;
+    sensibiliteLumiere?: boolean;
+    secheresse?: boolean;
+    antecedentsFamiliaux?: {
+        glaucome: boolean;
+        dmla: boolean;
+        diabete: boolean;
+        autres?: string;
+    };
+
+    // Antécédents médicaux généraux
+    maladiesChroniques?: {
+        actif: boolean;
+        details?: string;
+    };
+    traitementMedicamenteux?: {
+        actif: boolean;
+        details?: string;
+    };
+    allergies?: {
+        actif: boolean;
+        details?: string;
+    };
+
+    // Habitudes et confort
+    ecranPlus4h?: boolean;
+    ressenti?: {
+        fatigue: boolean;
+        mauxTete: boolean;
+        visionFloue: boolean;
+        picotements: boolean;
+        difficultePresLoin: boolean;
+    };
+    sport?: {
+        actif: boolean;
+        details?: string;
+    };
+
+    // Anciens champs (pour compatibilité ou remarques générales)
     remarques?: string;
 }
 
@@ -82,6 +160,7 @@ export interface ClientParticulier extends ClientBase {
     email?: string;
     ville: string; // Obligatoire pour Particulier
     convention?: Convention;
+    groupeFamille?: GroupeFamille;
     couvertureSociale?: CouvertureSociale;
     dossierMedical?: DossierMedical;
     parrainId?: string; // Pour programme fidélité

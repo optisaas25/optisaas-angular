@@ -21,7 +21,11 @@ import {
   TypeCouverture,
   StatutClient,
   Client,
-  ClientCreate
+  ClientCreate,
+  RoleClientFamille,
+  LienParental,
+  CorrectionVisuelle,
+  DureePort
 } from '../models/client.model';
 
 @Component({
@@ -57,11 +61,19 @@ export class ClientFormComponent implements OnInit {
   TitreClient = TitreClient;
   TypeCouverture = TypeCouverture;
   StatutClient = StatutClient;
+  RoleClientFamille = RoleClientFamille;
+  LienParental = LienParental;
+  CorrectionVisuelle = CorrectionVisuelle;
+  DureePort = DureePort;
 
   // Listes pour les selects
   titres = Object.values(TitreClient);
   typesCouverture = Object.values(TypeCouverture);
   statuts = Object.values(StatutClient);
+  rolesClientFamille = Object.values(RoleClientFamille);
+  liensParentaux = Object.values(LienParental);
+  correctionsVisuelles = Object.values(CorrectionVisuelle);
+  dureesPort = Object.values(DureePort);
 
   constructor(
     private fb: FormBuilder,
@@ -94,6 +106,11 @@ export class ClientFormComponent implements OnInit {
     // Écouter les changements de couverture sociale
     this.clientForm.get('couvertureSocialeActif')?.valueChanges.subscribe(actif => {
       this.toggleCouvertureSocialeFields(actif);
+    });
+
+    // Écouter les changements de rôle famille
+    this.clientForm.get('roleFamille')?.valueChanges.subscribe(role => {
+      this.toggleFamilleFields(role);
     });
   }
 
@@ -131,8 +148,60 @@ export class ClientFormComponent implements OnInit {
       couvertureSocialeNumero: [''],
 
       // Dossier médical
-      dossierMedicalAntecedents: [''],
-      dossierMedicalRemarques: [''],
+      dossierMedical: this.fb.group({
+        // Antécédents visuels
+        correctionActuelle: [null],
+        dureePort: [null],
+        traumatisme: [false],
+        operation: [false],
+        inflammation: [false],
+        sensibiliteLumiere: [false],
+        secheresse: [false],
+        antecedentsFamiliaux: this.fb.group({
+          glaucome: [false],
+          dmla: [false],
+          diabete: [false],
+          autres: ['']
+        }),
+
+        // Antécédents médicaux généraux
+        maladiesChroniques: this.fb.group({
+          actif: [false],
+          details: ['']
+        }),
+        traitementMedicamenteux: this.fb.group({
+          actif: [false],
+          details: ['']
+        }),
+        allergies: this.fb.group({
+          actif: [false],
+          details: ['']
+        }),
+
+        // Habitudes et confort
+        ecranPlus4h: [false],
+        ressenti: this.fb.group({
+          fatigue: [false],
+          mauxTete: [false],
+          visionFloue: [false],
+          picotements: [false],
+          difficultePresLoin: [false]
+        }),
+        sport: this.fb.group({
+          actif: [false],
+          details: ['']
+        }),
+        remarques: ['']
+      }),
+
+      // Groupe Famille
+      roleFamille: [''],
+      lienParental: [''],
+      nomFamille: [''],
+      beneficiaireOptique: [false],
+      responsableFinancier: [false],
+      mutuellePartagee: [false],
+      adressePartagee: [false],
 
       // Champs Client Professionnel
       raisonSociale: [''],
@@ -226,6 +295,23 @@ export class ClientFormComponent implements OnInit {
     control?.updateValueAndValidity();
   }
 
+  private toggleFamilleFields(role: RoleClientFamille): void {
+    const lienControl = this.clientForm.get('lienParental');
+    const nomFamilleControl = this.clientForm.get('nomFamille');
+
+    if (role === RoleClientFamille.MEMBRE) {
+      lienControl?.setValidators([Validators.required]);
+      nomFamilleControl?.setValidators([Validators.required]);
+    } else {
+      lienControl?.clearValidators();
+      nomFamilleControl?.clearValidators();
+      lienControl?.setValue('');
+      nomFamilleControl?.setValue('');
+    }
+    lienControl?.updateValueAndValidity();
+    nomFamilleControl?.updateValueAndValidity();
+  }
+
   get contacts(): FormArray {
     return this.clientForm.get('contacts') as FormArray;
   }
@@ -262,8 +348,99 @@ export class ClientFormComponent implements OnInit {
   }
 
   private populateForm(client: Client): void {
-    // TODO: Implémenter le remplissage du formulaire
-    // selon le type de client
+    // 1. Définir les valeurs de base
+    this.clientForm.patchValue({
+      typeClient: client.typeClient,
+      telephone: client.telephone,
+      ville: client.ville,
+      adresse: client.adresse,
+      statut: client.statut || StatutClient.ACTIF
+    });
+
+    // 2. Mettre à jour les validateurs selon le type
+    this.onTypeClientChange(client.typeClient);
+
+    // 3. Remplir les champs spécifiques
+    if (client.typeClient === TypeClient.PARTICULIER) {
+      this.clientForm.patchValue({
+        titre: client.titre,
+        nom: client.nom,
+        prenom: client.prenom,
+        cin: client.cin,
+        cinParent: client.cinParent,
+        dateNaissance: client.dateNaissance,
+        email: client.email
+      });
+
+      // Convention
+      if (client.convention) {
+        this.clientForm.patchValue({
+          conventionActif: client.convention.actif,
+          conventionNom: client.convention.nomConvention,
+          conventionContactNom: client.convention.contactNom,
+          conventionContactPrenom: client.convention.contactPrenom,
+          conventionContactTelephone: client.convention.contactTelephone,
+          conventionRemise: client.convention.remiseOfferte
+        });
+        this.toggleConventionFields(true);
+      }
+
+      // Couverture sociale
+      if (client.couvertureSociale) {
+        this.clientForm.patchValue({
+          couvertureSocialeActif: client.couvertureSociale.actif,
+          couvertureSocialeType: client.couvertureSociale.type,
+          couvertureSocialeNumero: client.couvertureSociale.numeroAdhesion
+        });
+        this.toggleCouvertureSocialeFields(true);
+      }
+
+      // Dossier médical
+      if (client.dossierMedical) {
+        this.clientForm.patchValue({
+          dossierMedical: client.dossierMedical
+        });
+      }
+
+      // Groupe Famille
+      if (client.groupeFamille) {
+        this.clientForm.patchValue({
+          roleFamille: client.groupeFamille.role,
+          lienParental: client.groupeFamille.lienParental,
+          nomFamille: client.groupeFamille.nomFamille,
+          beneficiaireOptique: client.groupeFamille.beneficiaireOptique,
+          responsableFinancier: client.groupeFamille.responsableFinancier,
+          mutuellePartagee: client.groupeFamille.mutuellePartagee,
+          adressePartagee: client.groupeFamille.adressePartagee
+        });
+        this.toggleFamilleFields(client.groupeFamille.role);
+      }
+
+    } else if (client.typeClient === TypeClient.PROFESSIONNEL) {
+      this.clientForm.patchValue({
+        raisonSociale: client.raisonSociale,
+        identifiantFiscal: client.identifiantFiscal,
+        ice: client.ice,
+        numeroSociete: client.numeroSociete,
+        typePartenariat: client.typePartenariat,
+        facturationGroupee: client.facturationGroupee,
+        email: client.email
+      });
+
+      // Contacts
+      if (client.contacts && client.contacts.length > 0) {
+        client.contacts.forEach(contact => {
+          const contactGroup = this.fb.group({
+            nom: [contact.nom, Validators.required],
+            prenom: [contact.prenom, Validators.required],
+            fonction: [contact.fonction, Validators.required],
+            telephone: [contact.telephone, Validators.required],
+            email: [contact.email, [Validators.required, Validators.email]]
+          });
+          this.contacts.push(contactGroup);
+        });
+      }
+    }
   }
 
   onSubmit(): void {
@@ -320,10 +497,16 @@ export class ClientFormComponent implements OnInit {
           type: formValue.couvertureSocialeType,
           numeroAdhesion: formValue.couvertureSocialeNumero
         } : undefined,
-        dossierMedical: {
-          antecedents: formValue.dossierMedicalAntecedents,
-          remarques: formValue.dossierMedicalRemarques
-        }
+        dossierMedical: formValue.dossierMedical,
+        groupeFamille: formValue.roleFamille ? {
+          role: formValue.roleFamille,
+          lienParental: formValue.roleFamille === RoleClientFamille.MEMBRE ? formValue.lienParental : undefined,
+          nomFamille: formValue.roleFamille === RoleClientFamille.MEMBRE ? formValue.nomFamille : undefined,
+          beneficiaireOptique: formValue.beneficiaireOptique,
+          responsableFinancier: formValue.responsableFinancier,
+          mutuellePartagee: formValue.mutuellePartagee,
+          adressePartagee: formValue.adressePartagee
+        } : undefined
       };
     } else if (typeClient === TypeClient.PROFESSIONNEL) {
       return {
