@@ -39,6 +39,12 @@ export const MENU: MenuItem[] = [
         route: 'clients',
       },
       {
+        label: 'Gestion Stock',
+        icon: 'inventory_2',
+        type: 'subchild',
+        route: 'stock',
+      },
+      {
         label: 'Catégories',
         icon: 'category',
         type: 'subchild',
