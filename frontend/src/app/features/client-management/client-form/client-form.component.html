@@ -79,10 +79,12 @@
                             </div>
 
                             <h3 class="text-lg font-semibold mb-3">Document d'identité</h3>
-                            <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div class="grid grid-cols-1 gap-4 mb-6">
                                 <mat-form-field appearance="outline">
-                                    <mat-label>CIN</mat-label>
-                                    <input matInput formControlName="cin" placeholder="Numéro CIN">
+                                    <mat-label>{{ clientForm.get('titre')?.value === 'Enf' ? 'CIN du parent (si mineur)'
+                                        : 'CIN' }}</mat-label>
+                                    <input matInput formControlName="cin"
+                                        [placeholder]="clientForm.get('titre')?.value === 'Enf' ? 'CIN du parent' : 'Numéro CIN'">
                                     @if (clientForm.get('cin')?.hasError('required') &&
                                     clientForm.get('cin')?.touched) {
                                     <mat-error>Le CIN est obligatoire</mat-error>
@@ -90,11 +92,6 @@
                                     @if (clientForm.get('cin')?.hasError('minlength')) {
                                     <mat-error>Le CIN doit contenir au moins 5 caractères</mat-error>
                                     }
-                                </mat-form-field>
-
-                                <mat-form-field appearance="outline">
-                                    <mat-label>CIN du parent (si mineur)</mat-label>
-                                    <input matInput formControlName="cinParent" placeholder="CIN du parent">
                                 </mat-form-field>
                             </div>
                             }
@@ -206,6 +203,107 @@
                         </div>
                     </mat-tab>
 
+                    <!-- Onglet Groupe Famille -->
+                    <mat-tab label="Groupe Famille"
+                        *ngIf="clientForm.get('typeClient')?.value === TypeClient.PARTICULIER">
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Rôle Client -->
+                            <div class="col-span-1">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Rôle Client</mat-label>
+                                    <mat-select formControlName="roleFamille">
+                                        <mat-option *ngFor="let role of rolesClientFamille" [value]="role">
+                                            {{role}}
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-hint *ngIf="clientForm.get('roleFamille')?.value === RoleClientFamille.MEMBRE">
+                                        Si Membre, affiche le lien Parental
+                                    </mat-hint>
+                                </mat-form-field>
+                            </div>
+
+                            <!-- Lien Parental (Visible si Membre) -->
+                            <div class="col-span-1"
+                                *ngIf="clientForm.get('roleFamille')?.value === RoleClientFamille.MEMBRE">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Lien Parental</mat-label>
+                                    <mat-select formControlName="lienParental">
+                                        <mat-option *ngFor="let lien of liensParentaux" [value]="lien">
+                                            {{lien}}
+                                        </mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+
+                            <!-- ID Famille (Lecture seule pour l'instant) -->
+                            <div class="col-span-1">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>ID Famille</mat-label>
+                                    <input matInput placeholder="ID Groupe Famille" disabled>
+                                </mat-form-field>
+                            </div>
+
+                            <!-- Nom Famille (Visible si Membre) -->
+                            <div class="col-span-1"
+                                *ngIf="clientForm.get('roleFamille')?.value === RoleClientFamille.MEMBRE">
+                                <mat-form-field appearance="outline" class="w-full">
+                                    <mat-label>Nom Famille</mat-label>
+                                    <input matInput formControlName="nomFamille" placeholder="Auto Complete">
+                                    <mat-error *ngIf="clientForm.get('nomFamille')?.hasError('required')">
+                                        Le nom de famille est requis
+                                    </mat-error>
+                                </mat-form-field>
+                            </div>
+
+                            <!-- Options (Checkboxes) -->
+                            <div class="col-span-2 space-y-4 mt-4">
+                                <div class="flex items-center justify-between border-b pb-2">
+                                    <span class="font-medium">Bénéficiaire Optique :</span>
+                                    <mat-radio-group formControlName="beneficiaireOptique">
+                                        <mat-radio-button [value]="true" class="mr-4">Oui</mat-radio-button>
+                                        <mat-radio-button [value]="false">Non</mat-radio-button>
+                                    </mat-radio-group>
+                                </div>
+
+                                <div class="flex items-center justify-between border-b pb-2">
+                                    <span class="font-medium">Responsable Financier :</span>
+                                    <mat-radio-group formControlName="responsableFinancier">
+                                        <mat-radio-button [value]="true" class="mr-4">Oui</mat-radio-button>
+                                        <mat-radio-button [value]="false">Non</mat-radio-button>
+                                    </mat-radio-group>
+                                </div>
+
+                                <div class="flex items-center justify-between border-b pb-2">
+                                    <span class="font-medium">Mutuelle Partagée :</span>
+                                    <mat-radio-group formControlName="mutuellePartagee">
+                                        <mat-radio-button [value]="true" class="mr-4">Oui</mat-radio-button>
+                                        <mat-radio-button [value]="false">Non</mat-radio-button>
+                                    </mat-radio-group>
+                                </div>
+
+                                <div class="flex items-center justify-between border-b pb-2">
+                                    <span class="font-medium">Adresse Partagée :</span>
+                                    <mat-radio-group formControlName="adressePartagee">
+                                        <mat-radio-button [value]="true" class="mr-4">Oui</mat-radio-button>
+                                        <mat-radio-button [value]="false">Non</mat-radio-button>
+                                    </mat-radio-group>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="col-span-2 flex gap-4 mt-6">
+                                <button mat-stroked-button type="button" color="primary" class="flex-1 py-6"
+                                    *ngIf="clientForm.get('roleFamille')?.value === RoleClientFamille.PRINCIPAL || !clientForm.get('roleFamille')?.value">
+                                    Créer Groupe Famille
+                                </button>
+                                <button mat-stroked-button type="button" color="primary" class="flex-1 py-6"
+                                    *ngIf="clientForm.get('roleFamille')?.value === RoleClientFamille.MEMBRE">
+                                    Joindre Groupe Famille
+                                </button>
+                            </div>
+                        </div>
+                    </mat-tab>
+
                     <!-- ONGLET CONVENTION -->
                     @if (clientForm.get('typeClient')?.value !== TypeClient.ANONYME) {
                     <mat-tab label="Convention">
@@ -272,7 +370,6 @@
                                     <mat-error>Le type de couverture est obligatoire</mat-error>
                                     }
                                 </mat-form-field>
-
                                 <mat-form-field appearance="outline">
                                     <mat-label>Numéro d'adhésion</mat-label>
                                     <input matInput formControlName="couvertureSocialeNumero">
@@ -281,21 +378,163 @@
                             }
                         </div>
                     </mat-tab>
+                    }
 
                     <!-- ONGLET DOSSIER MÉDICAL (Particulier uniquement) -->
+                    @if (clientForm.get('typeClient')?.value === TypeClient.PARTICULIER) {
                     <mat-tab label="Dossier Médical">
-                        <div class="p-6">
-                            <mat-form-field appearance="outline" class="w-full mb-4">
-                                <mat-label>Antécédents</mat-label>
-                                <textarea matInput formControlName="dossierMedicalAntecedents" rows="3"
-                                    placeholder="Antécédents médicaux (facultatif)"></textarea>
-                            </mat-form-field>
+                        <div class="p-6" formGroupName="dossierMedical">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <!-- COLONNE 1 : Antécédents visuels -->
+                                <div>
+                                    <h3 class="text-lg font-bold mb-4 text-gray-800">Antécédents visuels</h3>
 
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Remarques</mat-label>
-                                <textarea matInput formControlName="dossierMedicalRemarques" rows="3"
-                                    placeholder="Remarques diverses (facultatif)"></textarea>
-                            </mat-form-field>
+                                    <!-- Correction actuelle -->
+                                    <div class="mb-4">
+                                        <label class="block font-medium mb-2">Portez-vous actuellement</label>
+                                        <mat-radio-group formControlName="correctionActuelle"
+                                            class="flex flex-col gap-2">
+                                            @for (correction of correctionsVisuelles; track correction) {
+                                            <mat-radio-button [value]="correction">{{ correction }}</mat-radio-button>
+                                            }
+                                        </mat-radio-group>
+                                    </div>
+
+                                    <!-- Durée de port -->
+                                    <div class="mb-4">
+                                        <label class="block font-medium mb-2">Depuis combien de temps portez-vous une
+                                            correction visuelle ?</label>
+                                        <mat-radio-group formControlName="dureePort" class="flex flex-col gap-2">
+                                            @for (duree of dureesPort; track duree) {
+                                            <mat-radio-button [value]="duree">{{ duree }}</mat-radio-button>
+                                            }
+                                        </mat-radio-group>
+                                    </div>
+
+                                    <!-- Checkboxes Antécédents -->
+                                    <div class="mb-4 space-y-2">
+                                        <label class="block font-medium mb-2">Avez-vous déjà eu</label>
+                                        <mat-checkbox formControlName="traumatisme">Un traumatisme oculaire (coup, corps
+                                            étranger, etc.)</mat-checkbox>
+                                        <mat-checkbox formControlName="operation">Une opération des yeux (ex :
+                                            cataracte, LASIK...)</mat-checkbox>
+                                        <mat-checkbox formControlName="inflammation">Une inflammation ou infection
+                                            oculaire</mat-checkbox>
+                                        <mat-checkbox formControlName="sensibiliteLumiere">Une sensibilité à la lumière
+                                            (photophobie)</mat-checkbox>
+                                        <mat-checkbox formControlName="secheresse">Une sécheresse ou larmoiement
+                                            excessif</mat-checkbox>
+                                    </div>
+
+                                    <!-- Antécédents familiaux -->
+                                    <div class="mb-4" formGroupName="antecedentsFamiliaux">
+                                        <label class="block font-medium mb-2">Avez-vous des antécédents familiaux
+                                            de</label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <mat-checkbox formControlName="glaucome">Glaucome</mat-checkbox>
+                                            <mat-checkbox formControlName="dmla">DMLA</mat-checkbox>
+                                            <mat-checkbox formControlName="diabete">Diabète</mat-checkbox>
+                                        </div>
+                                        <mat-form-field appearance="outline" class="w-full mt-2">
+                                            <mat-label>Autres maladies oculaires</mat-label>
+                                            <input matInput formControlName="autres">
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+
+                                <!-- COLONNE 2 : Antécédents médicaux généraux -->
+                                <div>
+                                    <h3 class="text-lg font-bold mb-4 text-gray-800">Antécédents médicaux généraux</h3>
+
+                                    <!-- Maladies chroniques -->
+                                    <div class="mb-6" formGroupName="maladiesChroniques">
+                                        <label class="block font-medium mb-2">Êtes-vous suivi pour une ou plusieurs
+                                            maladies chroniques ?</label>
+                                        <div class="flex items-center gap-4 mb-2">
+                                            <mat-checkbox formControlName="actif">Oui</mat-checkbox>
+                                        </div>
+                                        @if (clientForm.get('dossierMedical.maladiesChroniques.actif')?.value) {
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Précisez</mat-label>
+                                            <input matInput formControlName="details">
+                                        </mat-form-field>
+                                        }
+                                    </div>
+
+                                    <!-- Traitement médicamenteux -->
+                                    <div class="mb-6" formGroupName="traitementMedicamenteux">
+                                        <label class="block font-medium mb-2">Prenez-vous actuellement un traitement
+                                            médicamenteux régulier ?</label>
+                                        <div class="flex items-center gap-4 mb-2">
+                                            <mat-checkbox formControlName="actif">Oui</mat-checkbox>
+                                        </div>
+                                        @if (clientForm.get('dossierMedical.traitementMedicamenteux.actif')?.value) {
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Précisez</mat-label>
+                                            <input matInput formControlName="details">
+                                        </mat-form-field>
+                                        }
+                                    </div>
+
+                                    <!-- Allergies -->
+                                    <div class="mb-6" formGroupName="allergies">
+                                        <label class="block font-medium mb-2">Avez-vous des allergies connues ?</label>
+                                        <div class="flex items-center gap-4 mb-2">
+                                            <mat-checkbox formControlName="actif">Oui</mat-checkbox>
+                                        </div>
+                                        @if (clientForm.get('dossierMedical.allergies.actif')?.value) {
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Précisez</mat-label>
+                                            <input matInput formControlName="details">
+                                        </mat-form-field>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- COLONNE 3 : Habitudes et confort visuel -->
+                                <div>
+                                    <h3 class="text-lg font-bold mb-4 text-gray-800">Habitudes et confort visuel</h3>
+
+                                    <!-- Écran -->
+                                    <div class="mb-6">
+                                        <label class="block font-medium mb-2">Passez-vous plus de 4h par jour devant un
+                                            écran ?</label>
+                                        <mat-radio-group formControlName="ecranPlus4h" class="flex gap-4">
+                                            <mat-radio-button [value]="true">Oui</mat-radio-button>
+                                            <mat-radio-button [value]="false">Non</mat-radio-button>
+                                        </mat-radio-group>
+                                    </div>
+
+                                    <!-- Ressenti -->
+                                    <div class="mb-6" formGroupName="ressenti">
+                                        <label class="block font-medium mb-2">Ressentez-vous souvent :</label>
+                                        <div class="flex flex-col gap-2">
+                                            <mat-checkbox formControlName="fatigue">Fatigue visuelle</mat-checkbox>
+                                            <mat-checkbox formControlName="mauxTete">Maux de tête</mat-checkbox>
+                                            <mat-checkbox formControlName="visionFloue">Vision floue</mat-checkbox>
+                                            <mat-checkbox formControlName="picotements">Picotements /
+                                                démangeaisons</mat-checkbox>
+                                            <mat-checkbox formControlName="difficultePresLoin">Difficulté à voir de près
+                                                / de loin</mat-checkbox>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sport -->
+                                    <div class="mb-6" formGroupName="sport">
+                                        <label class="block font-medium mb-2">Pratiquez-vous un sport ou une activité
+                                            nécessitant une vision spécifique ?</label>
+                                        <div class="flex items-center gap-4 mb-2">
+                                            <mat-checkbox formControlName="actif">Oui</mat-checkbox>
+                                        </div>
+                                        @if (clientForm.get('dossierMedical.sport.actif')?.value) {
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Précisez</mat-label>
+                                            <input matInput formControlName="details">
+                                        </mat-form-field>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </mat-tab>
                     }
@@ -314,15 +553,13 @@
 
                             @for (contact of contacts.controls; track $index) {
                             <mat-card class="mb-4">
+                                <mat-card-header>
+                                    <mat-card-title class="text-base">Contact {{ $index + 1 }}</mat-card-title>
+                                    <button mat-icon-button color="warn" (click)="removeContact($index)">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </mat-card-header>
                                 <mat-card-content>
-                                    <div class="flex justify-between items-center mb-3">
-                                        <h4 class="font-semibold">Contact {{ $index + 1 }}</h4>
-                                        <button mat-icon-button color="warn" type="button"
-                                            (click)="removeContact($index)">
-                                            <mat-icon>delete</mat-icon>
-                                        </button>
-                                    </div>
-
                                     <div [formGroup]="$any(contact)" class="grid grid-cols-2 gap-4">
                                         <mat-form-field appearance="outline">
                                             <mat-label>Nom</mat-label>
@@ -358,12 +595,10 @@
                     }
                 </mat-tab-group>
 
-                <!-- Boutons d'action -->
-                <div class="flex justify-end gap-4 mt-6 border-t pt-4">
-                    <button mat-stroked-button type="button" (click)="onCancel()" [disabled]="loading()">
-                        Annuler
-                    </button>
-                    <button mat-raised-button color="primary" type="submit" [disabled]="loading()">
+                <div class="mt-6 flex justify-end gap-4">
+                    <button mat-button type="button" (click)="onCancel()">Annuler</button>
+                    <button mat-raised-button color="primary" type="submit"
+                        [disabled]="clientForm.invalid || loading()">
                         @if (loading()) {
                         <mat-icon class="animate-spin">refresh</mat-icon>
                         }
