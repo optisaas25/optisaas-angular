@@ -412,18 +412,22 @@
                                     </div>
 
                                     <!-- Checkboxes Antécédents -->
-                                    <div class="mb-4 space-y-2">
+                                    <div class="mb-4">
                                         <label class="block font-medium mb-2">Avez-vous déjà eu</label>
-                                        <mat-checkbox formControlName="traumatisme">Un traumatisme oculaire (coup, corps
-                                            étranger, etc.)</mat-checkbox>
-                                        <mat-checkbox formControlName="operation">Une opération des yeux (ex :
-                                            cataracte, LASIK...)</mat-checkbox>
-                                        <mat-checkbox formControlName="inflammation">Une inflammation ou infection
-                                            oculaire</mat-checkbox>
-                                        <mat-checkbox formControlName="sensibiliteLumiere">Une sensibilité à la lumière
-                                            (photophobie)</mat-checkbox>
-                                        <mat-checkbox formControlName="secheresse">Une sécheresse ou larmoiement
-                                            excessif</mat-checkbox>
+                                        <div class="flex flex-col gap-2">
+                                            <mat-checkbox formControlName="traumatisme">Un traumatisme oculaire (coup,
+                                                corps
+                                                étranger, etc.)</mat-checkbox>
+                                            <mat-checkbox formControlName="operation">Une opération des yeux (ex :
+                                                cataracte, LASIK...)</mat-checkbox>
+                                            <mat-checkbox formControlName="inflammation">Une inflammation ou infection
+                                                oculaire</mat-checkbox>
+                                            <mat-checkbox formControlName="sensibiliteLumiere">Une sensibilité à la
+                                                lumière
+                                                (photophobie)</mat-checkbox>
+                                            <mat-checkbox formControlName="secheresse">Une sécheresse ou larmoiement
+                                                excessif</mat-checkbox>
+                                        </div>
                                     </div>
 
                                     <!-- Antécédents familiaux -->
@@ -437,7 +441,7 @@
                                         </div>
                                         <mat-form-field appearance="outline" class="w-full mt-2">
                                             <mat-label>Autres maladies oculaires</mat-label>
-                                            <input matInput formControlName="autres">
+                                            <textarea matInput formControlName="autres" rows="3"></textarea>
                                         </mat-form-field>
                                     </div>
                                 </div>
