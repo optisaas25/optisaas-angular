@@ -36,6 +36,10 @@ export class UserFormComponent implements OnInit {
     isEditMode = false;
     userId?: string;
 
+    // Photo upload
+    selectedPhoto: File | null = null;
+    photoPreview: string | null = null;
+
     // Enums for dropdowns
     civilites = Object.values(Civilite);
     userRoles = Object.values(UserRole);
@@ -81,6 +85,7 @@ export class UserFormComponent implements OnInit {
             civilite: [Civilite.MONSIEUR, Validators.required],
             telephone: [''],
             email: ['', [Validators.required, Validators.email]],
+            photoUrl: [''], // Photo URL
             agrement: [''], // Optional
             statut: [UserStatus.ACTIF, Validators.required],
             centreRoles: this.fb.array([])
@@ -143,9 +148,15 @@ export class UserFormComponent implements OnInit {
                     civilite: user.civilite,
                     telephone: user.telephone,
                     email: user.email,
+                    photoUrl: user.photoUrl,
                     agrement: user.agrement,
                     statut: user.statut
                 });
+
+                // Set photo preview if exists
+                if (user.photoUrl) {
+                    this.photoPreview = user.photoUrl;
+                }
 
                 // Load centre-roles
                 user.centreRoles.forEach(cr => {
@@ -172,6 +183,49 @@ export class UserFormComponent implements OnInit {
                 });
             }
         }
+    }
+
+    /**
+     * Handle photo file selection
+     */
+    onPhotoSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Veuillez sélectionner une image valide');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La taille de l\'image ne doit pas dépasser 5MB');
+                return;
+            }
+
+            this.selectedPhoto = file;
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.photoPreview = e.target?.result as string;
+                // In production, upload to server and get URL
+                // For now, store the base64 preview
+                this.userForm.patchValue({ photoUrl: this.photoPreview });
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    /**
+     * Remove selected photo
+     */
+    removePhoto(): void {
+        this.selectedPhoto = null;
+        this.photoPreview = null;
+        this.userForm.patchValue({ photoUrl: '' });
     }
 
     /**

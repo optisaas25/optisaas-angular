@@ -22,6 +22,32 @@
                     </mat-radio-group>
                 </div>
 
+                <!-- Photo de profil -->
+                <div class="form-section mb-4">
+                    <label class="section-label">Photo de profil</label>
+                    <div class="photo-upload-container">
+                        <div class="photo-preview" *ngIf="photoPreview || userForm.get('photoUrl')?.value">
+                            <img [src]="photoPreview || userForm.get('photoUrl')?.value" alt="Photo de profil" />
+                            <button mat-icon-button type="button" class="remove-photo-btn" (click)="removePhoto()"
+                                matTooltip="Supprimer la photo">
+                                <mat-icon>close</mat-icon>
+                            </button>
+                        </div>
+                        <div class="photo-upload-placeholder" *ngIf="!photoPreview && !userForm.get('photoUrl')?.value">
+                            <mat-icon>account_circle</mat-icon>
+                            <p>Aucune photo</p>
+                        </div>
+                        <input type="file" #photoInput accept="image/*" (change)="onPhotoSelected($event)"
+                            style="display: none" />
+                        <button mat-raised-button type="button" color="accent" (click)="photoInput.click()"
+                            class="upload-btn">
+                            <mat-icon>upload</mat-icon>
+                            {{ photoPreview || userForm.get('photoUrl')?.value ? 'Changer la photo' : 'Ajouter une
+                            photo' }}
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Personal Information -->
                 <div class="form-row">
                     <mat-form-field class="form-field">

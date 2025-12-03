@@ -13,6 +13,7 @@ export interface User {
     civilite: Civilite;
     telephone?: string;
     email: string;
+    photoUrl?: string; // Profile picture URL
     agrement?: string; // Optional field
     statut: UserStatus;
     centreRoles: CentreRole[];
