@@ -48,6 +48,8 @@ interface PrescriptionFile {
 })
 export class MontureFormComponent implements OnInit {
     @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+    @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
+    @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
     ficheForm: FormGroup;
     clientId: string | null = null;
@@ -66,6 +68,11 @@ export class MontureFormComponent implements OnInit {
     // Fichiers prescription
     prescriptionFiles: PrescriptionFile[] = [];
     viewingFile: PrescriptionFile | null = null;
+
+    // Camera capture
+    showCameraModal = false;
+    cameraStream: MediaStream | null = null;
+    capturedImage: string | null = null;
 
     // Prix des verres (logique de calcul)
     private LENS_PRICES: Record<string, Record<string, number>> = {
@@ -573,6 +580,104 @@ export class MontureFormComponent implements OnInit {
             }
         });
     }
+
+    // Camera capture methods
+    async openCamera(): Promise<void> {
+        try {
+            this.showCameraModal = true;
+            this.cdr.markForCheck();
+
+            // Wait for modal to render
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Start video stream
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }, // Back camera on mobile
+                audio: false
+            });
+
+            if (this.videoElement) {
+                this.videoElement.nativeElement.srcObject = this.cameraStream;
+            }
+        } catch (error) {
+            console.error('Camera access error:', error);
+            alert('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+            this.closeCamera();
+        }
+    }
+
+    capturePhoto(): void {
+        if (!this.videoElement || !this.canvasElement) return;
+
+        const video = this.videoElement.nativeElement;
+        const canvas = this.canvasElement.nativeElement;
+        const context = canvas.getContext('2d');
+
+        if (!context) return;
+
+        // Set canvas dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw current video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert to data URL
+        this.capturedImage = canvas.toDataURL('image/jpeg', 0.9);
+        this.cdr.markForCheck();
+    }
+
+    retakePhoto(): void {
+        this.capturedImage = null;
+        this.cdr.markForCheck();
+    }
+
+    useCapture(): void {
+        if (!this.capturedImage) return;
+
+        // Convert data URL to Blob
+        fetch(this.capturedImage)
+            .then(res => res.blob())
+            .then(blob => {
+                // Create file from Blob
+                const timestamp = new Date().getTime();
+                const file = new File([blob], `prescription_${timestamp}.jpg`, {
+                    type: 'image/jpeg'
+                });
+
+                // Create PrescriptionFile object
+                const prescriptionFile: PrescriptionFile = {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    preview: this.capturedImage!,
+                    file: file,
+                    uploadDate: new Date()
+                };
+
+                this.prescriptionFiles.push(prescriptionFile);
+
+                // Trigger automatic OCR extraction
+                this.extractData(prescriptionFile);
+
+                // Close modal
+                this.closeCamera();
+                this.cdr.markForCheck();
+            });
+    }
+
+    closeCamera(): void {
+        // Stop all video tracks
+        if (this.cameraStream) {
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            this.cameraStream = null;
+        }
+
+        this.showCameraModal = false;
+        this.capturedImage = null;
+        this.cdr.markForCheck();
+    }
+
 
     goBack(): void {
         if (this.clientId) {
