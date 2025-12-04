@@ -537,52 +537,52 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- Camera Capture Modal -->
-<div class="camera-modal" *ngIf="showCameraModal" (click)="closeCamera()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-            <h3>Capturer une photo de prescription</h3>
-            <button type="button" class="btn-close" (click)="closeCamera()">×</button>
-        </div>
 
-        <div class="modal-body">
-            <!-- Video stream -->
-            <div class="camera-container" *ngIf="!capturedImage">
-                <video #videoElement autoplay playsinline></video>
+    <!-- Camera Capture Modal -->
+    <div class="camera-modal" *ngIf="showCameraModal" (click)="closeCamera()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Capturer une photo de prescription</h3>
+                <button type="button" class="btn-close" (click)="closeCamera()">×</button>
             </div>
 
-            <!-- Captured photo preview -->
-            <div class="preview-container" *ngIf="capturedImage">
-                <img [src]="capturedImage" alt="Photo capturée">
+            <div class="modal-body">
+                <!-- Video stream -->
+                <div class="camera-container" *ngIf="!capturedImage">
+                    <video #videoElement autoplay playsinline></video>
+                </div>
+
+                <!-- Captured photo preview -->
+                <div class="preview-container" *ngIf="capturedImage">
+                    <img [src]="capturedImage" alt="Photo capturée">
+                </div>
+
+                <!-- Hidden canvas for capture -->
+                <canvas #canvasElement style="display: none;"></canvas>
             </div>
 
-            <!-- Hidden canvas for capture -->
-            <canvas #canvasElement style="display: none;"></canvas>
-        </div>
+            <div class="modal-footer">
+                <!-- Buttons before capture -->
+                <ng-container *ngIf="!capturedImage">
+                    <button type="button" class="btn-secondary" (click)="closeCamera()">
+                        Annuler
+                    </button>
+                    <button type="button" class="btn-primary" (click)="capturePhoto()">
+                        📷 Capturer
+                    </button>
+                </ng-container>
 
-        <div class="modal-footer">
-            <!-- Buttons before capture -->
-            <ng-container *ngIf="!capturedImage">
-                <button type="button" class="btn-secondary" (click)="closeCamera()">
-                    Annuler
-                </button>
-                <button type="button" class="btn-primary" (click)="capturePhoto()">
-                    📷 Capturer
-                </button>
-            </ng-container>
-
-            <!-- Buttons after capture -->
-            <ng-container *ngIf="capturedImage">
-                <button type="button" class="btn-secondary" (click)="retakePhoto()">
-                    ↺ Reprendre
-                </button>
-                <button type="button" class="btn-success" (click)="useCapture()">
-                    ✓ Utiliser cette photo
-                </button>
-            </ng-container>
+                <!-- Buttons after capture -->
+                <ng-container *ngIf="capturedImage">
+                    <button type="button" class="btn-secondary" (click)="retakePhoto()">
+                        ↺ Reprendre
+                    </button>
+                    <button type="button" class="btn-success" (click)="useCapture()">
+                        ✓ Utiliser cette photo
+                    </button>
+                </ng-container>
+            </div>
         </div>
     </div>
-</div>
 </div>
