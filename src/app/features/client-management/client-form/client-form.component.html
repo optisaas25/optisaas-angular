@@ -1,5 +1,5 @@
 <div class="client-form-container p-6">
-    <mat-card class="max-w-6xl mx-auto">
+    <mat-card class="client-form-card">
         <mat-card-header class="mb-4">
             <mat-card-title>
                 {{ isEditMode() ? 'Modifier un client' : 'Ajouter un client' }}
@@ -32,9 +32,12 @@
                     <mat-tab label="Identité & Coordonnées">
                         <div class="p-6">
                             <!-- CLIENT PARTICULIER -->
-                            @if (clientForm.get('typeClient')?.value === TypeClient.PARTICULIER) {
+                            <!-- CLIENT PARTICULIER ET ANONYME -->
+                            @if (clientForm.get('typeClient')?.value === TypeClient.PARTICULIER ||
+                            clientForm.get('typeClient')?.value === TypeClient.ANONYME) {
                             <h3 class="text-lg font-semibold mb-3">Identité</h3>
                             <div class="grid grid-cols-4 gap-4 mb-6">
+                                @if (clientForm.get('typeClient')?.value === TypeClient.PARTICULIER) {
                                 <mat-form-field appearance="outline">
                                     <mat-label>Titre</mat-label>
                                     <mat-select formControlName="titre">
@@ -47,6 +50,7 @@
                                     <mat-error>Le titre est obligatoire</mat-error>
                                     }
                                 </mat-form-field>
+                                }
 
                                 <mat-form-field appearance="outline">
                                     <mat-label>Nom</mat-label>
@@ -66,6 +70,7 @@
                                     }
                                 </mat-form-field>
 
+                                @if (clientForm.get('typeClient')?.value === TypeClient.PARTICULIER) {
                                 <mat-form-field appearance="outline">
                                     <mat-label>Date de naissance</mat-label>
                                     <input matInput [matDatepicker]="picker" formControlName="dateNaissance">
@@ -76,24 +81,49 @@
                                     <mat-error>La date de naissance est obligatoire</mat-error>
                                     }
                                 </mat-form-field>
+                                }
                             </div>
 
+                            @if (clientForm.get('typeClient')?.value === TypeClient.PARTICULIER) {
                             <h3 class="text-lg font-semibold mb-3">Document d'identité</h3>
-                            <div class="grid grid-cols-1 gap-4 mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <mat-form-field appearance="outline">
-                                    <mat-label>{{ clientForm.get('titre')?.value === 'Enf' ? 'CIN du parent (si mineur)'
-                                        : 'CIN' }}</mat-label>
-                                    <input matInput formControlName="cin"
-                                        [placeholder]="clientForm.get('titre')?.value === 'Enf' ? 'CIN du parent' : 'Numéro CIN'">
-                                    @if (clientForm.get('cin')?.hasError('required') &&
-                                    clientForm.get('cin')?.touched) {
-                                    <mat-error>Le CIN est obligatoire</mat-error>
+                                    <mat-label>Type de pièce</mat-label>
+                                    <mat-select formControlName="typePieceIdentite">
+                                        @for (type of typesPieceIdentite; track type) {
+                                        <mat-option [value]="type">{{ type }}</mat-option>
+                                        }
+                                    </mat-select>
+                                </mat-form-field>
+
+                                @if (clientForm.get('titre')?.value !== TitreClient.ENF) {
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Numéro de pièce</mat-label>
+                                    <input matInput formControlName="numeroPieceIdentite"
+                                        placeholder="Numéro de la pièce">
+                                    @if (clientForm.get('numeroPieceIdentite')?.hasError('required') &&
+                                    clientForm.get('numeroPieceIdentite')?.touched) {
+                                    <mat-error>Le numéro est obligatoire</mat-error>
                                     }
-                                    @if (clientForm.get('cin')?.hasError('minlength')) {
-                                    <mat-error>Le CIN doit contenir au moins 5 caractères</mat-error>
+                                    @if (clientForm.get('numeroPieceIdentite')?.hasError('minlength')) {
+                                    <mat-error>Minimum 5 caractères</mat-error>
                                     }
                                 </mat-form-field>
+                                }
+
+                                @if (clientForm.get('titre')?.value === TitreClient.ENF) {
+                                <mat-form-field appearance="outline" class="md:col-span-1">
+                                    <mat-label>Pièce d'Identité du Parent</mat-label>
+                                    <input matInput formControlName="cinParent"
+                                        placeholder="Pièce d'Identité du Parent">
+                                    @if (clientForm.get('cinParent')?.hasError('required') &&
+                                    clientForm.get('cinParent')?.touched) {
+                                    <mat-error>Le numéro est obligatoire</mat-error>
+                                    }
+                                </mat-form-field>
+                                }
                             </div>
+                            }
                             }
 
                             <!-- CLIENT PROFESSIONNEL -->
@@ -130,23 +160,18 @@
                                 </mat-form-field>
 
                                 <mat-form-field appearance="outline">
-                                    <mat-label>Numéro de société</mat-label>
-                                    <input matInput formControlName="numeroSociete"
-                                        placeholder="Numéro de société (facultatif)">
+                                    <mat-label>Registre de Commerce</mat-label>
+                                    <input matInput formControlName="registreCommerce" placeholder="RC (facultatif)">
+                                </mat-form-field>
+
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Patente</mat-label>
+                                    <input matInput formControlName="patente" placeholder="Patente (facultatif)">
                                 </mat-form-field>
                             </div>
                             }
 
-                            <!-- CLIENT ANONYME -->
-                            @if (clientForm.get('typeClient')?.value === TypeClient.ANONYME) {
-                            <div class="bg-gray-50 p-6 rounded-lg mb-6">
-                                <p class="text-gray-600 mb-4">
-                                    <mat-icon class="align-middle mr-2">info</mat-icon>
-                                    Client anonyme : utilisé pour les ventes ponctuelles. Aucun champ
-                                    obligatoire.
-                                </p>
-                            </div>
-                            }
+                            <!-- Message Anonyme supprimé car champs optionnels présents -->
 
                             <!-- Contact & Localisation (Commun) -->
                             <h3 class="text-lg font-semibold mb-3">Contact & Localisation</h3>
@@ -304,43 +329,55 @@
                         </div>
                     </mat-tab>
 
-                    <!-- ONGLET CONVENTION -->
-                    @if (clientForm.get('typeClient')?.value !== TypeClient.ANONYME) {
+                    <!-- ONGLET CONVENTION (Professionnel uniquement) -->
+                    @if (clientForm.get('typeClient')?.value === TypeClient.PROFESSIONNEL) {
                     <mat-tab label="Convention">
-                        <div class="p-6">
-                            <mat-checkbox formControlName="conventionActif" class="mb-4">
+                        <div class="p-6" formGroupName="convention">
+                            <mat-checkbox formControlName="actif" class="mb-4">
                                 Ce client bénéficie d'une convention
                             </mat-checkbox>
 
-                            @if (clientForm.get('conventionActif')?.value) {
+                            @if (clientForm.get('convention.actif')?.value) {
                             <div class="grid grid-cols-2 gap-4 mt-4">
-                                <mat-form-field appearance="outline" class="col-span-2">
+                                <mat-form-field appearance="outline">
                                     <mat-label>Nom de la convention</mat-label>
-                                    <input matInput formControlName="conventionNom" placeholder="Nom de la convention">
-                                    @if (clientForm.get('conventionNom')?.hasError('required') &&
-                                    clientForm.get('conventionNom')?.touched) {
-                                    <mat-error>Le nom de la convention est obligatoire</mat-error>
+                                    <input matInput formControlName="nomConvention">
+                                    @if (clientForm.get('convention.nomConvention')?.hasError('required')) {
+                                    <mat-error>Le nom est requis</mat-error>
                                     }
                                 </mat-form-field>
 
                                 <mat-form-field appearance="outline">
-                                    <mat-label>Contact - Nom</mat-label>
-                                    <input matInput formControlName="conventionContactNom">
+                                    <mat-label>Remise (%)</mat-label>
+                                    <input matInput type="number" formControlName="remiseOfferte">
                                 </mat-form-field>
 
                                 <mat-form-field appearance="outline">
-                                    <mat-label>Contact - Prénom</mat-label>
-                                    <input matInput formControlName="conventionContactPrenom">
+                                    <mat-label>Nom contact</mat-label>
+                                    <input matInput formControlName="contactNom">
                                 </mat-form-field>
 
                                 <mat-form-field appearance="outline">
-                                    <mat-label>Contact - Téléphone</mat-label>
-                                    <input matInput formControlName="conventionContactTelephone">
+                                    <mat-label>Tel contact</mat-label>
+                                    <input matInput formControlName="contactTelephone">
                                 </mat-form-field>
 
                                 <mat-form-field appearance="outline">
-                                    <mat-label>Remise offerte (%)</mat-label>
-                                    <input matInput type="number" formControlName="conventionRemise" min="0" max="100">
+                                    <mat-label>Modalité de paiement</mat-label>
+                                    <mat-select formControlName="modalitePaiement">
+                                        @for (mode of modalitesPaiement; track mode) {
+                                        <mat-option [value]="mode">{{ mode }}</mat-option>
+                                        }
+                                    </mat-select>
+                                </mat-form-field>
+
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Echéance de paiement</mat-label>
+                                    <mat-select formControlName="echeancePaiement">
+                                        @for (echeance of echeancesPaiement; track echeance) {
+                                        <mat-option [value]="echeance">{{ echeance }}</mat-option>
+                                        }
+                                    </mat-select>
                                 </mat-form-field>
                             </div>
                             }
@@ -543,6 +580,19 @@
                     </mat-tab>
                     }
 
+                    <!-- ONGLET NOTES (Particulier uniquement) -->
+                    @if (clientForm.get('typeClient')?.value === TypeClient.PARTICULIER) {
+                    <mat-tab label="Notes">
+                        <div class="p-6" formGroupName="dossierMedical">
+                            <mat-form-field appearance="outline" class="w-full">
+                                <mat-label>Notes et observations</mat-label>
+                                <textarea matInput formControlName="notes" rows="12"
+                                    placeholder="Saisissez ici toute note ou observation concernant le client..."></textarea>
+                            </mat-form-field>
+                        </div>
+                    </mat-tab>
+                    }
+
                     <!-- ONGLET CONTACTS (Professionnel uniquement) -->
                     @if (clientForm.get('typeClient')?.value === TypeClient.PROFESSIONNEL) {
                     <mat-tab label="Contacts Internes">
@@ -559,7 +609,8 @@
                             <mat-card class="mb-4">
                                 <mat-card-header>
                                     <mat-card-title class="text-base">Contact {{ $index + 1 }}</mat-card-title>
-                                    <button mat-icon-button color="warn" (click)="removeContact($index)">
+                                    <mat-card-title class="text-base">Contact {{ $index + 1 }}</mat-card-title>
+                                    <button mat-icon-button color="warn" type="button" (click)="removeContact($index)">
                                         <mat-icon>delete</mat-icon>
                                     </button>
                                 </mat-card-header>
@@ -586,9 +637,27 @@
                                             <input matInput formControlName="telephone">
                                         </mat-form-field>
 
-                                        <mat-form-field appearance="outline" class="col-span-2">
+                                        <mat-form-field appearance="outline">
                                             <mat-label>Email</mat-label>
                                             <input matInput type="email" formControlName="email">
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>Canal de communication</mat-label>
+                                            <mat-select formControlName="canal">
+                                                @for (canal of canauxCommunication; track canal) {
+                                                <mat-option [value]="canal">{{ canal }}</mat-option>
+                                                }
+                                            </mat-select>
+                                        </mat-form-field>
+
+                                        <mat-form-field appearance="outline" class="col-span-2">
+                                            <mat-label>Tâches suivies</mat-label>
+                                            <mat-select formControlName="taches" multiple>
+                                                @for (tache of tachesContact; track tache) {
+                                                <mat-option [value]="tache">{{ tache }}</mat-option>
+                                                }
+                                            </mat-select>
                                         </mat-form-field>
                                     </div>
                                 </mat-card-content>
