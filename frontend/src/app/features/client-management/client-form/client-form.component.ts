@@ -25,7 +25,13 @@ import {
   RoleClientFamille,
   LienParental,
   CorrectionVisuelle,
-  DureePort
+  DureePort,
+  TypePieceIdentite,
+  ClientProfessionnel,
+  ModalitePaiement,
+  EcheancePaiement,
+  TacheContact,
+  CanalCommunication
 } from '../models/client.model';
 
 @Component({
@@ -48,7 +54,7 @@ import {
     MatTabsModule
   ],
   templateUrl: './client-form.component.html',
-  styleUrl: './client-form.component.css'
+  styleUrl: './client-form.component.scss'
 })
 export class ClientFormComponent implements OnInit {
   clientForm!: FormGroup;
@@ -65,6 +71,10 @@ export class ClientFormComponent implements OnInit {
   LienParental = LienParental;
   CorrectionVisuelle = CorrectionVisuelle;
   DureePort = DureePort;
+  ModalitePaiement = ModalitePaiement;
+  EcheancePaiement = EcheancePaiement;
+  TacheContact = TacheContact;
+  CanalCommunication = CanalCommunication;
 
   // Listes pour les selects
   titres = Object.values(TitreClient);
@@ -74,6 +84,11 @@ export class ClientFormComponent implements OnInit {
   liensParentaux = Object.values(LienParental);
   correctionsVisuelles = Object.values(CorrectionVisuelle);
   dureesPort = Object.values(DureePort);
+  typesPieceIdentite = Object.values(TypePieceIdentite);
+  modalitesPaiement = Object.values(ModalitePaiement);
+  echeancesPaiement = Object.values(EcheancePaiement);
+  tachesContact = Object.values(TacheContact);
+  canauxCommunication = Object.values(CanalCommunication);
 
   constructor(
     private fb: FormBuilder,
@@ -98,11 +113,6 @@ export class ClientFormComponent implements OnInit {
       this.onTypeClientChange(type);
     });
 
-    // Écouter les changements de convention
-    this.clientForm.get('conventionActif')?.valueChanges.subscribe(actif => {
-      this.toggleConventionFields(actif);
-    });
-
     // Écouter les changements de couverture sociale
     this.clientForm.get('couvertureSocialeActif')?.valueChanges.subscribe(actif => {
       this.toggleCouvertureSocialeFields(actif);
@@ -111,6 +121,17 @@ export class ClientFormComponent implements OnInit {
     // Écouter les changements de rôle famille
     this.clientForm.get('roleFamille')?.valueChanges.subscribe(role => {
       this.toggleFamilleFields(role);
+    });
+
+    // Écouter les changements de convention
+    this.clientForm.get('convention.actif')?.valueChanges.subscribe(actif => {
+      this.toggleConventionFields(actif);
+    });
+
+
+    // Écouter les changements de titre pour adapter les champs d'identité
+    this.clientForm.get('titre')?.valueChanges.subscribe(titre => {
+      this.onTitreChange(titre);
     });
   }
 
@@ -129,18 +150,11 @@ export class ClientFormComponent implements OnInit {
       titre: [TitreClient.MR],
       nom: [''],
       prenom: [''],
-      cin: [''],
+      typePieceIdentite: [TypePieceIdentite.CIN],
+      numeroPieceIdentite: [''],
       cinParent: [''],
       dateNaissance: [null],
       email: ['', Validators.email],
-
-      // Convention
-      conventionActif: [false],
-      conventionNom: [''],
-      conventionContactNom: [''],
-      conventionContactPrenom: [''],
-      conventionContactTelephone: [''],
-      conventionRemise: [0],
 
       // Couverture sociale
       couvertureSocialeActif: [false],
@@ -191,7 +205,8 @@ export class ClientFormComponent implements OnInit {
           actif: [false],
           details: ['']
         }),
-        remarques: ['']
+        remarques: [''],
+        notes: ['']
       }),
 
       // Groupe Famille
@@ -207,9 +222,21 @@ export class ClientFormComponent implements OnInit {
       raisonSociale: [''],
       identifiantFiscal: [''],
       ice: [''],
-      numeroSociete: [''],
+      registreCommerce: [''],
+      patente: [''],
       typePartenariat: [''],
       facturationGroupee: [false],
+      // Convention (pour Professionnels)
+      convention: this.fb.group({
+        actif: [false],
+        nomConvention: [''],
+        contactNom: [''],
+        contactPrenom: [''],
+        contactTelephone: [''],
+        remiseOfferte: [null],
+        modalitePaiement: [null],
+        echeancePaiement: [null]
+      }),
       contacts: this.fb.array([])
     });
 
@@ -240,7 +267,7 @@ export class ClientFormComponent implements OnInit {
   }
 
   private clearAllValidators(): void {
-    const fields = ['titre', 'nom', 'prenom', 'cin', 'dateNaissance', 'telephone', 'ville', 'email',
+    const fields = ['titre', 'nom', 'prenom', 'numeroPieceIdentite', 'dateNaissance', 'telephone', 'ville', 'email',
       'raisonSociale', 'identifiantFiscal', 'ice'];
     fields.forEach(field => {
       this.clientForm.get(field)?.clearValidators();
@@ -251,7 +278,10 @@ export class ClientFormComponent implements OnInit {
     this.clientForm.get('titre')?.setValidators([Validators.required]);
     this.clientForm.get('nom')?.setValidators([Validators.required]);
     this.clientForm.get('prenom')?.setValidators([Validators.required]);
-    this.clientForm.get('cin')?.setValidators([Validators.required, Validators.minLength(5)]);
+    this.clientForm.get('prenom')?.setValidators([Validators.required]);
+    // Validation dynamique gérée par onTitreChange
+    // this.clientForm.get('numeroPieceIdentite')?.setValidators([Validators.required, Validators.minLength(5)]);
+    this.onTitreChange(this.clientForm.get('titre')?.value);
     this.clientForm.get('dateNaissance')?.setValidators([Validators.required]);
     this.clientForm.get('telephone')?.setValidators([Validators.required]);
     this.clientForm.get('ville')?.setValidators([Validators.required]);
@@ -268,21 +298,17 @@ export class ClientFormComponent implements OnInit {
     this.clientForm.get('telephone')?.setValidators([Validators.required]);
     this.clientForm.get('email')?.setValidators([Validators.required, Validators.email]);
     this.clientForm.get('ville')?.setValidators([Validators.required]);
+    this.clientForm.get('ville')?.setValidators([Validators.required]);
   }
 
   private toggleConventionFields(actif: boolean): void {
-    const fields = ['conventionNom', 'conventionContactNom', 'conventionContactPrenom',
-      'conventionContactTelephone', 'conventionRemise'];
-
-    fields.forEach(field => {
-      const control = this.clientForm.get(field);
-      if (actif) {
-        control?.setValidators([Validators.required]);
-      } else {
-        control?.clearValidators();
-      }
-      control?.updateValueAndValidity();
-    });
+    const group = this.clientForm.get('convention') as FormGroup;
+    if (actif) {
+      group.get('nomConvention')?.setValidators([Validators.required]);
+    } else {
+      group.get('nomConvention')?.clearValidators();
+    }
+    group.get('nomConvention')?.updateValueAndValidity();
   }
 
   private toggleCouvertureSocialeFields(actif: boolean): void {
@@ -312,6 +338,24 @@ export class ClientFormComponent implements OnInit {
     nomFamilleControl?.updateValueAndValidity();
   }
 
+  private onTitreChange(titre: TitreClient): void {
+    const numPieceControl = this.clientForm.get('numeroPieceIdentite');
+    const cinParentControl = this.clientForm.get('cinParent');
+
+    if (titre === TitreClient.ENF) {
+      // Si enfant : Numéro pièce masqué/optionnel, CIN Parent requis
+      numPieceControl?.clearValidators();
+      cinParentControl?.setValidators([Validators.required, Validators.minLength(5)]);
+    } else {
+      // Si adulte : Numéro pièce requis, CIN Parent masqué/optionnel
+      cinParentControl?.clearValidators();
+      numPieceControl?.setValidators([Validators.required, Validators.minLength(5)]);
+    }
+
+    numPieceControl?.updateValueAndValidity();
+    cinParentControl?.updateValueAndValidity();
+  }
+
   get contacts(): FormArray {
     return this.clientForm.get('contacts') as FormArray;
   }
@@ -322,7 +366,9 @@ export class ClientFormComponent implements OnInit {
       prenom: ['', Validators.required],
       fonction: ['', Validators.required],
       telephone: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]]
+      email: ['', [Validators.required, Validators.email]],
+      taches: [[]],
+      canal: ['']
     });
     this.contacts.push(contactGroup);
   }
@@ -366,24 +412,15 @@ export class ClientFormComponent implements OnInit {
         titre: client.titre,
         nom: client.nom,
         prenom: client.prenom,
-        cin: client.cin,
+        typePieceIdentite: client.typePieceIdentite,
+        numeroPieceIdentite: client.numeroPieceIdentite,
         cinParent: client.cinParent,
         dateNaissance: client.dateNaissance,
         email: client.email
       });
 
-      // Convention
-      if (client.convention) {
-        this.clientForm.patchValue({
-          conventionActif: client.convention.actif,
-          conventionNom: client.convention.nomConvention,
-          conventionContactNom: client.convention.contactNom,
-          conventionContactPrenom: client.convention.contactPrenom,
-          conventionContactTelephone: client.convention.contactTelephone,
-          conventionRemise: client.convention.remiseOfferte
-        });
-        this.toggleConventionFields(true);
-      }
+      // Convention retirée pour Particulier ici (plus d'onglet)
+
 
       // Couverture sociale
       if (client.couvertureSociale) {
@@ -421,11 +458,20 @@ export class ClientFormComponent implements OnInit {
         raisonSociale: client.raisonSociale,
         identifiantFiscal: client.identifiantFiscal,
         ice: client.ice,
-        numeroSociete: client.numeroSociete,
+        registreCommerce: client.registreCommerce,
+        patente: client.patente,
         typePartenariat: client.typePartenariat,
         facturationGroupee: client.facturationGroupee,
         email: client.email
       });
+
+      // Convention
+      if (client.convention) {
+        this.clientForm.patchValue({
+          convention: client.convention
+        });
+        this.toggleConventionFields(client.convention.actif);
+      }
 
       // Contacts
       if (client.contacts && client.contacts.length > 0) {
@@ -435,7 +481,9 @@ export class ClientFormComponent implements OnInit {
             prenom: [contact.prenom, Validators.required],
             fonction: [contact.fonction, Validators.required],
             telephone: [contact.telephone, Validators.required],
-            email: [contact.email, [Validators.required, Validators.email]]
+            email: [contact.email, [Validators.required, Validators.email]],
+            taches: [contact.taches || []],
+            canal: [contact.canal || '']
           });
           this.contacts.push(contactGroup);
         });
@@ -463,6 +511,7 @@ export class ClientFormComponent implements OnInit {
     const formValue = this.clientForm.value;
     const typeClient = formValue.typeClient;
 
+    // Champs de base présents pour Anonyme aussi
     const baseData = {
       typeClient,
       telephone: formValue.telephone || undefined,
@@ -478,20 +527,14 @@ export class ClientFormComponent implements OnInit {
         titre: formValue.titre,
         nom: formValue.nom,
         prenom: formValue.prenom,
-        cin: formValue.cin,
+        typePieceIdentite: formValue.typePieceIdentite,
+        numeroPieceIdentite: formValue.numeroPieceIdentite,
         cinParent: formValue.cinParent || undefined,
         dateNaissance: formValue.dateNaissance,
         telephone: formValue.telephone,
         email: formValue.email || undefined,
         ville: formValue.ville,
-        convention: formValue.conventionActif ? {
-          actif: true,
-          nomConvention: formValue.conventionNom,
-          contactNom: formValue.conventionContactNom,
-          contactPrenom: formValue.conventionContactPrenom,
-          contactTelephone: formValue.conventionContactTelephone,
-          remiseOfferte: formValue.conventionRemise
-        } : undefined,
+        // Convention supprimée
         couvertureSociale: formValue.couvertureSocialeActif ? {
           actif: true,
           type: formValue.couvertureSocialeType,
@@ -515,28 +558,33 @@ export class ClientFormComponent implements OnInit {
         raisonSociale: formValue.raisonSociale,
         identifiantFiscal: formValue.identifiantFiscal,
         ice: formValue.ice,
-        numeroSociete: formValue.numeroSociete || undefined,
+        registreCommerce: formValue.registreCommerce || undefined,
+        patente: formValue.patente || undefined,
         telephone: formValue.telephone,
         email: formValue.email,
         ville: formValue.ville,
         typePartenariat: formValue.typePartenariat || undefined,
         facturationGroupee: formValue.facturationGroupee,
+        convention: formValue.convention,
         contacts: formValue.contacts || []
       };
     } else {
       // Anonyme
       return {
         ...baseData,
-        typeClient: TypeClient.ANONYME
+        typeClient: TypeClient.ANONYME,
+        nom: formValue.nom || undefined,
+        prenom: formValue.prenom || undefined
       };
     }
   }
 
   private createClient(clientData: any): void {
     this.clientService.createClient(clientData).subscribe({
-      next: () => {
+      next: (newClient) => {
         this.loading.set(false);
-        this.router.navigate(['/p/clients']);
+        // Rediriger vers la page de détail du client
+        this.router.navigate(['/p/clients', newClient.id]);
       },
       error: (error) => {
         console.error('Erreur lors de la création du client:', error);

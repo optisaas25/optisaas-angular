@@ -86,8 +86,8 @@
                     </mat-form-field>
 
                     <mat-form-field appearance="outline">
-                        <mat-label>CIN</mat-label>
-                        <input matInput formControlName="cin" placeholder="CIN...">
+                        <mat-label>Pièce d'identité</mat-label>
+                        <input matInput formControlName="cin" placeholder="Numéro pièce...">
                     </mat-form-field>
 
                     <mat-form-field appearance="outline">
@@ -135,10 +135,10 @@
                         <td mat-cell *matCellDef="let client">{{ client.telephone }}</td>
                     </ng-container>
 
-                    <!-- CIN Column -->
+                    <!-- Identity Column -->
                     <ng-container matColumnDef="cin">
-                        <th mat-header-cell *matHeaderCellDef>CIN</th>
-                        <td mat-cell *matCellDef="let client">{{ client.cin }}</td>
+                        <th mat-header-cell *matHeaderCellDef>Pièce d'identité</th>
+                        <td mat-cell *matCellDef="let client">{{ client.numeroPieceIdentite || '-' }}</td>
                     </ng-container>
 
                     <!-- Ville Column -->
