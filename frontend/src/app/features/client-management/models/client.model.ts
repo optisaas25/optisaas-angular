@@ -40,6 +40,45 @@ export enum LienParental {
 }
 
 // Interfaces communes
+export enum TypePieceIdentite {
+    CIN = 'CIN',
+    PASSEPORT = 'Passeport',
+    CARTE_SEJOUR = 'Carte de Résidence'
+}
+
+export enum ModalitePaiement {
+    CHEQUE = 'Chèque',
+    VIREMENT = 'Virement',
+    ESPECES = 'Espèces',
+    TRAITE = 'Traite',
+    AUTRE = 'Autre'
+}
+
+export enum EcheancePaiement {
+    COMPTANT = 'Comptant',
+    J30 = '30 jours',
+    J60 = '60 jours',
+    J90 = '90 jours'
+}
+
+export enum TacheContact {
+    DEVIS = 'Devis',
+    FACTURE = 'Facture',
+    BL = 'Bon de Livraison',
+    COMMANDE = 'Commande',
+    RELANCE = 'Relance Paiement',
+    AUTRE = 'Autre'
+}
+
+export enum CanalCommunication {
+    EMAIL = 'Email',
+    WHATSAPP = 'WhatsApp',
+    TELEPHONE = 'Téléphone',
+    SMS = 'SMS',
+    AUTRE = 'Autre'
+}
+
+// Interfaces communes
 export interface Convention {
     actif: boolean;
     nomConvention?: string;
@@ -47,6 +86,8 @@ export interface Convention {
     contactPrenom?: string;
     contactTelephone?: string;
     remiseOfferte?: number; // Pourcentage
+    modalitePaiement?: ModalitePaiement;
+    echeancePaiement?: EcheancePaiement;
 }
 
 export interface GroupeFamille {
@@ -123,6 +164,7 @@ export interface DossierMedical {
 
     // Anciens champs (pour compatibilité ou remarques générales)
     remarques?: string;
+    notes?: string; // Ajout Notes pour Particulier
 }
 
 export interface ContactProfessionnel {
@@ -132,6 +174,8 @@ export interface ContactProfessionnel {
     fonction: string;
     telephone: string;
     email: string;
+    taches?: TacheContact[];
+    canal?: CanalCommunication;
 }
 
 // Interface de base
@@ -153,13 +197,14 @@ export interface ClientParticulier extends ClientBase {
     titre: TitreClient;
     nom: string;
     prenom: string;
-    cin: string;
+    typePieceIdentite?: TypePieceIdentite; // Modifié
+    numeroPieceIdentite?: string; // Modifié
     cinParent?: string; // Si mineur
     dateNaissance: Date;
     telephone: string; // Obligatoire pour Particulier
     email?: string;
     ville: string; // Obligatoire pour Particulier
-    convention?: Convention;
+    // Convention retirée pour Particulier
     groupeFamille?: GroupeFamille;
     couvertureSociale?: CouvertureSociale;
     dossierMedical?: DossierMedical;
@@ -169,7 +214,8 @@ export interface ClientParticulier extends ClientBase {
 // Client Anonyme
 export interface ClientAnonyme extends ClientBase {
     typeClient: TypeClient.ANONYME;
-    // Tous les champs sont facultatifs (hérités de ClientBase)
+    nom?: string; // Ajout
+    prenom?: string; // Ajout
 }
 
 // Client Professionnel
@@ -178,7 +224,8 @@ export interface ClientProfessionnel extends ClientBase {
     raisonSociale: string;
     identifiantFiscal: string;
     ice: string; // Identifiant Commun de l'Entreprise
-    numeroSociete?: string;
+    registreCommerce?: string; // Renommé de numeroSociete
+    patente?: string; // Ajout
     telephone: string; // Obligatoire pour Professionnel
     email: string; // Obligatoire pour Professionnel
     ville: string; // Obligatoire pour Professionnel
