@@ -1002,10 +1002,13 @@ export class MontureFormComponent implements OnInit {
     }
 
     ngAfterViewInit(): void {
-        // Initialize canvas drawing
+        // Ensure view is fully initialized
+        this.cdr.detectChanges();
+
+        // Initialize canvas drawing with longer delay to ensure DOM is ready
         setTimeout(() => {
             this.drawCenteringCanvas();
-        }, 100);
+        }, 500);
 
         // Listen to montage form changes for real-time canvas updates
         this.ficheForm.get('montage')?.valueChanges.subscribe(() => {
@@ -1017,11 +1020,23 @@ export class MontureFormComponent implements OnInit {
      * Draw centering canvas with OD/OG circles and crosshairs
      */
     drawCenteringCanvas(): void {
-        if (!this.centeringCanvas) return;
+        console.log('drawCenteringCanvas called');
+
+        if (!this.centeringCanvas) {
+            console.warn('Canvas ViewChild not initialized');
+            return;
+        }
 
         const canvas = this.centeringCanvas.nativeElement;
+        console.log('Canvas element:', canvas);
+
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) {
+            console.error('Could not get 2D context');
+            return;
+        }
+
+        console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
 
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
