@@ -1211,6 +1211,7 @@ span[matSuffix] {
     padding: 16px;
     border-radius: 10px;
     border: 2px solid;
+    overflow: hidden;
 
     &.od-section {
         border-color: #4f46e5;
@@ -1275,6 +1276,8 @@ span[matSuffix] {
             border-radius: 6px;
             font-size: 14px;
             background: white;
+            box-sizing: border-box;
+            max-width: 100%;
 
             &:focus {
                 outline: none;
