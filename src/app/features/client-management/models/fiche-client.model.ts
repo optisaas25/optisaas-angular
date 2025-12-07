@@ -43,9 +43,10 @@ export enum TypeEquipement {
 // ============ Suggestion IA ============
 
 export interface SuggestionIA {
-    type: 'OD' | 'OG';
+    type: 'OD' | 'OG' | 'Paire';
     matiere: string;
     indice: string;
+    traitements?: string[];  // Traitements recommandés
     raison: string;
     epaisseur: string;
 }
