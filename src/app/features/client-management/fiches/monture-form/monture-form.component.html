@@ -341,21 +341,17 @@
                                 <div class="grid grid-cols-3 gap-4 mb-4">
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Matière</mat-label><mat-select
-                                            formControlName="matiere"><mat-option value="Organique (CR-39)">Organique
-                                                (CR-39)</mat-option><mat-option
-                                                value="Polycarbonate">Polycarbonate</mat-option><mat-option
-                                                value="Trivex">Trivex</mat-option></mat-select></mat-form-field>
+                                            formControlName="matiere"><mat-option *ngFor="let m of lensMaterials"
+                                                [value]="m">{{ m }}</mat-option></mat-select></mat-form-field>
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Indice</mat-label><mat-select
-                                            formControlName="indice"><mat-option
-                                                value="1.50 (Standard)">1.50</mat-option><mat-option
-                                                value="1.56">1.56</mat-option><mat-option
-                                                value="1.60">1.60</mat-option></mat-select></mat-form-field>
+                                            formControlName="indice"><mat-option *ngFor="let i of lensIndices"
+                                                [value]="i">{{ i }}</mat-option></mat-select></mat-form-field>
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Traitement</mat-label><mat-select
                                             formControlName="traitement" multiple><mat-option
-                                                value="Anti-reflet">Anti-reflet</mat-option><mat-option
-                                                value="Durci">Durci</mat-option></mat-select></mat-form-field>
+                                                *ngFor="let t of lensTreatments" [value]="t">{{ t
+                                                }}</mat-option></mat-select></mat-form-field>
                                 </div>
                                 <div class="form-group full-width price-row">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Prix Unitaire
@@ -375,53 +371,41 @@
                                     <h4 class="text-sm font-bold text-gray-700 mb-2">Œil Droit (OD)</h4>
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Matière</mat-label><mat-select
-                                            formControlName="matiereOD"><mat-option value="Organique (CR-39)">Organique
-                                                (CR-39)</mat-option><mat-option
-                                                value="Polycarbonate">Polycarbonate</mat-option><mat-option
-                                                value="Trivex">Trivex</mat-option></mat-select></mat-form-field>
+                                            formControlName="matiereOD"><mat-option *ngFor="let m of lensMaterials"
+                                                [value]="m">{{ m }}</mat-option></mat-select></mat-form-field>
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Indice</mat-label><mat-select
-                                            formControlName="indiceOD"><mat-option
-                                                value="1.50 (Standard)">1.50</mat-option><mat-option
-                                                value="1.56">1.56</mat-option><mat-option
-                                                value="1.60">1.60</mat-option></mat-select></mat-form-field>
+                                            formControlName="indiceOD"><mat-option *ngFor="let i of lensIndices"
+                                                [value]="i">{{ i }}</mat-option></mat-select></mat-form-field>
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Traitement</mat-label><mat-select
                                             formControlName="traitementOD" multiple><mat-option
-                                                value="Anti-reflet">Anti-reflet</mat-option><mat-option
-                                                value="Durci">Durci</mat-option></mat-select></mat-form-field>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Prix Verre OD
-                                            (DH)</label>
-                                        <input type="number" formControlName="prixOD"
-                                            class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-sm">
-                                    </div>
+                                                *ngFor="let t of lensTreatments" [value]="t">{{ t
+                                                }}</mat-option></mat-select></mat-form-field>
+                                    <mat-form-field appearance="outline" class="w-full">
+                                        <mat-label>Prix Verre OD (DH)</mat-label>
+                                        <input matInput type="number" formControlName="prixOD">
+                                    </mat-form-field>
                                 </div>
                                 <div class="verre-og">
                                     <h4 class="text-sm font-bold text-gray-700 mb-2">Œil Gauche (OG)</h4>
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Matière</mat-label><mat-select
-                                            formControlName="matiereOG"><mat-option value="Organique (CR-39)">Organique
-                                                (CR-39)</mat-option><mat-option
-                                                value="Polycarbonate">Polycarbonate</mat-option><mat-option
-                                                value="Trivex">Trivex</mat-option></mat-select></mat-form-field>
+                                            formControlName="matiereOG"><mat-option *ngFor="let m of lensMaterials"
+                                                [value]="m">{{ m }}</mat-option></mat-select></mat-form-field>
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Indice</mat-label><mat-select
-                                            formControlName="indiceOG"><mat-option
-                                                value="1.50 (Standard)">1.50</mat-option><mat-option
-                                                value="1.56">1.56</mat-option><mat-option
-                                                value="1.60">1.60</mat-option></mat-select></mat-form-field>
+                                            formControlName="indiceOG"><mat-option *ngFor="let i of lensIndices"
+                                                [value]="i">{{ i }}</mat-option></mat-select></mat-form-field>
                                     <mat-form-field appearance="outline"
                                         class="w-full"><mat-label>Traitement</mat-label><mat-select
                                             formControlName="traitementOG" multiple><mat-option
-                                                value="Anti-reflet">Anti-reflet</mat-option><mat-option
-                                                value="Durci">Durci</mat-option></mat-select></mat-form-field>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Prix Verre OG
-                                            (DH)</label>
-                                        <input type="number" formControlName="prixOG"
-                                            class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-sm">
-                                    </div>
+                                                *ngFor="let t of lensTreatments" [value]="t">{{ t
+                                                }}</mat-option></mat-select></mat-form-field>
+                                    <mat-form-field appearance="outline" class="w-full">
+                                        <mat-label>Prix Verre OG (DH)</mat-label>
+                                        <input matInput type="number" formControlName="prixOG">
+                                    </mat-form-field>
                                 </div>
                             </div>
 
@@ -520,22 +504,17 @@
                                     <div class="grid grid-cols-3 gap-4 mb-4">
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Matière</mat-label><mat-select
-                                                formControlName="matiere"><mat-option
-                                                    value="Organique (CR-39)">Organique
-                                                    (CR-39)</mat-option><mat-option
-                                                    value="Polycarbonate">Polycarbonate</mat-option><mat-option
-                                                    value="Trivex">Trivex</mat-option></mat-select></mat-form-field>
+                                                formControlName="matiere"><mat-option *ngFor="let m of lensMaterials"
+                                                    [value]="m">{{ m }}</mat-option></mat-select></mat-form-field>
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Indice</mat-label><mat-select
-                                                formControlName="indice"><mat-option
-                                                    value="1.50 (Standard)">1.50</mat-option><mat-option
-                                                    value="1.56">1.56</mat-option><mat-option
-                                                    value="1.60">1.60</mat-option></mat-select></mat-form-field>
+                                                formControlName="indice"><mat-option *ngFor="let i of lensIndices"
+                                                    [value]="i">{{ i }}</mat-option></mat-select></mat-form-field>
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Traitement</mat-label><mat-select
                                                 formControlName="traitement" multiple><mat-option
-                                                    value="Anti-reflet">Anti-reflet</mat-option><mat-option
-                                                    value="Durci">Durci</mat-option></mat-select></mat-form-field>
+                                                    *ngFor="let t of lensTreatments" [value]="t">{{ t
+                                                    }}</mat-option></mat-select></mat-form-field>
                                     </div>
                                     <div class="form-group full-width price-row">
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Prix Unitaire
@@ -555,55 +534,41 @@
                                         <h4 class="text-sm font-bold text-gray-700 mb-2">Œil Droit (OD)</h4>
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Matière</mat-label><mat-select
-                                                formControlName="matiereOD"><mat-option
-                                                    value="Organique (CR-39)">Organique
-                                                    (CR-39)</mat-option><mat-option
-                                                    value="Polycarbonate">Polycarbonate</mat-option><mat-option
-                                                    value="Trivex">Trivex</mat-option></mat-select></mat-form-field>
+                                                formControlName="matiereOD"><mat-option *ngFor="let m of lensMaterials"
+                                                    [value]="m">{{ m }}</mat-option></mat-select></mat-form-field>
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Indice</mat-label><mat-select
-                                                formControlName="indiceOD"><mat-option
-                                                    value="1.50 (Standard)">1.50</mat-option><mat-option
-                                                    value="1.56">1.56</mat-option><mat-option
-                                                    value="1.60">1.60</mat-option></mat-select></mat-form-field>
+                                                formControlName="indiceOD"><mat-option *ngFor="let i of lensIndices"
+                                                    [value]="i">{{ i }}</mat-option></mat-select></mat-form-field>
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Traitement</mat-label><mat-select
                                                 formControlName="traitementOD" multiple><mat-option
-                                                    value="Anti-reflet">Anti-reflet</mat-option><mat-option
-                                                    value="Durci">Durci</mat-option></mat-select></mat-form-field>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Prix Verre OD
-                                                (DH)</label>
-                                            <input type="number" formControlName="prixOD"
-                                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-sm">
-                                        </div>
+                                                    *ngFor="let t of lensTreatments" [value]="t">{{ t
+                                                    }}</mat-option></mat-select></mat-form-field>
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Prix Verre OD (DH)</mat-label>
+                                            <input matInput type="number" formControlName="prixOD">
+                                        </mat-form-field>
                                     </div>
                                     <div class="verre-og">
                                         <h4 class="text-sm font-bold text-gray-700 mb-2">Œil Gauche (OG)</h4>
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Matière</mat-label><mat-select
-                                                formControlName="matiereOG"><mat-option
-                                                    value="Organique (CR-39)">Organique
-                                                    (CR-39)</mat-option><mat-option
-                                                    value="Polycarbonate">Polycarbonate</mat-option><mat-option
-                                                    value="Trivex">Trivex</mat-option></mat-select></mat-form-field>
+                                                formControlName="matiereOG"><mat-option *ngFor="let m of lensMaterials"
+                                                    [value]="m">{{ m }}</mat-option></mat-select></mat-form-field>
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Indice</mat-label><mat-select
-                                                formControlName="indiceOG"><mat-option
-                                                    value="1.50 (Standard)">1.50</mat-option><mat-option
-                                                    value="1.56">1.56</mat-option><mat-option
-                                                    value="1.60">1.60</mat-option></mat-select></mat-form-field>
+                                                formControlName="indiceOG"><mat-option *ngFor="let i of lensIndices"
+                                                    [value]="i">{{ i }}</mat-option></mat-select></mat-form-field>
                                         <mat-form-field appearance="outline"
                                             class="w-full"><mat-label>Traitement</mat-label><mat-select
                                                 formControlName="traitementOG" multiple><mat-option
-                                                    value="Anti-reflet">Anti-reflet</mat-option><mat-option
-                                                    value="Durci">Durci</mat-option></mat-select></mat-form-field>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">Prix Verre OG
-                                                (DH)</label>
-                                            <input type="number" formControlName="prixOG"
-                                                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white text-sm">
-                                        </div>
+                                                    *ngFor="let t of lensTreatments" [value]="t">{{ t
+                                                    }}</mat-option></mat-select></mat-form-field>
+                                        <mat-form-field appearance="outline" class="w-full">
+                                            <mat-label>Prix Verre OG (DH)</mat-label>
+                                            <input matInput type="number" formControlName="prixOG">
+                                        </mat-form-field>
                                     </div>
                                 </div>
                             </div>
