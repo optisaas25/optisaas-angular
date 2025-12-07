@@ -1202,6 +1202,50 @@ span[matSuffix] {
 // Bottom Fields Container (spans full OD+OG width)
 .bottom-fields-container {
     margin-top: 20px;
+
+    .form-group {
+        margin-bottom: 16px;
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+            margin-bottom: 8px;
+
+            svg {
+                color: #94a3b8;
+            }
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            max-width: 100%;
+
+            &:focus {
+                outline: none;
+                border-color: #6366f1;
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            }
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            font-family: inherit;
+        }
+    }
+
+    .mb-4 {
+        margin-bottom: 20px;
+    }
 }
 
 // Eye Parameters Grid
