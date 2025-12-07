@@ -708,8 +708,178 @@
                     <p>Paramètres de centrage et montage</p>
                 </div>
             </div>
-            <div class="placeholder-content">
-                <p>Contenu de la fiche montage à venir...</p>
+
+            <!-- Résumé de la Prescription -->
+            <div class="montage-summary-grid">
+                <!-- Correction d'Ordonnance -->
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z" />
+                        </svg>
+                        <h4>Correction d'Ordonnance</h4>
+                    </div>
+                    <div class="summary-content">
+                        <div class="eye-summary od-summary">
+                            <strong>OD:</strong>
+                            <span>{{ ficheForm.get('ordonnance.od.sphere')?.value || '0' }} ({{
+                                ficheForm.get('ordonnance.od.cylindre')?.value || '0' }}) {{
+                                ficheForm.get('ordonnance.od.axe')?.value || '0' }}° Add {{
+                                ficheForm.get('ordonnance.od.addition')?.value || '0' }}</span>
+                        </div>
+                        <div class="eye-summary og-summary">
+                            <strong>OG:</strong>
+                            <span>{{ ficheForm.get('ordonnance.og.sphere')?.value || '0' }} ({{
+                                ficheForm.get('ordonnance.og.cylindre')?.value || '0' }}) {{
+                                ficheForm.get('ordonnance.og.axe')?.value || '0' }}° Add {{
+                                ficheForm.get('ordonnance.og.addition')?.value || '0' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Types de Verres -->
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z" />
+                        </svg>
+                        <h4>Types de Verres</h4>
+                    </div>
+                    <div class="summary-content">
+                        <div class="eye-summary od-summary">
+                            <strong>OD:</strong>
+                            <span>{{ ficheForm.get('verres.differentODOG')?.value ?
+                                ficheForm.get('verres.matiereOD')?.value : ficheForm.get('verres.matiere')?.value }}
+                                {{ ficheForm.get('verres.differentODOG')?.value ?
+                                ficheForm.get('verres.indiceOD')?.value : ficheForm.get('verres.indice')?.value }}
+                                ({{ ficheForm.get('verres.differentODOG')?.value ?
+                                ficheForm.get('verres.marqueOD')?.value : ficheForm.get('verres.marque')?.value }})
+                                • {{ (ficheForm.get('verres.differentODOG')?.value ?
+                                ficheForm.get('verres.traitementOD')?.value :
+                                ficheForm.get('verres.traitement')?.value)?.join(', ') || 'Aucun' }}</span>
+                        </div>
+                        <div class="eye-summary og-summary">
+                            <strong>OG:</strong>
+                            <span>{{ ficheForm.get('verres.differentODOG')?.value ?
+                                ficheForm.get('verres.matiereOG')?.value : ficheForm.get('verres.matiere')?.value }}
+                                {{ ficheForm.get('verres.differentODOG')?.value ?
+                                ficheForm.get('verres.indiceOG')?.value : ficheForm.get('verres.indice')?.value }}
+                                ({{ ficheForm.get('verres.differentODOG')?.value ?
+                                ficheForm.get('verres.marqueOG')?.value : ficheForm.get('verres.marque')?.value }})
+                                • {{ (ficheForm.get('verres.differentODOG')?.value ?
+                                ficheForm.get('verres.traitementOG')?.value :
+                                ficheForm.get('verres.traitement')?.value)?.join(', ') || 'Aucun' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paramètres de Montage -->
+            <div class="montage-params-container" formGroupName="montage">
+                <div class="montage-params-left">
+                    <!-- Type de Montage -->
+                    <div class="form-group mb-4">
+                        <label>Type de Montage</label>
+                        <select formControlName="typeMontage" class="form-control">
+                            <option *ngFor="let type of typesMontage" [value]="type">{{ type }}</option>
+                        </select>
+                    </div>
+
+                    <!-- Paramètres OD/OG -->
+                    <div class="eye-params-grid">
+                        <div class="eye-param-section od-section">
+                            <h5 class="eye-param-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="10" />
+                                </svg>
+                                ŒIL DROIT (OD)
+                            </h5>
+                            <div class="param-field">
+                                <label>Écart Pupillaire (mm)</label>
+                                <input type="number" formControlName="ecartPupillaireOD" class="form-control">
+                            </div>
+                            <div class="param-field">
+                                <label>Hauteur (mm)</label>
+                                <input type="number" formControlName="hauteurOD" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="eye-param-section og-section">
+                            <h5 class="eye-param-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="12" r="10" />
+                                </svg>
+                                ŒIL GAUCHE (OG)
+                            </h5>
+                            <div class="param-field">
+                                <label>Écart Pupillaire (mm)</label>
+                                <input type="number" formControlName="ecartPupillaireOG" class="form-control">
+                            </div>
+                            <div class="param-field">
+                                <label>Hauteur (mm)</label>
+                                <input type="number" formControlName="hauteurOG" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diamètre Effectif -->
+                    <div class="form-group mb-4">
+                        <label>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+                            </svg>
+                            Diamètre Effectif (mm)
+                        </label>
+                        <input type="text" formControlName="diametreEffectif" class="form-control"
+                            placeholder="ex: 65/70">
+                    </div>
+
+                    <!-- Remarques -->
+                    <div class="form-group">
+                        <label>Remarques</label>
+                        <textarea formControlName="remarques" class="form-control" rows="3"
+                            placeholder="Notes spéciales pour le montage..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Canvas de Calibrage Visuel -->
+                <div class="montage-canvas-section">
+                    <div class="canvas-header">
+                        <h4>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Prototype de Calibrage Visuel
+                        </h4>
+                        <button type="button" class="btn-camera-stylish">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 15.2c1.77 0 3.2-1.43 3.2-3.2s-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2 1.43 3.2 3.2 3.2z" />
+                            </svg>
+                            Centrage Virtuel (Tablette)
+                        </button>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas #centeringCanvas width="600" height="400" class="centering-canvas"></canvas>
+                        <div class="canvas-legend">
+                            <div class="legend-item od-legend">
+                                <span class="legend-dot od-dot"></span>
+                                <span>OD: {{ ficheForm.get('montage.ecartPupillaireOD')?.value }}mm / {{
+                                    ficheForm.get('montage.hauteurOD')?.value }}mm</span>
+                            </div>
+                            <div class="legend-item og-legend">
+                                <span class="legend-dot og-dot"></span>
+                                <span>OG: {{ ficheForm.get('montage.ecartPupillaireOG')?.value }}mm / {{
+                                    ficheForm.get('montage.hauteurOG')?.value }}mm</span>
+                            </div>
+                        </div>
+                        <p class="canvas-hint">Ajustez les cibles sur la monture pour définir automatiquement les
+                            écarts et hauteurs.</p>
+                    </div>
+                </div>
             </div>
         </div>
 

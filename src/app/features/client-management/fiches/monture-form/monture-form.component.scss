@@ -1000,22 +1000,23 @@
 .btn-camera-stylish {
     background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     color: white;
-    padding: 12px 24px;
+    padding: 8px 16px; // Reduced padding
     border: none;
-    border-radius: 12px;
-    font-size: 15px;
+    border-radius: 10px; // Slightly smaller radius
+    font-size: 13px; // Reduced font size
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px; // Reduced gap
     box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
     margin-right: 12px;
+    height: 42px; // Fixed height for consistency
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.15);
+        box-shadow: 0 8px 12px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.15);
         background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
     }
 
@@ -1029,14 +1030,38 @@
         align-items: center;
         justify-content: center;
         background: rgba(255, 255, 255, 0.2);
-        border-radius: 8px;
-        padding: 6px;
-        width: 32px;
-        height: 32px;
+        border-radius: 6px;
+        padding: 4px;
+        width: 24px; // Reduced icon size
+        height: 24px;
+
+        svg {
+            width: 16px;
+            height: 16px;
+        }
     }
+}
+
+// Override for other action buttons to match size
+.btn-icon-primary,
+.btn-icon-success {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    height: 42px !important;
+    border-radius: 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
 
     svg {
-        width: 20px;
-        height: 20px;
+        width: 18px !important;
+        height: 18px !important;
     }
+}
+
+// Adjust Price Suffix Position
+span[matSuffix] {
+    padding-right: 15px !important; // Approx 4mm to shift left from border
+    color: #64748b;
+    font-weight: 500;
 }
