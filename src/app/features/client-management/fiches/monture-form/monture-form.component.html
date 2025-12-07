@@ -97,13 +97,16 @@
                         </svg>
                         Importer Files
                     </button>
-                    <button type="button" class="btn-icon-camera" (click)="openCamera()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path
-                                d="M12 15.2c1.77 0 3.2-1.43 3.2-3.2s-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2 1.43 3.2 3.2 3.2zm0-4.9c.94 0 1.7.76 1.7 1.7s-.76 1.7-1.7 1.7-1.7-.76-1.7-1.7.76-1.7 1.7-1.7zM20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h4.05l1.83-2h4.24l1.83 2H20v12z" />
-                        </svg>
-                        Prendre une photo
+                    <button type="button" class="btn-camera-stylish" (click)="openCamera()">
+                        <span class="icon-wrapper">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M12 15.2c1.77 0 3.2-1.43 3.2-3.2s-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2 1.43 3.2 3.2 3.2zm0-4.9c.94 0 1.7.76 1.7 1.7s-.76 1.7-1.7 1.7-1.7-.76-1.7-1.7.76-1.7 1.7-1.7zM20 4h-3.17L15 2H9L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h4.05l1.83-2h4.24l1.83 2H20v12z" />
+                            </svg>
+                        </span>
+                        <span>Prendre une photo</span>
                     </button>
+
                     <input #fileInput type="file" accept="image/*,application/pdf" multiple style="display:none"
                         (change)="onFilesSelected($event)">
                 </div>
@@ -654,5 +657,7 @@
             </div>
         </div>
     </div>
+
+
 
 </div>
