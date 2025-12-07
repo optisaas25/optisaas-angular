@@ -245,38 +245,114 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private drawOverlay(pupils: { left: Point; right: Point }): void {
-        if (!this.overlayCanvas) return;
+        if (!this.overlayCanvas || !this.videoElement) return;
 
         const canvas = this.overlayCanvas.nativeElement;
+        const video = this.videoElement.nativeElement;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        // Ensure canvas matches video dimensions
+        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+        }
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw chin landmark (height reference) if available
+        if (this.currentLandmarks && this.currentLandmarks.length > 152) {
+            const chin = this.currentLandmarks[152];
+            if (chin) {
+                // Draw horizontal line at chin level
+                ctx.strokeStyle = 'rgba(255, 165, 0, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(0, chin.y);
+                ctx.lineTo(canvas.width, chin.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw chin point
+                ctx.fillStyle = 'rgba(255, 165, 0, 0.9)';
+                ctx.beginPath();
+                ctx.arc(chin.x, chin.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = '#FFA500';
+                ctx.font = 'bold 14px Inter, Arial';
+                ctx.fillText('Menton (référence hauteur)', 10, chin.y - 10);
+            }
+        }
 
         // Draw pupils
         ctx.fillStyle = 'rgba(0, 200, 0, 0.9)';
         ctx.beginPath();
-        ctx.arc(pupils.left.x, pupils.left.y, 6, 0, Math.PI * 2);
+        ctx.arc(pupils.left.x, pupils.left.y, 8, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(pupils.right.x, pupils.right.y, 6, 0, Math.PI * 2);
+        ctx.arc(pupils.right.x, pupils.right.y, 8, 0, Math.PI * 2);
         ctx.fill();
 
         // Draw line between pupils
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(pupils.left.x, pupils.left.y);
         ctx.lineTo(pupils.right.x, pupils.right.y);
         ctx.stroke();
 
+        // Draw vertical lines from pupils to chin (height visualization)
+        if (this.currentLandmarks && this.currentLandmarks.length > 152) {
+            const chin = this.currentLandmarks[152];
+            if (chin) {
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+
+                // Left height line
+                ctx.beginPath();
+                ctx.moveTo(pupils.left.x, pupils.left.y);
+                ctx.lineTo(pupils.left.x, chin.y);
+                ctx.stroke();
+
+                // Right height line
+                ctx.beginPath();
+                ctx.moveTo(pupils.right.x, pupils.right.y);
+                ctx.lineTo(pupils.right.x, chin.y);
+                ctx.stroke();
+
+                ctx.setLineDash([]);
+            }
+        }
+
         // Draw measurement text
         if (this.latestMeasurement) {
             ctx.fillStyle = '#fff';
-            ctx.font = '16px Inter, Arial';
-            ctx.fillText(`PD: ${this.latestMeasurement.pdMm.toFixed(1)} mm`, 10, 30);
-            ctx.fillText(`PD L: ${this.latestMeasurement.pdLeftMm.toFixed(1)} mm`, 10, 55);
-            ctx.fillText(`PD R: ${this.latestMeasurement.pdRightMm.toFixed(1)} mm`, 10, 80);
+            ctx.font = 'bold 16px Inter, Arial';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+
+            const texts = [
+                `PD: ${this.latestMeasurement.pdMm.toFixed(1)} mm`,
+                `PD L: ${this.latestMeasurement.pdLeftMm.toFixed(1)} mm`,
+                `PD R: ${this.latestMeasurement.pdRightMm.toFixed(1)} mm`
+            ];
+
+            if (this.latestMeasurement.heightLeftMm) {
+                texts.push(`H L: ${this.latestMeasurement.heightLeftMm.toFixed(1)} mm`);
+            }
+            if (this.latestMeasurement.heightRightMm) {
+                texts.push(`H R: ${this.latestMeasurement.heightRightMm.toFixed(1)} mm`);
+            }
+
+            texts.forEach((text, i) => {
+                const y = 30 + (i * 25);
+                ctx.strokeText(text, 10, y);
+                ctx.fillText(text, 10, y);
+            });
         }
     }
 }
