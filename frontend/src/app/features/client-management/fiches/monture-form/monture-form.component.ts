@@ -14,6 +14,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FicheService } from '../../services/fiche.service';
 import { FicheMontureCreate, TypeFiche, StatutFiche, TypeEquipement, SuggestionIA } from '../../models/fiche-client.model';
 import { getLensSuggestion, Correction, FrameData, calculateLensPrice } from '../../utils/lensLogic';
@@ -44,7 +45,8 @@ interface PrescriptionFile {
         MatDatepickerModule,
         MatNativeDateModule,
         MatTabsModule,
-        MatCheckboxModule
+        MatCheckboxModule,
+        MatDialogModule
     ],
     templateUrl: './monture-form.component.html',
     styleUrls: ['./monture-form.component.scss'],
@@ -194,7 +196,8 @@ export class MontureFormComponent implements OnInit {
         private router: Router,
         private ficheService: FicheService,
         private cdr: ChangeDetectorRef,
-        private sanitizer: DomSanitizer
+        private sanitizer: DomSanitizer,
+        private dialog: MatDialog
     ) {
         this.ficheForm = this.initForm();
     }
@@ -1128,12 +1131,45 @@ export class MontureFormComponent implements OnInit {
     }
 
     /**
-     * Open virtual centering modal (placeholder)
+     * Open virtual centering modal with camera measurement
      */
     openVirtualCentering(): void {
-        // TODO: Integrate with existing PD measurement system or create modal
-        console.log('Virtual centering feature - to be implemented');
-        alert('Fonctionnalité de centrage virtuel à venir...');
+        // Dynamically import the modal component
+        import('../../../measurement/components/virtual-centering-modal/virtual-centering-modal.component')
+            .then(m => {
+                const dialogRef = this.dialog.open(m.VirtualCenteringModalComponent, {
+                    width: '95vw',
+                    maxWidth: '1400px',
+                    height: '90vh',
+                    disableClose: true,
+                    panelClass: 'virtual-centering-dialog'
+                });
+
+                dialogRef.afterClosed().subscribe((measurement) => {
+                    if (measurement) {
+                        // Populate form with measurements
+                        this.ficheForm.patchValue({
+                            montage: {
+                                ecartPupillaireOD: Math.round(measurement.pdRightMm),
+                                ecartPupillaireOG: Math.round(measurement.pdLeftMm),
+                                // Note: hauteur would need additional calculation from camera
+                                // For now, we only populate PD values
+                            }
+                        });
+
+                        // Redraw canvas with new values
+                        setTimeout(() => {
+                            this.drawCenteringCanvas();
+                        }, 100);
+
+                        this.cdr.markForCheck();
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Failed to load virtual centering modal:', error);
+                alert('Erreur lors du chargement du module de centrage virtuel');
+            });
     }
 
     /**

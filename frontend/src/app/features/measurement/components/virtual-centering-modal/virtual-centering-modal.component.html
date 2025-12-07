@@ -1,0 +1,49 @@
+<div class="modal-header">
+    <h2 mat-dialog-title>
+        <mat-icon>camera_alt</mat-icon>
+        Centrage Virtuel - Mesure Automatique
+    </h2>
+    <button mat-icon-button (click)="cancel()" class="close-btn">
+        <mat-icon>close</mat-icon>
+    </button>
+</div>
+
+<mat-dialog-content>
+    <div class="instructions">
+        <p>📸 Positionnez-vous face à la caméra à environ 40-50 cm</p>
+        <p>👓 Portez vos lunettes si vous mesurez avec monture</p>
+        <p>💡 Assurez-vous d'avoir un bon éclairage</p>
+    </div>
+
+    <app-camera-view (measurementChange)="onMeasurementChange($event)"></app-camera-view>
+
+    @if (capturedMeasurement) {
+    <div class="captured-measurement">
+        <h3>✓ Mesure Capturée</h3>
+        <div class="measurement-grid">
+            <div class="measure-item">
+                <span class="label">PD Total:</span>
+                <span class="value">{{ capturedMeasurement.pdMm.toFixed(1) }} mm</span>
+            </div>
+            <div class="measure-item">
+                <span class="label">PD Gauche:</span>
+                <span class="value">{{ capturedMeasurement.pdLeftMm.toFixed(1) }} mm</span>
+            </div>
+            <div class="measure-item">
+                <span class="label">PD Droit:</span>
+                <span class="value">{{ capturedMeasurement.pdRightMm.toFixed(1) }} mm</span>
+            </div>
+        </div>
+    </div>
+    }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Annuler</button>
+    <button mat-raised-button color="primary" (click)="captureMeasurement()" [disabled]="!currentMeasurement">
+        📷 Capturer
+    </button>
+    <button mat-raised-button color="accent" (click)="validateMeasurement()" [disabled]="!capturedMeasurement">
+        ✓ Valider
+    </button>
+</mat-dialog-actions>
