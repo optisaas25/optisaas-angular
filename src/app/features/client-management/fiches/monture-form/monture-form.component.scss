@@ -1199,6 +1199,12 @@ span[matSuffix] {
     }
 }
 
+// Bottom Fields Container (aligned with OG)
+.bottom-fields-container {
+    margin-left: calc(50% + 8px); // Half width + half gap
+    margin-top: 20px;
+}
+
 // Eye Parameters Grid
 .eye-params-grid {
     display: grid;

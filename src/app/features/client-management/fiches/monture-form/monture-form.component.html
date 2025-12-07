@@ -824,24 +824,27 @@
                         </div>
                     </div>
 
-                    <!-- Diamètre Effectif -->
-                    <div class="form-group mb-4">
-                        <label>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path
-                                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
-                            </svg>
-                            Diamètre Effectif (mm)
-                        </label>
-                        <input type="text" formControlName="diametreEffectif" class="form-control"
-                            placeholder="ex: 65/70">
-                    </div>
+                    <!-- Diamètre Effectif & Remarques (aligned with OG) -->
+                    <div class="bottom-fields-container">
+                        <!-- Diamètre Effectif -->
+                        <div class="form-group mb-4">
+                            <label>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path
+                                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+                                </svg>
+                                Diamètre Effectif (mm)
+                            </label>
+                            <input type="text" formControlName="diametreEffectif" class="form-control"
+                                placeholder="ex: 65/70">
+                        </div>
 
-                    <!-- Remarques -->
-                    <div class="form-group">
-                        <label>Remarques</label>
-                        <textarea formControlName="remarques" class="form-control" rows="3"
-                            placeholder="Notes spéciales pour le montage..."></textarea>
+                        <!-- Remarques -->
+                        <div class="form-group">
+                            <label>Remarques</label>
+                            <textarea formControlName="remarques" class="form-control" rows="3"
+                                placeholder="Notes spéciales pour le montage..."></textarea>
+                        </div>
                     </div>
                 </div>
 
