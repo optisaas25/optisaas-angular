@@ -60,6 +60,18 @@
                 <span class="label">PD Droit:</span>
                 <span class="value">{{ latestMeasurement.pdRightMm.toFixed(1) }} mm</span>
             </div>
+            @if (latestMeasurement.heightLeftMm) {
+            <div class="measurement-item">
+                <span class="label">Hauteur Gauche:</span>
+                <span class="value">{{ latestMeasurement.heightLeftMm.toFixed(1) }} mm</span>
+            </div>
+            }
+            @if (latestMeasurement.heightRightMm) {
+            <div class="measurement-item">
+                <span class="label">Hauteur Droite:</span>
+                <span class="value">{{ latestMeasurement.heightRightMm.toFixed(1) }} mm</span>
+            </div>
+            }
             } @else {
             <p class="no-data">Aucune mesure disponible</p>
             }

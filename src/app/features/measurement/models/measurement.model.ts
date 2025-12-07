@@ -18,24 +18,6 @@ export interface EngineResult {
     confidence?: number; // aggregated confidence 0..1
     angles?: {
         pantoscopic?: number;
-        wrap?: number;
-    };
-    timestamp?: number;
-}
-
-export interface Measurement {
-    pdMm: number;
-    pdLeftMm: number;
-    pdRightMm: number;
-    hcdLeftMm?: number; // Height of centering distance
-    hcdRightMm?: number;
-    edMm?: number; // Effective diameter
-    vertexDistanceMm?: number;
-    pantoscopicTiltDeg?: number;
-    wrapDeg?: number;
-    pupils?: Pupils;
-    timestamp?: number;
-}
 
 export interface CalibrationData {
     pixelsPerMm: number;
