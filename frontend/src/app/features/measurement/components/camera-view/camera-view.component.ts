@@ -216,10 +216,29 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
         const pdLeftMm = this.calibrationService.pxToMm(pdLeftPx, this.pixelsPerMm!);
         const pdRightMm = this.calibrationService.pxToMm(pdRightPx, this.pixelsPerMm!);
 
+        // Calculate heights (from chin to pupil)
+        let heightLeftMm: number | undefined;
+        let heightRightMm: number | undefined;
+
+        if (this.currentLandmarks && this.currentLandmarks.length > 152) {
+            // Use chin landmark (152) as bottom reference
+            const chin = this.currentLandmarks[152];
+
+            if (chin) {
+                const heightLeftPx = Math.abs(pupils.left.y - chin.y);
+                const heightRightPx = Math.abs(pupils.right.y - chin.y);
+
+                heightLeftMm = this.calibrationService.pxToMm(heightLeftPx, this.pixelsPerMm!);
+                heightRightMm = this.calibrationService.pxToMm(heightRightPx, this.pixelsPerMm!);
+            }
+        }
+
         return {
             pdMm,
             pdLeftMm,
             pdRightMm,
+            heightLeftMm,
+            heightRightMm,
             pupils,
             timestamp: Date.now()
         };
