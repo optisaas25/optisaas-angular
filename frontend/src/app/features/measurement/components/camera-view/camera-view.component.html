@@ -17,8 +17,7 @@
             <p class="instruction">Placez une carte bancaire (85.6 mm) bien visible dans le cadre</p>
 
             <!-- Auto-detection button -->
-            <button (click)="detectCardAutomatically()" [disabled]="isDetectingCard || isCalibrated"
-                class="btn-auto-detect">
+            <button (click)="detectCardAutomatically()" [disabled]="isDetectingCard" class="btn-auto-detect">
                 @if (isDetectingCard) {
                 🔍 Détection en cours...
                 } @else {
