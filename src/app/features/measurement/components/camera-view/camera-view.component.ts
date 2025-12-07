@@ -291,12 +291,12 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Draw pupils
-        ctx.fillStyle = 'rgba(0, 200, 0, 0.9)';
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.9)'; // Brighter green
         ctx.beginPath();
-        ctx.arc(pupils.left.x, pupils.left.y, 6, 0, Math.PI * 2);
+        ctx.arc(pupils.left.x, pupils.left.y, 2, 0, Math.PI * 2); // Reduced size
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(pupils.right.x, pupils.right.y, 6, 0, Math.PI * 2);
+        ctx.arc(pupils.right.x, pupils.right.y, 2, 0, Math.PI * 2); // Reduced size
         ctx.fill();
 
         // Draw line between pupils
