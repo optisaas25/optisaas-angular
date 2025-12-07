@@ -1199,9 +1199,8 @@ span[matSuffix] {
     }
 }
 
-// Bottom Fields Container (aligned with OG)
+// Bottom Fields Container (spans full OD+OG width)
 .bottom-fields-container {
-    margin-left: calc(50% + 8px); // Half width + half gap
     margin-top: 20px;
 }
 
