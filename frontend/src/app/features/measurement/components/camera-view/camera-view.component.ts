@@ -92,6 +92,15 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.isDraggingRight) {
             this.frameBottomRightY = canvasY;
         }
+
+        // If in captured mode/static image, we must manually trigger redraw when dragging
+        if (this.isCaptured && this.latestMeasurement?.pupils) {
+            this.drawOverlay(this.latestMeasurement.pupils);
+            // Also update measurement values live
+            const newMeasurement = this.calculateMeasurement(this.latestMeasurement.pupils);
+            this.latestMeasurement = newMeasurement;
+            this.measurementChange.emit(newMeasurement);
+        }
     }
 
     onMouseUp(): void {
