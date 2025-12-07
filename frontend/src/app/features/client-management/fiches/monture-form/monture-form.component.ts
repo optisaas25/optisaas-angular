@@ -105,6 +105,14 @@ export class MontureFormComponent implements OnInit {
         'Autre'
     ];
 
+    // Types de montage
+    typesMontage: string[] = [
+        'Cerclé (Complet)',
+        'Percé (Nylor)',
+        'Semi-cerclé (Nylor)',
+        'Sans monture (Percé)'
+    ];
+
     // État d'expansion
     mainEquipmentExpanded = true;
     addedEquipmentsExpanded: boolean[] = [];
@@ -267,6 +275,17 @@ export class MontureFormComponent implements OnInit {
                 marqueOG: ['Essilor'],
                 indiceOG: ['1.50 (Standard)'],
                 traitementOG: [['Anti-reflet']]
+            }),
+
+            // Onglet 3: Fiche Montage
+            montage: this.fb.group({
+                typeMontage: ['Cerclé (Complet)'],
+                ecartPupillaireOD: [32],
+                ecartPupillaireOG: [32],
+                hauteurOD: [20],
+                hauteurOG: [20],
+                diametreEffectif: ['65/70'],
+                remarques: ['']
             }),
 
             // Liste des équipements additionnels
