@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, AbstractControl, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatCardModule } from '@angular/material/card';
@@ -33,6 +34,7 @@ interface PrescriptionFile {
     imports: [
         CommonModule,
         ReactiveFormsModule,
+        FormsModule,
         MatCardModule,
         MatFormFieldModule,
         MatInputModule,
@@ -104,6 +106,10 @@ export class MontureFormComponent implements OnInit {
     showCameraModal = false;
     cameraStream: MediaStream | null = null;
     capturedImage: string | null = null;
+
+    // Paste text dialog
+    // Paste text dialog removed
+
 
     // Prix des verres (logique de calcul)
     private LENS_PRICES: Record<string, Record<string, number>> = {
@@ -722,36 +728,76 @@ export class MontureFormComponent implements OnInit {
         this.cdr.markForCheck();
     }
 
-    extractData(file: PrescriptionFile): void {
-        console.log(`Extraction automatique des données de ${file.name}...`);
-        setTimeout(() => {
-            const odGroup = this.ficheForm.get('ordonnance.od');
-            const ogGroup = this.ficheForm.get('ordonnance.og');
-            if (odGroup && ogGroup) {
-                odGroup.patchValue({
-                    sphere: '-1.25',
-                    cylindre: '-0.50',
-                    axe: '90°',
-                    ep: '32'
-                });
-                ogGroup.patchValue({
-                    sphere: '-1.00',
-                    cylindre: '-0.25',
-                    axe: '85°',
-                    ep: '32'
-                });
-                console.log('Données extraites et injectées automatiquement');
-                this.cdr.markForCheck();
-            }
-        }, 1500);
+
+    private formatNumber(value: number): string {
+        if (value === undefined || value === null) return '';
+        let formatted = value.toFixed(2);
+        if (value > 0) formatted = '+' + formatted;
+        return formatted;
     }
 
     formatFileSize(bytes: number): string {
         if (bytes === 0) return '0 B';
         const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Paste Text Dialog and Apply functionality removed as per user request
+
+
+    async extractData(file: PrescriptionFile): Promise<void> {
+        console.log(`Extraction automatique des données de ${file.name}...`);
+
+        try {
+            // Import OCR functions dynamically
+            const { extractTextFromImage } = await import('../../utils/ocr-extractor');
+            const { parsePrescription } = await import('../../utils/prescription-parser');
+
+            // Extract text from image
+            const text = await extractTextFromImage(file.file);
+            console.log('Texte extrait (OCR):', text);
+
+            // Parse prescription data using the standardized parser
+            const parsed = parsePrescription(text);
+            console.log('Données parsées (OCR):', parsed);
+
+            // Apply extracted data to form
+            this.setCorrectionOD(parsed.OD);
+            this.setCorrectionOG(parsed.OG);
+
+            console.log('Données OCR appliquées avec succès');
+            this.cdr.markForCheck();
+
+        } catch (error) {
+            console.error('Erreur OCR:', error);
+            alert('Impossible de lire l\'ordonnance automatiquement.');
+        }
+    }
+
+    private setCorrectionOD(data: any): void {
+        const odGroup = this.ficheForm.get('ordonnance.od');
+        if (odGroup) {
+            const values: any = {};
+            if (data.sph !== 0) values.sphere = this.formatNumber(data.sph);
+            if (data.cyl !== 0) values.cylindre = this.formatNumber(data.cyl);
+            if (data.axis !== undefined) values.axe = data.axis + '°';
+            if (data.add !== undefined) values.addition = this.formatNumber(data.add);
+            odGroup.patchValue(values);
+        }
+    }
+
+    private setCorrectionOG(data: any): void {
+        const ogGroup = this.ficheForm.get('ordonnance.og');
+        if (ogGroup) {
+            const values: any = {};
+            if (data.sph !== 0) values.sphere = this.formatNumber(data.sph);
+            if (data.cyl !== 0) values.cylindre = this.formatNumber(data.cyl);
+            if (data.axis !== undefined) values.axe = data.axis + '°';
+            if (data.add !== undefined) values.addition = this.formatNumber(data.add);
+            ogGroup.patchValue(values);
+        }
     }
 
     loadFiche(): void {
