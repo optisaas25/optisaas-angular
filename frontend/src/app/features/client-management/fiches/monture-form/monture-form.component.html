@@ -626,11 +626,11 @@
     </div>
 
     <!-- Camera Modal -->
-    <div class="camera-modal" *ngIf="showCameraModal" (click)="closeCamera()">
+    <div class="camera-modal" *ngIf="showCameraModal" (click)="closeCameraModal()">
         <div class="modal-content" (click)="$event.stopPropagation()">
             <div class="modal-header">
                 <h3>Capturer une photo</h3>
-                <button type="button" class="btn-close" (click)="closeCamera()">×</button>
+                <button type="button" class="btn-close" (click)="closeCameraModal()">×</button>
             </div>
             <div class="modal-body">
                 <div class="camera-container" *ngIf="!capturedImage">
@@ -643,12 +643,13 @@
             </div>
             <div class="modal-footer">
                 <ng-container *ngIf="!capturedImage">
-                    <button type="button" class="btn-secondary" (click)="closeCamera()">Annuler</button>
+                    <button type="button" class="btn-secondary" (click)="closeCameraModal()">Annuler</button>
                     <button type="button" class="btn-primary" (click)="capturePhoto()">📷 Capturer</button>
                 </ng-container>
                 <ng-container *ngIf="capturedImage">
-                    <button type="button" class="btn-secondary" (click)="retakePhoto()">↺ Reprendre</button>
-                    <button type="button" class="btn-success" (click)="useCapture()">✓ Utiliser cette photo</button>
+                    <button type="button" class="btn-secondary" (click)="capturedImage = null">↺ Reprendre</button>
+                    <button type="button" class="btn-success" (click)="saveCapturedPhoto()">✓ Utiliser cette
+                        photo</button>
                 </ng-container>
             </div>
         </div>

@@ -51,6 +51,9 @@
       "ESNext",
       "dom"
     ],
+    "types": [
+      "node"
+    ],
     "useDefineForClassFields": false,
     "esModuleInterop": true
   },
