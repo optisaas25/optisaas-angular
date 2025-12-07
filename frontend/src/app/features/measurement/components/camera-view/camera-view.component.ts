@@ -428,19 +428,6 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
             ctx.font = '14px Inter, Arial';
             ctx.fillText(`OD: ${this.latestMeasurement.pdRightMm.toFixed(1)} | H: ${this.latestMeasurement.heightRightMm?.toFixed(1) ?? '?'}`, 10, 75);
             ctx.fillText(`OG: ${this.latestMeasurement.pdLeftMm.toFixed(1)} | H: ${this.latestMeasurement.heightLeftMm?.toFixed(1) ?? '?'}`, 10, 100);
-        } ctx.fillRect(0, 0, 220, 130);
-
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 16px Inter, Arial';
-        ctx.fillText(`PD Total: ${this.latestMeasurement.pdMm.toFixed(1)} mm`, 10, 30);
-
-        ctx.font = '14px Inter, Arial';
-        ctx.fillText(`OD - PD: ${this.latestMeasurement.pdRightMm.toFixed(1)} | H: ${this.latestMeasurement.heightRightMm?.toFixed(1) ?? '?'}`, 10, 60);
-        ctx.fillText(`OG - PD: ${this.latestMeasurement.pdLeftMm.toFixed(1)} | H: ${this.latestMeasurement.heightLeftMm?.toFixed(1) ?? '?'}`, 10, 90);
-
-        ctx.font = 'italic 12px Arial';
-        ctx.fillStyle = '#aaa';
-        ctx.fillText('Ajustez les lignes bleues pour la hauteur', 10, 120);
+        }
     }
-}
 }
