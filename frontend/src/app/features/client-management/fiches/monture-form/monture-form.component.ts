@@ -15,6 +15,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { FicheService } from '../../services/fiche.service';
 import { FicheMontureCreate, TypeFiche, StatutFiche, TypeEquipement, SuggestionIA } from '../../models/fiche-client.model';
+import { getLensSuggestion, Correction, FrameData, calculateLensPrice } from '../../utils/lensLogic';
+import { getLensMaterials, getLensIndices } from '../../utils/lensDatabase';
 
 interface PrescriptionFile {
     name: string;
@@ -66,28 +68,10 @@ export class MontureFormComponent implements OnInit {
     // Enums pour les dropdowns
     typesEquipement = Object.values(TypeEquipement);
 
-    // Master Lists (Enriched)
-    lensMaterials: string[] = [
-        'Organique (CR-39)',
-        'Polycarbonate',
-        'Trivex',
-        'Minéral',
-        'Organique MR-8',
-        'Organique MR-7',
-        'Blue Cut Mass'
-    ];
+    // Master Lists (From Database)
+    lensMaterials: string[] = getLensMaterials();
 
-    lensIndices: string[] = [
-        '1.50 (Standard)',
-        '1.53',
-        '1.56',
-        '1.59',
-        '1.60',
-        '1.67',
-        '1.74',
-        '1.80',
-        '1.90'
-    ];
+    lensIndices: string[] = getLensIndices();
 
     lensTreatments: string[] = [
         'Anti-reflet (HMC)',
@@ -322,19 +306,13 @@ export class MontureFormComponent implements OnInit {
             const indiceOD = verresGroup.get('indiceOD')?.value;
             const traitementsOD = verresGroup.get('traitementOD')?.value || [];
 
-            prixOD = this.LENS_PRICES[matiereOD]?.[indiceOD] || 0;
-            traitementsOD.forEach((t: string) => {
-                prixOD += this.TREATMENT_PRICES[t] || 0;
-            });
+            prixOD = calculateLensPrice(matiereOD, indiceOD, traitementsOD);
         } else {
             const matiere = verresGroup.get('matiere')?.value;
             const indice = verresGroup.get('indice')?.value;
             const traitements = verresGroup.get('traitement')?.value || [];
 
-            prixOD = this.LENS_PRICES[matiere]?.[indice] || 0;
-            traitements.forEach((t: string) => {
-                prixOD += this.TREATMENT_PRICES[t] || 0;
-            });
+            prixOD = calculateLensPrice(matiere, indice, traitements);
         }
 
         // Prix OG
@@ -344,10 +322,7 @@ export class MontureFormComponent implements OnInit {
             const indiceOG = verresGroup.get('indiceOG')?.value;
             const traitementsOG = verresGroup.get('traitementOG')?.value || [];
 
-            prixOG = this.LENS_PRICES[matiereOG]?.[indiceOG] || 0;
-            traitementsOG.forEach((t: string) => {
-                prixOG += this.TREATMENT_PRICES[t] || 0;
-            });
+            prixOG = calculateLensPrice(matiereOG, indiceOG, traitementsOG);
         } else {
             prixOG = prixOD;
         }
@@ -362,46 +337,82 @@ export class MontureFormComponent implements OnInit {
 
     checkSuggestion(index: number = -1): void {
         this.activeSuggestionIndex = index;
-        const od = this.ficheForm.get('ordonnance.od')?.value;
-        const og = this.ficheForm.get('ordonnance.og')?.value;
+        const odValues = this.ficheForm.get('ordonnance.od')?.value;
+        const ogValues = this.ficheForm.get('ordonnance.og')?.value;
+
+        // Extract frame details from the target monture group (Main or Added)
+        let montureGroup = this.ficheForm.get('monture');
+        if (index >= 0) {
+            montureGroup = this.equipements.at(index)?.get('monture') || null;
+        }
+
+        // Parse Frame Data (ED from 'taille')
+        const tailleStr = montureGroup?.get('taille')?.value || '';
+        const ed = parseInt(tailleStr.split('-')[0]) || 52; // Default 52 if parse fails
+
+        // Frame shape and mount - using defaults for now (could be added to UI later)
+        const frameData: FrameData = {
+            ed,
+            shape: 'rectangular', // Default
+            mount: 'full-rim'     // Default
+        };
+
+        // Prepare Corrections
+        const corrOD: Correction = {
+            sph: parseFloat(odValues.sphere) || 0,
+            cyl: parseFloat(odValues.cylindre) || 0
+        };
+        const corrOG: Correction = {
+            sph: parseFloat(ogValues.sphere) || 0,
+            cyl: parseFloat(ogValues.cylindre) || 0
+        };
+
+        // Get AI Recommendations
+        const recOD = getLensSuggestion(corrOD, frameData);
+        const recOG = getLensSuggestion(corrOG, frameData);
+
+        // Compare Spheres for Pair vs Split Logic
+        const diff = Math.abs(corrOD.sph - corrOG.sph);
 
         this.suggestions = [];
 
-        // Suggestion pour OD
-        if (Math.abs(od.sphere) > 3) {
-            this.suggestions.push({
-                type: 'OD',
-                matiere: 'Organique (CR-39)',
-                indice: '1.67',
-                raison: 'Correction forte - important pour réduire l\'épaisseur',
-                epaisseur: '~1.5-2mm'
-            });
-        } else {
-            this.suggestions.push({
-                type: 'OD',
-                matiere: 'Organique (CR-39)',
-                indice: '1.50 (Standard)',
-                raison: 'Correction faible - épaisseur normale suffisante',
-                epaisseur: '~3-4mm'
-            });
-        }
+        if (diff < 2.0) {
+            // Case A: Similar Prescriptions -> Suggest Single Pair (Aesthetic Priority)
+            // Use the "stronger" recommendation (highest index) for both
+            const useOD = recOD.option.index >= recOG.option.index;
+            const bestRec = useOD ? recOD : recOG;
+            const thicknessInfo = `~${bestRec.estimatedThickness}mm`;
 
-        // Suggestion pour OG
-        if (Math.abs(og.sphere) > 3) {
             this.suggestions.push({
-                type: 'OG',
-                matiere: 'Organique (CR-39)',
-                indice: '1.67',
-                raison: 'Correction forte - important pour réduire l\'épaisseur',
-                epaisseur: '~1.5-2mm'
+                type: 'Paire',
+                matiere: bestRec.option.material,
+                indice: bestRec.option.index.toFixed(2),
+                traitements: this.mapTreatmentsToUI(bestRec.selectedTreatments),
+                raison: bestRec.rationale,
+                epaisseur: thicknessInfo
             });
+
         } else {
+            // Case B: Different Prescriptions -> Suggest Split Indices
+            const thickOD = `~${recOD.estimatedThickness}mm`;
+            const thickOG = `~${recOG.estimatedThickness}mm`;
+
+            this.suggestions.push({
+                type: 'OD',
+                matiere: recOD.option.material,
+                indice: recOD.option.index.toFixed(2),
+                traitements: this.mapTreatmentsToUI(recOD.selectedTreatments),
+                raison: recOD.rationale,
+                epaisseur: thickOD
+            });
+
             this.suggestions.push({
                 type: 'OG',
-                matiere: 'Organique (CR-39)',
-                indice: '1.50 (Standard)',
-                raison: 'Correction faible - épaisseur normale suffisante',
-                epaisseur: '~3-4mm'
+                matiere: recOG.option.material,
+                indice: recOG.option.index.toFixed(2),
+                traitements: this.mapTreatmentsToUI(recOG.selectedTreatments),
+                raison: recOG.rationale,
+                epaisseur: thickOG
             });
         }
 
@@ -413,32 +424,59 @@ export class MontureFormComponent implements OnInit {
         const verresGroup = parentGroup.get('verres');
         if (!verresGroup) return;
 
-        if (suggestion.type === 'OD') {
+        if (suggestion.type === 'Paire') {
+            // Case A: Apply to both (Grouped Mode)
             verresGroup.patchValue({
+                differentODOG: false,
                 matiere: suggestion.matiere,
                 indice: suggestion.indice,
+                traitement: suggestion.traitements || [],
+                // Update shadow fields
                 matiereOD: suggestion.matiere,
-                indiceOD: suggestion.indice
-            });
-        } else {
-            verresGroup.patchValue({
-                differentODOG: true,
+                indiceOD: suggestion.indice,
+                traitementOD: suggestion.traitements || [],
                 matiereOG: suggestion.matiere,
-                indiceOG: suggestion.indice
+                indiceOG: suggestion.indice,
+                traitementOG: suggestion.traitements || []
             });
+            this.closeSuggestions();
 
-            // Sync OD fields if needed
-            const currentMatiere = verresGroup.get('matiere')?.value;
-            const currentIndice = verresGroup.get('indice')?.value;
-            if (currentMatiere) {
+        } else {
+            // Case B: Split Mode
+            if (verresGroup.get('differentODOG')?.value !== true) {
+                verresGroup.patchValue({ differentODOG: true });
+            }
+
+            if (suggestion.type === 'OD') {
                 verresGroup.patchValue({
-                    matiereOD: currentMatiere,
-                    indiceOD: currentIndice
-                }, { emitEvent: false });
+                    matiereOD: suggestion.matiere,
+                    indiceOD: suggestion.indice,
+                    traitementOD: suggestion.traitements || []
+                });
+            } else if (suggestion.type === 'OG') {
+                verresGroup.patchValue({
+                    matiereOG: suggestion.matiere,
+                    indiceOG: suggestion.indice,
+                    traitementOG: suggestion.traitements || []
+                });
             }
         }
 
         this.calculateLensPrices(parentGroup);
+    }
+
+    // Helper to map database treatment names to UI names
+    mapTreatmentsToUI(dbTreatments: string[]): string[] {
+        const mapping: { [key: string]: string } = {
+            'AR': 'Anti-reflet (HMC)',
+            'BlueCut': 'Blue Cut',
+            'Photochromic': 'Transitions (Photochromique)',
+            'Polarized': 'Polarisé',
+            'None': ''
+        };
+        return dbTreatments
+            .map(t => mapping[t] || t)
+            .filter(t => t !== '');
     }
 
     closeSuggestions(): void {
@@ -598,6 +636,92 @@ export class MontureFormComponent implements OnInit {
         }
     }
 
+    // Camera Capture Methods
+    async openCamera(): Promise<void> {
+        try {
+            this.showCameraModal = true;
+            this.cdr.markForCheck();
+
+            // Wait for view to update
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+                audio: false
+            });
+
+            this.cameraStream = stream;
+            if (this.videoElement?.nativeElement) {
+                this.videoElement.nativeElement.srcObject = stream;
+                this.videoElement.nativeElement.play();
+            }
+            this.cdr.markForCheck();
+        } catch (error) {
+            console.error('Erreur d\'accès à la caméra:', error);
+            alert('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+            this.closeCameraModal();
+        }
+    }
+
+    capturePhoto(): void {
+        if (!this.videoElement?.nativeElement || !this.canvasElement?.nativeElement) {
+            return;
+        }
+
+        const video = this.videoElement.nativeElement;
+        const canvas = this.canvasElement.nativeElement;
+        const context = canvas.getContext('2d');
+
+        if (!context) return;
+
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Draw video frame to canvas
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert to base64
+        this.capturedImage = canvas.toDataURL('image/jpeg', 0.9);
+        this.cdr.markForCheck();
+    }
+
+    saveCapturedPhoto(): void {
+        if (!this.capturedImage) return;
+
+        // Convert base64 to blob
+        fetch(this.capturedImage)
+            .then(res => res.blob())
+            .then(blob => {
+                const timestamp = new Date().getTime();
+                const file = new File([blob], `prescription_${timestamp}.jpg`, { type: 'image/jpeg' });
+
+                const prescriptionFile: PrescriptionFile = {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    preview: this.capturedImage!,
+                    file,
+                    uploadDate: new Date()
+                };
+
+                this.prescriptionFiles.push(prescriptionFile);
+                this.extractData(prescriptionFile);
+                this.closeCameraModal();
+                this.cdr.markForCheck();
+            });
+    }
+
+    closeCameraModal(): void {
+        if (this.cameraStream) {
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            this.cameraStream = null;
+        }
+        this.showCameraModal = false;
+        this.capturedImage = null;
+        this.cdr.markForCheck();
+    }
+
     extractData(file: PrescriptionFile): void {
         console.log(`Extraction automatique des données de ${file.name}...`);
         setTimeout(() => {
@@ -652,9 +776,15 @@ export class MontureFormComponent implements OnInit {
 
     formatSphereValue(eye: 'od' | 'og', event: Event): void {
         const input = event.target as HTMLInputElement;
-        const value = parseFloat(input.value);
-        if (!isNaN(value)) {
-            const formatted = value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
+        let value = input.value.replace(',', '.');
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue)) {
+            // Format to 2 decimal places
+            let formatted = numValue.toFixed(2);
+            // Add '+' for positive numbers
+            if (numValue > 0) {
+                formatted = '+' + formatted;
+            }
             this.ficheForm.get(`ordonnance.${eye}.sphere`)?.setValue(formatted, { emitEvent: false });
             input.value = formatted;
         }
@@ -662,9 +792,15 @@ export class MontureFormComponent implements OnInit {
 
     formatCylindreValue(eye: 'od' | 'og', event: Event): void {
         const input = event.target as HTMLInputElement;
-        const value = parseFloat(input.value);
-        if (!isNaN(value)) {
-            const formatted = value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
+        let value = input.value.replace(',', '.');
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue)) {
+            // Format to 2 decimal places
+            let formatted = numValue.toFixed(2);
+            // Add '+' for positive numbers
+            if (numValue > 0) {
+                formatted = '+' + formatted;
+            }
             this.ficheForm.get(`ordonnance.${eye}.cylindre`)?.setValue(formatted, { emitEvent: false });
             input.value = formatted;
         }
@@ -672,9 +808,15 @@ export class MontureFormComponent implements OnInit {
 
     formatAdditionValue(eye: 'od' | 'og', event: Event): void {
         const input = event.target as HTMLInputElement;
-        const value = parseFloat(input.value);
-        if (!isNaN(value)) {
-            const formatted = value >= 0 ? `+${value.toFixed(2)}` : value.toFixed(2);
+        let value = input.value.replace(',', '.');
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue)) {
+            // Format to 2 decimal places
+            let formatted = numValue.toFixed(2);
+            // Add '+' for positive numbers
+            if (numValue > 0) {
+                formatted = '+' + formatted;
+            }
             this.ficheForm.get(`ordonnance.${eye}.addition`)?.setValue(formatted, { emitEvent: false });
             input.value = formatted;
         }
@@ -695,20 +837,30 @@ export class MontureFormComponent implements OnInit {
 
     formatPrismeValue(eye: 'od' | 'og', event: Event): void {
         const input = event.target as HTMLInputElement;
-        const value = parseFloat(input.value);
-        if (!isNaN(value)) {
-            const formatted = value.toFixed(2);
-            this.ficheForm.get(`ordonnance.${eye}.prisme`)?.setValue(formatted, { emitEvent: false });
-            input.value = formatted;
+        let value = input.value.replace(',', '.');
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue)) {
+            // Prisms don't strictly need '+' typically, but we treat them as numeric
+            this.ficheForm.get(`ordonnance.${eye}.prisme`)?.setValue(value, { emitEvent: false });
+            input.value = value;
         }
     }
 
     formatEPValue(eye: 'od' | 'og', event: Event): void {
         const input = event.target as HTMLInputElement;
-        const cleanValue = input.value.replace(/[^0-9.]/g, '');
+        // Replace comma with dot first
+        let cleanValue = input.value.replace(',', '.');
+        // Remove strictly invalid chars but keep dot
+        cleanValue = cleanValue.replace(/[^0-9.]/g, '');
+
         const value = parseFloat(cleanValue);
         if (!isNaN(value)) {
-            const formatted = `${value.toFixed(2)} mm`;
+            // Keep decimal precision if user typed it, don't force .toFixed(2)
+            // But append ' mm' for display if desired, or just keep number?
+            // User requested "no rounding", usually just the number is safer for edit.
+            // Let's keep the number in the model, and maybe just the number in input to match other fields?
+            // The previous code appended ' mm'. I will respect that but without rounding.
+            const formatted = `${cleanValue} mm`;
             this.ficheForm.get(`ordonnance.${eye}.ep`)?.setValue(value, { emitEvent: false });
             input.value = formatted;
         }
@@ -747,75 +899,5 @@ export class MontureFormComponent implements OnInit {
                 this.cdr.markForCheck();
             }
         });
-    }
-
-    // Camera capture methods
-    async openCamera(): Promise<void> {
-        try {
-            this.showCameraModal = true;
-            this.cdr.markForCheck();
-            await new Promise(resolve => setTimeout(resolve, 100));
-            this.cameraStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' },
-                audio: false
-            });
-            if (this.videoElement) {
-                this.videoElement.nativeElement.srcObject = this.cameraStream;
-            }
-        } catch (error) {
-            console.error('Camera access error:', error);
-            alert('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
-            this.closeCamera();
-        }
-    }
-
-    capturePhoto(): void {
-        if (!this.videoElement || !this.canvasElement) return;
-        const video = this.videoElement.nativeElement;
-        const canvas = this.canvasElement.nativeElement;
-        const context = canvas.getContext('2d');
-        if (!context) return;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        this.capturedImage = canvas.toDataURL('image/jpeg', 0.9);
-        this.cdr.markForCheck();
-    }
-
-    retakePhoto(): void {
-        this.capturedImage = null;
-        this.cdr.markForCheck();
-    }
-
-    useCapture(): void {
-        if (!this.capturedImage) return;
-        fetch(this.capturedImage)
-            .then(res => res.blob())
-            .then(blob => {
-                const timestamp = new Date().getTime();
-                const file = new File([blob], `prescription_${timestamp}.jpg`, { type: 'image/jpeg' });
-                const prescriptionFile: PrescriptionFile = {
-                    name: file.name,
-                    type: file.type,
-                    size: file.size,
-                    preview: this.capturedImage!,
-                    file: file,
-                    uploadDate: new Date()
-                };
-                this.prescriptionFiles.push(prescriptionFile);
-                this.extractData(prescriptionFile);
-                this.closeCamera();
-                this.cdr.markForCheck();
-            });
-    }
-
-    closeCamera(): void {
-        if (this.cameraStream) {
-            this.cameraStream.getTracks().forEach(track => track.stop());
-            this.cameraStream = null;
-        }
-        this.showCameraModal = false;
-        this.capturedImage = null;
-        this.cdr.markForCheck();
     }
 }
