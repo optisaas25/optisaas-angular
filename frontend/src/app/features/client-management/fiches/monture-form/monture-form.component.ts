@@ -89,6 +89,22 @@ export class MontureFormComponent implements OnInit {
         'Hydrophobe'
     ];
 
+    // Liste des marques
+    lensBrands: string[] = [
+        'Essilor',
+        'Zeiss',
+        'Hoya',
+        'Nikon',
+        'Rodenstock',
+        'Seiko',
+        'BBGR',
+        'Optiswiss',
+        'Shamir',
+        'Kodak',
+        'Generic',
+        'Autre'
+    ];
+
     // État d'expansion
     mainEquipmentExpanded = true;
     addedEquipmentsExpanded: boolean[] = [];
@@ -233,6 +249,7 @@ export class MontureFormComponent implements OnInit {
 
             verres: this.fb.group({
                 matiere: ['Organique (CR-39)', Validators.required],
+                marque: ['Essilor'],
                 indice: ['1.50 (Standard)', Validators.required],
                 traitement: [['Anti-reflet']],
                 prixOD: [0],
@@ -241,11 +258,13 @@ export class MontureFormComponent implements OnInit {
 
                 // Champs OD
                 matiereOD: ['Organique (CR-39)'],
+                marqueOD: ['Essilor'],
                 indiceOD: ['1.50 (Standard)'],
                 traitementOD: [['Anti-reflet']],
 
                 // Champs OG
                 matiereOG: ['Organique (CR-39)'],
+                marqueOG: ['Essilor'],
                 indiceOG: ['1.50 (Standard)'],
                 traitementOG: [['Anti-reflet']]
             }),
@@ -527,15 +546,18 @@ export class MontureFormComponent implements OnInit {
             }),
             verres: this.fb.group({
                 matiere: ['Organique (CR-39)'],
+                marque: ['Essilor'],
                 indice: ['1.50 (Standard)'],
                 traitement: [['Anti-reflet']],
                 prixOD: [0],
                 prixOG: [0],
                 differentODOG: [false],
                 matiereOD: ['Organique (CR-39)'],
+                marqueOD: ['Essilor'],
                 indiceOD: ['1.50 (Standard)'],
                 traitementOD: [['Anti-reflet']],
                 matiereOG: ['Organique (CR-39)'],
+                marqueOG: ['Essilor'],
                 indiceOG: ['1.50 (Standard)'],
                 traitementOG: [['Anti-reflet']]
             })
@@ -917,6 +939,18 @@ export class MontureFormComponent implements OnInit {
         const value = input.value.toUpperCase();
         this.ficheForm.get(`ordonnance.${eye}.base`)?.setValue(value, { emitEvent: false });
         input.value = value;
+    }
+
+    formatPrice(control: AbstractControl | null, event: Event): void {
+        if (!control) return;
+        const input = event.target as HTMLInputElement;
+        let value = input.value.replace(',', '.');
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue)) {
+            const formatted = numValue.toFixed(2);
+            control.setValue(formatted, { emitEvent: false });
+            input.value = formatted;
+        }
     }
 
     onSubmit(): void {
