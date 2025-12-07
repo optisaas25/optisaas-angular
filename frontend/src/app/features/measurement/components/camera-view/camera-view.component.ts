@@ -248,6 +248,38 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
         }
     }
 
+    captureImage(): void {
+        if (!this.videoElement) return;
+        const video = this.videoElement.nativeElement;
+
+        // Create high-res canvas for capture
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            this.capturedImage = new Image();
+            this.capturedImage.src = canvas.toDataURL('image/png');
+            this.capturedImage.onload = () => {
+                this.isCaptured = true;
+                this.cdr.markForCheck();
+                // Force a redraw with the LAST known pupils on the STATIC image
+                if (this.latestMeasurement?.pupils) {
+                    setTimeout(() => this.drawOverlay(this.latestMeasurement!.pupils!), 50);
+                }
+            };
+        }
+    }
+
+    retake(): void {
+        this.isCaptured = false;
+        this.capturedImage = null;
+        // MediaPipe loop will automatically resume updating overlay
+        this.cdr.markForCheck();
+    }
+
     resetCalibration(): void {
         this.isCalibrated = false;
         this.pixelsPerMm = null;
