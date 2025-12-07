@@ -66,6 +66,43 @@ export class MontureFormComponent implements OnInit {
     // Enums pour les dropdowns
     typesEquipement = Object.values(TypeEquipement);
 
+    // Master Lists (Enriched)
+    lensMaterials: string[] = [
+        'Organique (CR-39)',
+        'Polycarbonate',
+        'Trivex',
+        'Minéral',
+        'Organique MR-8',
+        'Organique MR-7',
+        'Blue Cut Mass'
+    ];
+
+    lensIndices: string[] = [
+        '1.50 (Standard)',
+        '1.53',
+        '1.56',
+        '1.59',
+        '1.60',
+        '1.67',
+        '1.74',
+        '1.80',
+        '1.90'
+    ];
+
+    lensTreatments: string[] = [
+        'Anti-reflet (HMC)',
+        'Durci (HC)',
+        'Super Anti-reflet (SHMC)',
+        'Anti-lumière bleue (Blue Cut)',
+        'Photochromique (Transitions)',
+        'Teinté (Solaire - Gris)',
+        'Teinté (Solaire - Brun)',
+        'Teinté (Solaire - Vert)',
+        'Polarisé',
+        'Miroité',
+        'Hydrophobe'
+    ];
+
     // État d'expansion
     mainEquipmentExpanded = true;
     addedEquipmentsExpanded: boolean[] = [];
@@ -88,24 +125,52 @@ export class MontureFormComponent implements OnInit {
     private LENS_PRICES: Record<string, Record<string, number>> = {
         'Organique (CR-39)': {
             '1.50 (Standard)': 200,
-            '1.56': 300,
-            '1.60': 400,
-            '1.67': 500,
-            '1.74': 700
+            '1.56': 250,
+            '1.60': 350,
+            '1.67': 500
         },
         'Polycarbonate': {
-            '1.59': 450
+            '1.59': 400
         },
         'Trivex': {
-            '1.53': 400
+            '1.53': 450
+        },
+        'Minéral': {
+            '1.523': 150,
+            '1.60': 300,
+            '1.70': 500,
+            '1.80': 800,
+            '1.90': 1200
+        },
+        'Organique MR-8': {
+            '1.60': 500
+        },
+        'Organique MR-7': {
+            '1.67': 700
+        },
+        'Blue Cut Mass': {
+            '1.56': 400,
+            '1.60': 600,
+            '1.67': 800
         }
     };
 
     private TREATMENT_PRICES: Record<string, number> = {
+        'Anti-reflet (HMC)': 100,
+        'Durci (HC)': 50,
+        'Super Anti-reflet (SHMC)': 150,
+        'Anti-lumière bleue (Blue Cut)': 200,
+        'Photochromique (Transitions)': 600,
+        'Teinté (Solaire - Gris)': 150,
+        'Teinté (Solaire - Brun)': 150,
+        'Teinté (Solaire - Vert)': 150,
+        'Polarisé': 400,
+        'Miroité': 250,
+        'Hydrophobe': 100,
+        // Legacy fallbacks mapping
         'Anti-reflet': 100,
         'Durci': 50,
-        'Hydrophobe': 75,
-        'Anti-rayure': 60
+        'Anti-rayure': 50
     };
 
     constructor(
