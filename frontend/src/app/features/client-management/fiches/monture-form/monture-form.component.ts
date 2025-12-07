@@ -1147,22 +1147,14 @@ export class MontureFormComponent implements OnInit {
 
                 dialogRef.afterClosed().subscribe((measurement) => {
                     if (measurement) {
-                        // Populate form with measurements (preserve 1 decimal)
-                        const formValues: any = {
-                            ecartPupillaireOD: parseFloat(measurement.pdRightMm.toFixed(1)),
-                            ecartPupillaireOG: parseFloat(measurement.pdLeftMm.toFixed(1))
-                        };
-
-                        // Add heights if available
-                        if (measurement.heightRightMm) {
-                            formValues.hauteurOD = parseFloat(measurement.heightRightMm.toFixed(1));
-                        }
-                        if (measurement.heightLeftMm) {
-                            formValues.hauteurOG = parseFloat(measurement.heightLeftMm.toFixed(1));
-                        }
-
+                        // Populate form with measurements (Precise values)
                         this.ficheForm.patchValue({
-                            montage: formValues
+                            montage: {
+                                ecartPupillaireOD: measurement.pdRightMm.toFixed(1), // Keep 1 decimal
+                                ecartPupillaireOG: measurement.pdLeftMm.toFixed(1),
+                                hauteurOD: measurement.heightRightMm ? measurement.heightRightMm.toFixed(1) : null,
+                                hauteurOG: measurement.heightLeftMm ? measurement.heightLeftMm.toFixed(1) : null
+                            }
                         });
 
                         // Redraw canvas with new values
