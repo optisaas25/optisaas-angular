@@ -21,16 +21,7 @@ export interface EngineResult {
         wrap?: number;
     };
     timestamp?: number;
-}
-
-export interface Measurement {
-    pdMm: number;           // Total PD
-    pdLeftMm: number;       // Left PD (from center)
-    pdRightMm: number;      // Right PD (from center)
-    heightLeftMm?: number;  // Left eye height from bottom
-    heightRightMm?: number; // Right eye height from bottom
-    pupils: Pupils;
-    timestamp: number;
+    timestamp?: number;
 }
 
 export interface CalibrationData {
