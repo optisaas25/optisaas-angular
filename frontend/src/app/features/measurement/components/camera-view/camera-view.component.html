@@ -1,7 +1,9 @@
 <div class="camera-container">
     <div class="video-wrapper">
         <video #videoElement autoplay playsinline muted class="video-element"></video>
-        <canvas #overlayCanvas width="1280" height="720" class="overlay-canvas"></canvas>
+        <canvas #overlayCanvas width="1280" height="720" class="overlay-canvas" (mousedown)="onMouseDown($event)"
+            (mousemove)="onMouseMove($event)" (mouseup)="onMouseUp()" (mouseleave)="onMouseUp()">
+        </canvas>
 
         @if (!isReady) {
         <div class="loading-overlay">
@@ -60,18 +62,6 @@
                 <span class="label">PD Droit:</span>
                 <span class="value">{{ latestMeasurement.pdRightMm.toFixed(1) }} mm</span>
             </div>
-            @if (latestMeasurement.heightLeftMm) {
-            <div class="measurement-item">
-                <span class="label">Hauteur Gauche:</span>
-                <span class="value">{{ latestMeasurement.heightLeftMm.toFixed(1) }} mm</span>
-            </div>
-            }
-            @if (latestMeasurement.heightRightMm) {
-            <div class="measurement-item">
-                <span class="label">Hauteur Droite:</span>
-                <span class="value">{{ latestMeasurement.heightRightMm.toFixed(1) }} mm</span>
-            </div>
-            }
             } @else {
             <p class="no-data">Aucune mesure disponible</p>
             }
