@@ -848,17 +848,29 @@ export class MontureFormComponent implements OnInit {
 
     setActiveTab(index: number): void {
         this.activeTab = index;
+        // Draw canvas when switching to Fiche Montage tab
+        if (index === 2) {
+            setTimeout(() => this.drawCenteringCanvas(), 100);
+        }
     }
 
     nextTab(): void {
-        if (this.activeTab < 2) {
+        if (this.activeTab < 3) {
             this.activeTab++;
+            // Draw canvas when entering Fiche Montage tab
+            if (this.activeTab === 2) {
+                setTimeout(() => this.drawCenteringCanvas(), 100);
+            }
         }
     }
 
     prevTab(): void {
         if (this.activeTab > 0) {
             this.activeTab--;
+            // Draw canvas when entering Fiche Montage tab
+            if (this.activeTab === 2) {
+                setTimeout(() => this.drawCenteringCanvas(), 100);
+            }
         }
     }
 
