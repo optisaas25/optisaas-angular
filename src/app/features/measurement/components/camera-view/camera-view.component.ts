@@ -247,23 +247,38 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (this.frameBottomLeftY === 0) this.frameBottomLeftY = pupils.left.y + 100;
         if (this.frameBottomRightY === 0) this.frameBottomRightY = pupils.right.y + 100;
 
+        // 1. Calculate Frame Center (Bridge) if we have landmarks
+        // This is crucial for "Demi-Ecarts" (Half-PDs) relative to the frame
+        let frameCenterX: number | null = null;
+        if (this.currentLandmarks && this.currentLandmarks.length > 454) {
+            const leftTemple = this.currentLandmarks[234];
+            const rightTemple = this.currentLandmarks[454];
+            if (leftTemple && rightTemple) {
+                frameCenterX = (leftTemple.x + rightTemple.x) / 2;
+            }
+        }
+
+        // Fallback to pupil midpoint if no frame detected
+        if (frameCenterX === null) {
+            frameCenterX = (pupils.left.x + pupils.right.x) / 2;
+        }
+
+        // 2. Calculate PD Total (Pupil to Pupil)
         const pdPx = Math.hypot(
             pupils.right.x - pupils.left.x,
             pupils.right.y - pupils.left.y
         );
         const pdMm = this.calibrationService.pxToMm(pdPx, this.pixelsPerMm!);
 
-        const midX = (pupils.left.x + pupils.right.x) / 2;
-        const midY = (pupils.left.y + pupils.right.y) / 2;
-
-        const pdLeftPx = Math.hypot(pupils.left.x - midX, pupils.left.y - midY);
-        const pdRightPx = Math.hypot(pupils.right.x - midX, pupils.right.y - midY);
+        // 3. Calculate Half-PDs from Frame Center
+        // We project pupils onto the horizontal axis of the frame to measure horizontal distance from center
+        const pdLeftPx = Math.abs(pupils.left.x - frameCenterX);
+        const pdRightPx = Math.abs(pupils.right.x - frameCenterX);
 
         const pdLeftMm = this.calibrationService.pxToMm(pdLeftPx, this.pixelsPerMm!);
         const pdRightMm = this.calibrationService.pxToMm(pdRightPx, this.pixelsPerMm!);
 
-        // Height Calculation: Distance Y from Pupil to Bottom Line
-        // We take vertical difference
+        // Height Calculation
         const heightLeftPx = Math.max(0, this.frameBottomLeftY - pupils.left.y);
         const heightRightPx = Math.max(0, this.frameBottomRightY - pupils.right.y);
 
@@ -289,6 +304,56 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
         if (!ctx) return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Draw Frame Guides (ALWAYS VISIBLE for verification)
+        if (this.currentLandmarks && this.currentLandmarks.length > 454) {
+            const leftTemple = this.currentLandmarks[234];
+            const rightTemple = this.currentLandmarks[454];
+
+            if (leftTemple && rightTemple) {
+                const frameCenterX = (leftTemple.x + rightTemple.x) / 2;
+
+                // --- FRAME EXTREMITIES (Vertical Lines) ---
+                ctx.strokeStyle = 'rgba(255, 140, 0, 0.9)'; // Deep Orange
+                ctx.lineWidth = 2;
+
+                // Left Limit
+                ctx.beginPath();
+                ctx.moveTo(leftTemple.x, 0); // Full height guide
+                ctx.lineTo(leftTemple.x, canvas.height);
+                ctx.stroke();
+
+                // Right Limit
+                ctx.beginPath();
+                ctx.moveTo(rightTemple.x, 0);
+                ctx.lineTo(rightTemple.x, canvas.height);
+                ctx.stroke();
+
+                // Points
+                ctx.fillStyle = 'rgba(255, 140, 0, 1)';
+                ctx.beginPath();
+                ctx.arc(leftTemple.x, leftTemple.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(rightTemple.x, rightTemple.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // --- FRAME CENTER (The "Bridge" Line) ---
+                // Crucial for Half-PD verification
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)'; // Cyan for center
+                ctx.setLineDash([10, 5]);
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(frameCenterX, 0);
+                ctx.lineTo(frameCenterX, canvas.height);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Label Center
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
+                ctx.fillText('Axe Central', frameCenterX + 5, 20);
+            }
+        }
 
         // Draw pupils
         ctx.fillStyle = 'rgba(0, 255, 0, 0.9)'; // Brighter green
@@ -357,15 +422,25 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 16px Inter, Arial';
-            ctx.fillText(`PD Total: ${this.latestMeasurement.pdMm.toFixed(1)} mm`, 10, 30);
+            ctx.fillText(`Largeur Ref: ${this.frameWidthMm}mm`, 10, 25);
+            ctx.fillText(`PD Total: ${this.latestMeasurement.pdMm.toFixed(1)} mm`, 10, 45);
 
             ctx.font = '14px Inter, Arial';
-            ctx.fillText(`OD - PD: ${this.latestMeasurement.pdRightMm.toFixed(1)} | H: ${this.latestMeasurement.heightRightMm?.toFixed(1) ?? '?'}`, 10, 60);
-            ctx.fillText(`OG - PD: ${this.latestMeasurement.pdLeftMm.toFixed(1)} | H: ${this.latestMeasurement.heightLeftMm?.toFixed(1) ?? '?'}`, 10, 90);
+            ctx.fillText(`OD: ${this.latestMeasurement.pdRightMm.toFixed(1)} | H: ${this.latestMeasurement.heightRightMm?.toFixed(1) ?? '?'}`, 10, 75);
+            ctx.fillText(`OG: ${this.latestMeasurement.pdLeftMm.toFixed(1)} | H: ${this.latestMeasurement.heightLeftMm?.toFixed(1) ?? '?'}`, 10, 100);
+        } ctx.fillRect(0, 0, 220, 130);
 
-            ctx.font = 'italic 12px Arial';
-            ctx.fillStyle = '#aaa';
-            ctx.fillText('Ajustez les lignes bleues pour la hauteur', 10, 120);
-        }
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px Inter, Arial';
+        ctx.fillText(`PD Total: ${this.latestMeasurement.pdMm.toFixed(1)} mm`, 10, 30);
+
+        ctx.font = '14px Inter, Arial';
+        ctx.fillText(`OD - PD: ${this.latestMeasurement.pdRightMm.toFixed(1)} | H: ${this.latestMeasurement.heightRightMm?.toFixed(1) ?? '?'}`, 10, 60);
+        ctx.fillText(`OG - PD: ${this.latestMeasurement.pdLeftMm.toFixed(1)} | H: ${this.latestMeasurement.heightLeftMm?.toFixed(1) ?? '?'}`, 10, 90);
+
+        ctx.font = 'italic 12px Arial';
+        ctx.fillStyle = '#aaa';
+        ctx.fillText('Ajustez les lignes bleues pour la hauteur', 10, 120);
     }
+}
 }
