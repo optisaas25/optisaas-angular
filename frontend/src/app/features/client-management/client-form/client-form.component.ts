@@ -275,8 +275,11 @@ export class ClientFormComponent implements OnInit {
     }
 
     // Mettre à jour la validation
+    // Mettre à jour la validation (sauf typeClient pour éviter la boucle infinie)
     Object.keys(this.clientForm.controls).forEach(key => {
-      this.clientForm.get(key)?.updateValueAndValidity();
+      if (key !== 'typeClient') {
+        this.clientForm.get(key)?.updateValueAndValidity();
+      }
     });
   }
 

@@ -31,6 +31,7 @@ export enum TypeLentille {
 }
 
 export enum TypeEquipement {
+    MONTURE = 'Monture',
     VISION_LOIN = 'Vision de loin',
     VISION_PRES = 'Vision de près',
     VISION_INTERMEDIAIRE = 'Vision intermédiaire',
