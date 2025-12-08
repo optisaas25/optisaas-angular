@@ -481,6 +481,22 @@
                                     <option *ngFor="let type of typesEquipement" [value]="type">{{ type }}
                                     </option>
                                 </select>
+                                <!-- Summary when collapsed -->
+                                <div class="text-gray-600 font-medium ml-2 flex items-center gap-2"
+                                    *ngIf="!addedEquipmentsExpanded[i]">
+                                    <span *ngIf="equipment.get('monture.marque')?.value"
+                                        class="bg-white px-2 py-1 rounded border border-gray-200 text-sm">
+                                        {{ equipment.get('monture.marque')?.value }}
+                                    </span>
+                                    <span *ngIf="equipment.get('monture.reference')?.value"
+                                        class="text-sm text-gray-500">
+                                        {{ equipment.get('monture.reference')?.value }}
+                                    </span>
+                                    <span *ngIf="equipment.get('monture.prixMonture')?.value"
+                                        class="text-green-600 font-bold ml-2">
+                                        {{ equipment.get('monture.prixMonture')?.value }} DH
+                                    </span>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button type="button" class="btn-toggle" (click)="toggleAddedEquipment(i)">

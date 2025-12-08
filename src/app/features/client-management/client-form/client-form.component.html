@@ -630,24 +630,59 @@
                             </div>
 
                             @for (contact of contacts.controls; track $index) {
-                            <mat-card class="mb-4">
-                                <mat-card-header>
-                                    <mat-card-title class="text-base">Contact {{ $index + 1 }}</mat-card-title>
-                                    <mat-card-title class="text-base">Contact {{ $index + 1 }}</mat-card-title>
-                                    <button mat-icon-button color="warn" type="button" (click)="removeContact($index)">
-                                        <mat-icon>delete</mat-icon>
-                                    </button>
-                                </mat-card-header>
-                                <mat-card-content>
+                            <div class="mb-4 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                                <!-- Header (Always visible) -->
+                                <div class="flex items-center justify-between p-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                                    (click)="toggleContact($index)">
+
+                                    <!-- Left: Title or Summary -->
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                                            {{ $index + 1 }}
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <span class="font-semibold text-gray-800">
+                                                {{ contact.get('nom')?.value || 'Nouveau Contact' }}
+                                                {{ contact.get('prenom')?.value }}
+                                            </span>
+                                            <span class="text-sm text-gray-500" *ngIf="!contactsExpanded[$index]">
+                                                {{ contact.get('fonction')?.value || 'Fonction non définie' }}
+                                                <span *ngIf="contact.get('telephone')?.value"> • {{
+                                                    contact.get('telephone')?.value }}</span>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right: Actions -->
+                                    <div class="flex items-center gap-2">
+                                        <button type="button"
+                                            class="text-gray-400 hover:text-indigo-600 transition-colors"
+                                            (click)="$event.stopPropagation(); toggleContact($index)">
+                                            <span class="text-sm mr-1">{{ contactsExpanded[$index] ? 'Réduire' :
+                                                'Développer' }}</span>
+                                            <mat-icon class="align-middle transition-transform duration-200"
+                                                [class.rotate-180]="contactsExpanded[$index]">expand_more</mat-icon>
+                                        </button>
+                                        <button type="button"
+                                            class="text-red-400 hover:text-red-600 transition-colors ml-2"
+                                            (click)="$event.stopPropagation(); removeContact($index)"
+                                            matTooltip="Supprimer ce contact">
+                                            <mat-icon>delete</mat-icon>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Body (Collapsible) -->
+                                <div class="p-6 border-t border-gray-100" *ngIf="contactsExpanded[$index]">
                                     <div [formGroup]="$any(contact)" class="grid grid-cols-2 gap-4">
                                         <mat-form-field appearance="outline">
                                             <mat-label>Nom</mat-label>
-                                            <input matInput formControlName="nom">
+                                            <input matInput formControlName="nom" placeholder="Nom">
                                         </mat-form-field>
-
                                         <mat-form-field appearance="outline">
                                             <mat-label>Prénom</mat-label>
-                                            <input matInput formControlName="prenom">
+                                            <input matInput formControlName="prenom" placeholder="Prénom">
                                         </mat-form-field>
 
                                         <mat-form-field appearance="outline">
@@ -658,12 +693,13 @@
 
                                         <mat-form-field appearance="outline">
                                             <mat-label>Téléphone</mat-label>
-                                            <input matInput formControlName="telephone">
+                                            <input matInput formControlName="telephone" placeholder="06...">
                                         </mat-form-field>
 
                                         <mat-form-field appearance="outline">
                                             <mat-label>Email</mat-label>
-                                            <input matInput type="email" formControlName="email">
+                                            <input matInput type="email" formControlName="email"
+                                                placeholder="email@exemple.com">
                                         </mat-form-field>
 
                                         <mat-form-field appearance="outline">
@@ -684,8 +720,8 @@
                                             </mat-select>
                                         </mat-form-field>
                                     </div>
-                                </mat-card-content>
-                            </mat-card>
+                                </div>
+                            </div>
                             }
                         </div>
                     </mat-tab>

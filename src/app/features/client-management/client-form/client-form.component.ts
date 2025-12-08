@@ -90,6 +90,9 @@ export class ClientFormComponent implements OnInit {
   tachesContact = Object.values(TacheContact);
   canauxCommunication = Object.values(CanalCommunication);
 
+  // State pour l'expansion des contacts
+  contactsExpanded: boolean[] = [];
+
   constructor(
     private fb: FormBuilder,
     private clientService: ClientService,
@@ -106,6 +109,10 @@ export class ClientFormComponent implements OnInit {
       this.isEditMode.set(true);
       this.clientId.set(id);
       this.loadClient(id);
+    } else {
+      // En mode création, si on ajoute un contact par défaut (optionnel, sinon laisser vide)
+      // Mais pour l'instant on initialise juste pour être sûr
+      this.contactsExpanded = [];
     }
 
     // Écouter les changements de type de client
@@ -388,10 +395,24 @@ export class ClientFormComponent implements OnInit {
       canal: ['']
     });
     this.contacts.push(contactGroup);
+
+    // Collapse all previous contacts and expand only the new one
+    this.contactsExpanded = this.contactsExpanded.map(() => false);
+    this.contactsExpanded.push(true);
   }
 
   removeContact(index: number): void {
-    this.contacts.removeAt(index);
+    if (confirm('Voulez-vous vraiment supprimer ce contact ?')) {
+      this.contacts.removeAt(index);
+      this.contactsExpanded.splice(index, 1);
+    }
+  }
+
+  toggleContact(index: number): void {
+    if (this.contactsExpanded[index] === undefined) {
+      this.contactsExpanded[index] = false;
+    }
+    this.contactsExpanded[index] = !this.contactsExpanded[index];
   }
 
   private loadClient(id: string): void {
