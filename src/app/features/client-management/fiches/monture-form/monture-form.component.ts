@@ -117,7 +117,7 @@ export class MontureFormComponent implements OnInit {
     ];
 
     // État d'expansion
-    mainEquipmentExpanded = true;
+    mainEquipmentExpanded = false;
     addedEquipmentsExpanded: boolean[] = [];
 
     // Suggestions IA
@@ -261,7 +261,7 @@ export class MontureFormComponent implements OnInit {
 
             verres: this.fb.group({
                 matiere: ['Organique (CR-39)', Validators.required],
-                marque: ['Essilor'],
+                marque: ['Standard'],
                 indice: ['1.50 (Standard)', Validators.required],
                 traitement: [['Anti-reflet']],
                 prixOD: [0],
@@ -270,13 +270,13 @@ export class MontureFormComponent implements OnInit {
 
                 // Champs OD
                 matiereOD: ['Organique (CR-39)'],
-                marqueOD: ['Essilor'],
+                marqueOD: ['Standard'],
                 indiceOD: ['1.50 (Standard)'],
                 traitementOD: [['Anti-reflet']],
 
                 // Champs OG
                 matiereOG: ['Organique (CR-39)'],
-                marqueOG: ['Essilor'],
+                marqueOG: ['Standard'],
                 indiceOG: ['1.50 (Standard)'],
                 traitementOG: [['Anti-reflet']]
             }),
@@ -383,6 +383,37 @@ export class MontureFormComponent implements OnInit {
         this.cdr.markForCheck();
     }
 
+    // Helper to map database material names to UI names
+    mapMaterialToUI(dbMaterial: string): string {
+        switch (dbMaterial) {
+            case 'CR-39':
+                return 'Organique (CR-39)';
+            case 'Polycarbonate':
+                return 'Polycarbonate';
+            case 'Trivex':
+                return 'Trivex';
+            case '1.56':
+                return 'Organique 1.56';
+            case '1.60':
+                return 'Organique 1.60';
+            case '1.67':
+                return 'Organique 1.67';
+            case '1.74':
+                return 'Organique 1.74';
+            default:
+                return dbMaterial;
+        }
+    }
+
+    // Helper to map database index to UI format with labels
+    mapIndiceToUI(indice: string): string {
+        const indexNum = parseFloat(indice);
+        if (indexNum === 1.50) return '1.50 (Standard)';
+        if (indexNum === 1.53) return '1.53 (Trivex)';
+        if (indexNum === 1.59) return '1.59 (Polycarbonate)';
+        return indice;
+    }
+
     checkSuggestion(index: number = -1): void {
         this.activeSuggestionIndex = index;
         const odValues = this.ficheForm.get('ordonnance.od')?.value;
@@ -419,36 +450,32 @@ export class MontureFormComponent implements OnInit {
         const recOD = getLensSuggestion(corrOD, frameData);
         const recOG = getLensSuggestion(corrOG, frameData);
 
-        // Compare Spheres for Pair vs Split Logic
-        const diff = Math.abs(corrOD.sph - corrOG.sph);
+        // Check if recommendations are identical (same material and index)
+        const areIdentical = recOD.option.material === recOG.option.material &&
+            recOD.option.index === recOG.option.index;
 
         this.suggestions = [];
 
-        if (diff < 2.0) {
-            // Case A: Similar Prescriptions -> Suggest Single Pair (Aesthetic Priority)
-            // Use the "stronger" recommendation (highest index) for both
-            const useOD = recOD.option.index >= recOG.option.index;
-            const bestRec = useOD ? recOD : recOG;
-            const thicknessInfo = `~${bestRec.estimatedThickness}mm`;
-
+        if (areIdentical) {
+            // Case A: Identical recommendations -> Show single Paire suggestion
             this.suggestions.push({
                 type: 'Paire',
-                matiere: bestRec.option.material,
-                indice: bestRec.option.index.toFixed(2),
-                traitements: this.mapTreatmentsToUI(bestRec.selectedTreatments),
-                raison: bestRec.rationale,
-                epaisseur: thicknessInfo
+                matiere: this.mapMaterialToUI(recOD.option.material),
+                indice: this.mapIndiceToUI(recOD.option.index.toFixed(2)),
+                traitements: this.mapTreatmentsToUI(recOD.selectedTreatments),
+                raison: recOD.rationale,
+                epaisseur: `~${recOD.estimatedThickness}mm`
             });
 
         } else {
-            // Case B: Different Prescriptions -> Suggest Split Indices
+            // Case B: Different recommendations -> Show OD and OG suggestions
             const thickOD = `~${recOD.estimatedThickness}mm`;
             const thickOG = `~${recOG.estimatedThickness}mm`;
 
             this.suggestions.push({
                 type: 'OD',
-                matiere: recOD.option.material,
-                indice: recOD.option.index.toFixed(2),
+                matiere: this.mapMaterialToUI(recOD.option.material),
+                indice: this.mapIndiceToUI(recOD.option.index.toFixed(2)),
                 traitements: this.mapTreatmentsToUI(recOD.selectedTreatments),
                 raison: recOD.rationale,
                 epaisseur: thickOD
@@ -456,15 +483,17 @@ export class MontureFormComponent implements OnInit {
 
             this.suggestions.push({
                 type: 'OG',
-                matiere: recOG.option.material,
-                indice: recOG.option.index.toFixed(2),
+                matiere: this.mapMaterialToUI(recOG.option.material),
+                indice: this.mapIndiceToUI(recOG.option.index.toFixed(2)),
                 traitements: this.mapTreatmentsToUI(recOG.selectedTreatments),
                 raison: recOG.rationale,
                 epaisseur: thickOG
             });
         }
 
+        // Always show suggestions panel
         this.showSuggestions = true;
+
         this.cdr.markForCheck();
     }
 
@@ -487,7 +516,6 @@ export class MontureFormComponent implements OnInit {
                 indiceOG: suggestion.indice,
                 traitementOG: suggestion.traitements || []
             });
-            this.closeSuggestions();
 
         } else {
             // Case B: Split Mode
@@ -510,7 +538,14 @@ export class MontureFormComponent implements OnInit {
             }
         }
 
+        // Recalculate prices after applying suggestion
         this.calculateLensPrices(parentGroup);
+
+        // Close suggestions panel
+        this.closeSuggestions();
+
+        // Force change detection
+        this.cdr.markForCheck();
     }
 
     // Helper to map database treatment names to UI names

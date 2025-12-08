@@ -8,9 +8,8 @@
                 <span *ngIf="clientParticulier" style="font-weight: 400; font-size: 20px;">
                     ({{ clientParticulier.nom }} {{ clientParticulier.prenom }})
                 </span>
-                <span *ngIf="client && client.typeClient === 'PROFESSIONNEL'"
-                    style="font-weight: 400; font-size: 20px;">
-                    ({{ client.raisonSociale }})
+                <span *ngIf="clientProfessionnel" style="font-weight: 400; font-size: 20px;">
+                    ({{ clientProfessionnel.raisonSociale }})
                 </span>
             </h1>
         </div>
@@ -73,46 +72,46 @@
                             </ng-container>
 
                             <!-- Client Professionnel -->
-                            <ng-container *ngIf="client.typeClient === 'professionnel'">
+                            <ng-container *ngIf="clientProfessionnel">
                                 <div class="info-item">
                                     <label>RAISON SOCIALE</label>
-                                    <span>{{ client.raisonSociale }}</span>
+                                    <span>{{ clientProfessionnel.raisonSociale }}</span>
                                 </div>
                                 <div class="info-item">
                                     <label>ICE</label>
-                                    <span>{{ client.ice }}</span>
+                                    <span>{{ clientProfessionnel.ice }}</span>
                                 </div>
                                 <div class="info-item">
                                     <label>IDENTIFIANT FISCAL</label>
-                                    <span>{{ client.identifiantFiscal }}</span>
+                                    <span>{{ clientProfessionnel.identifiantFiscal }}</span>
                                 </div>
                                 <div class="info-item">
                                     <label>TÉLÉPHONE</label>
-                                    <span>{{ client.telephone }}</span>
+                                    <span>{{ clientProfessionnel.telephone }}</span>
                                 </div>
                                 <div class="info-item">
                                     <label>EMAIL</label>
-                                    <span>{{ client.email }}</span>
+                                    <span>{{ clientProfessionnel.email }}</span>
                                 </div>
                                 <div class="info-item">
                                     <label>VILLE</label>
-                                    <span>{{ client.ville }}</span>
+                                    <span>{{ clientProfessionnel.ville }}</span>
                                 </div>
                             </ng-container>
 
                             <!-- Client Anonyme -->
-                            <ng-container *ngIf="client.typeClient === 'anonyme'">
+                            <ng-container *ngIf="clientAnonyme">
                                 <div class="info-item">
                                     <label>TYPE</label>
                                     <span>Client Anonyme</span>
                                 </div>
-                                <div class="info-item" *ngIf="client.telephone">
+                                <div class="info-item" *ngIf="clientAnonyme.telephone">
                                     <label>TÉLÉPHONE</label>
-                                    <span>{{ client.telephone }}</span>
+                                    <span>{{ clientAnonyme.telephone }}</span>
                                 </div>
-                                <div class="info-item" *ngIf="client.ville">
+                                <div class="info-item" *ngIf="clientAnonyme.ville">
                                     <label>VILLE</label>
-                                    <span>{{ client.ville }}</span>
+                                    <span>{{ clientAnonyme.ville }}</span>
                                 </div>
                             </ng-container>
                         </div>
