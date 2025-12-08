@@ -267,6 +267,21 @@
                                 [class.opacity-60]="!mainEquipmentExpanded" aria-label="Type d'équipement principal">
                                 <option *ngFor="let type of typesEquipement" [value]="type">{{ type }}</option>
                             </select>
+                            <!-- Summary when collapsed -->
+                            <div class="text-gray-600 font-medium ml-2 flex items-center gap-2"
+                                *ngIf="!mainEquipmentExpanded">
+                                <span *ngIf="ficheForm.get('monture.marque')?.value"
+                                    class="bg-white px-2 py-1 rounded border border-gray-200 text-sm">
+                                    {{ ficheForm.get('monture.marque')?.value }}
+                                </span>
+                                <span *ngIf="ficheForm.get('monture.reference')?.value" class="text-sm text-gray-500">
+                                    {{ ficheForm.get('monture.reference')?.value }}
+                                </span>
+                                <span *ngIf="ficheForm.get('monture.prixMonture')?.value"
+                                    class="text-green-600 font-bold ml-2">
+                                    {{ ficheForm.get('monture.prixMonture')?.value }} DH
+                                </span>
+                            </div>
                         </div>
                         <button type="button" class="btn-toggle" (click)="toggleMainEquipment()">
                             <span>{{ mainEquipmentExpanded ? 'Réduire' : 'Développer' }}</span>
