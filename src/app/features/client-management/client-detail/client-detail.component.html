@@ -3,7 +3,16 @@
     <div class="header">
         <div class="header-content">
             <mat-icon class="header-icon">folder_open</mat-icon>
-            <h1>DOSSIER CLIENT</h1>
+            <h1>
+                DOSSIER FICHES CLIENT
+                <span *ngIf="clientParticulier" style="font-weight: 400; font-size: 20px;">
+                    ({{ clientParticulier.nom }} {{ clientParticulier.prenom }})
+                </span>
+                <span *ngIf="client && client.typeClient === 'PROFESSIONNEL'"
+                    style="font-weight: 400; font-size: 20px;">
+                    ({{ client.raisonSociale }})
+                </span>
+            </h1>
         </div>
         <button mat-icon-button (click)="goBack()" class="back-btn">
             <mat-icon>close</mat-icon>
