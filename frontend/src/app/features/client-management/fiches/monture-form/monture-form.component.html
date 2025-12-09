@@ -328,6 +328,15 @@
                                         aria-label="Taille de la monture">
                                 </div>
                                 <div class="form-group">
+                                    <label>Type de cerclage</label>
+                                    <select formControlName="cerclage" aria-label="Type de cerclage">
+                                        <option value="">-- Sélectionner --</option>
+                                        <option value="cerclée">Cerclée (Complète)</option>
+                                        <option value="nylor">Nylor (Semi-cerclée)</option>
+                                        <option value="percée">Percée (Sans cercle)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
                                     <label>Prix Monture</label>
                                     <input type="text" formControlName="prixMonture"
                                         (blur)="formatPrice(ficheForm.get('monture.prixMonture'), $event)"
@@ -355,7 +364,17 @@
                                 <div class="suggestion-item" *ngFor="let suggestion of suggestions">
                                     <div class="suggestion-content">
                                         <strong>[{{ suggestion.type }}] {{ suggestion.matiere }}</strong>
-                                        <p>{{ suggestion.raison }}</p>
+                                        <p class="whitespace-pre-line">{{ suggestion.raison }}</p>
+                                        <p class="text-sm text-blue-600" *ngIf="suggestion.epaisseur">
+                                            📏 Épaisseur estimée: <strong>{{ suggestion.epaisseur }}</strong>
+                                        </p>
+                                        <div *ngIf="suggestion.warnings && suggestion.warnings.length > 0"
+                                            class="warnings mt-2">
+                                            <p *ngFor="let warning of suggestion.warnings"
+                                                class="text-sm text-orange-600">
+                                                {{ warning }}
+                                            </p>
+                                        </div>
                                     </div>
                                     <button type="button" class="btn-apply"
                                         (click)="applySuggestion(suggestion)">Appliquer</button>

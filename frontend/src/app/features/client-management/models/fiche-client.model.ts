@@ -49,6 +49,7 @@ export interface SuggestionIA {
     traitements?: string[];  // Traitements recommandés
     raison: string;
     epaisseur: string;
+    warnings?: string[]; // Frame compatibility warnings
 }
 
 // ============ Prescription Interfaces ============
