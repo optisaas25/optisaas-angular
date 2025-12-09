@@ -470,12 +470,13 @@ export class MontureFormComponent implements OnInit {
         const recOD = getLensSuggestion(corrOD, frameData);
         const recOG = getLensSuggestion(corrOG, frameData);
 
-        // Compare Spheres for Pair vs Split Logic
-        const diff = Math.abs(corrOD.sph - corrOG.sph);
+        // Compare Spheres and Cylinders for Pair vs Split Logic (Tighter thresholds)
+        const diffSph = Math.abs(corrOD.sph - corrOG.sph);
+        const diffCyl = Math.abs(corrOD.cyl - corrOG.cyl);
 
         this.suggestions = [];
 
-        if (diff < 2.0) {
+        if (diffSph <= 0.5 && diffCyl <= 0.75) {
             // Case A: Similar Prescriptions -> Suggest Single Pair (Aesthetic Priority)
             // Use the "stronger" recommendation (highest index) for both
             const useOD = recOD.option.index >= recOG.option.index;
