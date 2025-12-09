@@ -281,15 +281,30 @@
                                     ?</label>
                                 <mat-checkbox [checked]="dossier.maladiesChroniques?.actif"
                                     class="readonly-state">Oui</mat-checkbox>
+                                <mat-form-field appearance="outline" class="full-width mt-2"
+                                    *ngIf="dossier.maladiesChroniques?.actif">
+                                    <mat-label>Précisez</mat-label>
+                                    <input matInput [value]="dossier.maladiesChroniques?.details || ''" readonly>
+                                </mat-form-field>
 
                                 <label class="field-label mt-4">Prenez-vous actuellement un traitement médicamenteux
                                     régulier ?</label>
                                 <mat-checkbox [checked]="dossier.traitementMedicamenteux?.actif"
                                     class="readonly-state">Oui</mat-checkbox>
+                                <mat-form-field appearance="outline" class="full-width mt-2"
+                                    *ngIf="dossier.traitementMedicamenteux?.actif">
+                                    <mat-label>Précisez</mat-label>
+                                    <input matInput [value]="dossier.traitementMedicamenteux?.details || ''" readonly>
+                                </mat-form-field>
 
                                 <label class="field-label mt-4">Avez-vous des allergies connues ?</label>
                                 <mat-checkbox [checked]="dossier.allergies?.actif"
                                     class="readonly-state">Oui</mat-checkbox>
+                                <mat-form-field appearance="outline" class="full-width mt-2"
+                                    *ngIf="dossier.allergies?.actif">
+                                    <mat-label>Précisez</mat-label>
+                                    <input matInput [value]="dossier.allergies?.details || ''" readonly>
+                                </mat-form-field>
                             </div>
 
                             <!-- Col 3: Habitudes -->
@@ -321,6 +336,11 @@
                                 <label class="field-label mt-4">Pratiquez-vous un sport ou une activité nécessitant une
                                     vision spécifique ?</label>
                                 <mat-checkbox [checked]="dossier.sport?.actif" class="readonly-state">Oui</mat-checkbox>
+                                <mat-form-field appearance="outline" class="full-width mt-2"
+                                    *ngIf="dossier.sport?.actif">
+                                    <mat-label>Précisez</mat-label>
+                                    <input matInput [value]="dossier.sport?.details || ''" readonly>
+                                </mat-form-field>
                             </div>
                         </div>
                     </div>
