@@ -155,6 +155,13 @@
                     <input matInput formControlName="prescripteur" placeholder="Nom du médecin">
                     <mat-icon matSuffix>person_outline</mat-icon>
                 </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Date de Contrôle</mat-label>
+                    <input matInput [matDatepicker]="pickerControle" formControlName="dateControle">
+                    <mat-datepicker-toggle matSuffix [for]="pickerControle"></mat-datepicker-toggle>
+                    <mat-datepicker #pickerControle></mat-datepicker>
+                </mat-form-field>
             </div>
 
             <div class="eyes-container">
