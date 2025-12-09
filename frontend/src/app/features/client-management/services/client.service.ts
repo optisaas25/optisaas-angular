@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { delay, map } from 'rxjs/operators';
-import { Client, ClientCreate, TypeClient } from '../models/client.model';
+import { Client, ClientCreate, TypeClient, TitreClient, StatutClient, TypePieceIdentite, TypeCouverture, CorrectionVisuelle, DureePort, ClientParticulier, ClientProfessionnel } from '../models/client.model';
 
 @Injectable({
     providedIn: 'root'
@@ -174,8 +174,78 @@ export class ClientService {
      * Initialiser des données de test
      */
     private initMockData(): void {
-        // Cette méthode sera supprimée quand on connectera au backend
-        this.clients = [];
-        this.nextId = 1;
+        this.nextId = 3;
+        this.clients = [
+            {
+                id: '1',
+                typeClient: TypeClient.PARTICULIER,
+                titre: TitreClient.MME,
+                nom: 'Benami',
+                prenom: 'Salma',
+                dateNaissance: new Date('1990-05-15'),
+                typePieceIdentite: TypePieceIdentite.CIN,
+                numeroPieceIdentite: 'AA123456',
+                telephone: '0612345678',
+                email: 'salma.benami@example.com',
+                ville: 'Casablanca',
+                adresse: '123 Boulevard Anfa, Résidence Les Fleurs, Apt 4',
+                statut: StatutClient.ACTIF,
+                dateCreation: new Date('2024-01-10'),
+                derniereVisite: new Date('2024-10-20'),
+                pointsFidelite: 120,
+                couvertureSociale: {
+                    actif: true,
+                    type: TypeCouverture.MUTUELLE,
+                    numeroAdhesion: 'MAF-888999'
+                },
+                dossierMedical: {
+                    correctionActuelle: CorrectionVisuelle.LUNETTES,
+                    dureePort: DureePort.ENTRE_1_ET_5_ANS,
+                    traumatisme: false,
+                    operation: false,
+                    inflammation: false,
+                    sensibiliteLumiere: true,
+                    secheresse: false,
+                    antecedentsFamiliaux: {
+                        glaucome: false,
+                        dmla: false,
+                        diabete: true,
+                        autres: 'Mère diabétique'
+                    },
+                    ecranPlus4h: true,
+                    ressenti: {
+                        fatigue: true,
+                        mauxTete: true,
+                        visionFloue: false,
+                        picotements: false,
+                        difficultePresLoin: false
+                    },
+                    notes: 'Patiente sensible à la lumière bleue.'
+                }
+            } as ClientParticulier,
+            {
+                id: '2',
+                typeClient: TypeClient.PROFESSIONNEL,
+                raisonSociale: 'OptiTech Solutions',
+                identifiantFiscal: 'IF123456',
+                ice: 'ICE987654321',
+                registreCommerce: 'RC555666',
+                telephone: '0522112233',
+                email: 'contact@optitech.com',
+                ville: 'Rabat',
+                adresse: 'Zone Industrielle Agdal',
+                statut: StatutClient.ACTIF,
+                dateCreation: new Date('2023-11-05'),
+                contacts: [
+                    {
+                        nom: 'Alami',
+                        prenom: 'Karim',
+                        fonction: 'Directeur',
+                        telephone: '0661112233',
+                        email: 'k.alami@optitech.com'
+                    }
+                ]
+            } as ClientProfessionnel
+        ];
     }
 }

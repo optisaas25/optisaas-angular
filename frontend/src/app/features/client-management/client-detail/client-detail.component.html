@@ -2,221 +2,272 @@
     <!-- Header -->
     <div class="header">
         <div class="header-content">
-            <mat-icon class="header-icon">folder_open</mat-icon>
-            <h1>
-                DOSSIER FICHES CLIENT
-                <span *ngIf="clientParticulier" style="font-weight: 400; font-size: 20px;">
-                    ({{ clientParticulier.nom }} {{ clientParticulier.prenom }})
-                </span>
-                <span *ngIf="clientProfessionnel" style="font-weight: 400; font-size: 20px;">
-                    ({{ clientProfessionnel.raisonSociale }})
-                </span>
-            </h1>
+            <h1>Dossier Fiches Client</h1>
         </div>
-        <button mat-icon-button (click)="goBack()" class="back-btn">
+        <button mat-icon-button (click)="goBack()" class="close-btn">
             <mat-icon>close</mat-icon>
         </button>
     </div>
 
-    <!-- Tabs -->
-    <mat-tab-group class="client-tabs">
-        <!-- Onglet Informations -->
-        <mat-tab label="Informations">
-            <div class="tab-content">
-                <div class="info-layout">
-                    <!-- Left: Client Info -->
-                    <div class="client-info-section">
-                        <div class="info-grid" *ngIf="client">
-                            <!-- Client Particulier -->
-                            <ng-container *ngIf="clientParticulier">
-                                <div class="info-item">
-                                    <label>TITRE</label>
-                                    <span>{{ clientParticulier.titre }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>NOM</label>
-                                    <span>{{ clientParticulier.nom }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>PRÉNOM</label>
-                                    <span>{{ clientParticulier.prenom }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>TYPE PIÈCE</label>
-                                    <span>{{ clientParticulier.typePieceIdentite }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>NUMÉRO PIÈCE</label>
-                                    <span>{{ clientParticulier.numeroPieceIdentite }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>DATE DE NAISSANCE</label>
-                                    <span>{{ clientParticulier.dateNaissance | date:'dd/MM/yyyy' }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>TÉLÉPHONE</label>
-                                    <span>{{ clientParticulier.telephone }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>EMAIL</label>
-                                    <span>{{ clientParticulier.email || '-' }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>VILLE</label>
-                                    <span>{{ clientParticulier.ville }}</span>
-                                </div>
-                                <div class="info-item full-width">
-                                    <label>ADRESSE</label>
-                                    <span>{{ clientParticulier.adresse || '-' }}</span>
-                                </div>
-                            </ng-container>
+    <div class="main-content">
+        <!-- Left Side: Tabs -->
+        <div class="left-section">
+            <mat-tab-group class="client-tabs" animationDuration="0ms">
+                <!-- Onglet Identité Client -->
+                <mat-tab label="Identité Client">
+                    <div class="form-container" *ngIf="client">
+                        <!-- Particulier -->
+                        <ng-container *ngIf="clientParticulier">
+                            <div class="form-row three-cols">
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Titre</mat-label>
+                                    <mat-select [value]="clientParticulier.titre" disabled>
+                                        <mat-option [value]="clientParticulier.titre">{{ clientParticulier.titre }}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Nom</mat-label>
+                                    <input matInput [value]="clientParticulier.nom" readonly>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Prénom</mat-label>
+                                    <input matInput [value]="clientParticulier.prenom" readonly>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Date de naissance</mat-label>
+                                    <input matInput [value]="clientParticulier.dateNaissance | date:'dd/MM/yyyy'" readonly>
+                                    <mat-icon matSuffix>calendar_today</mat-icon>
+                                </mat-form-field>
+                            </div>
 
-                            <!-- Client Professionnel -->
-                            <ng-container *ngIf="clientProfessionnel">
-                                <div class="info-item">
-                                    <label>RAISON SOCIALE</label>
-                                    <span>{{ clientProfessionnel.raisonSociale }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>ICE</label>
-                                    <span>{{ clientProfessionnel.ice }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>IDENTIFIANT FISCAL</label>
-                                    <span>{{ clientProfessionnel.identifiantFiscal }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>TÉLÉPHONE</label>
-                                    <span>{{ clientProfessionnel.telephone }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>EMAIL</label>
-                                    <span>{{ clientProfessionnel.email }}</span>
-                                </div>
-                                <div class="info-item">
-                                    <label>VILLE</label>
-                                    <span>{{ clientProfessionnel.ville }}</span>
-                                </div>
-                            </ng-container>
+                            <div class="section-title">DOCUMENT D'IDENTITÉ</div>
+                            <div class="form-row two-cols">
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Type de pièce</mat-label>
+                                    <mat-select [value]="clientParticulier.typePieceIdentite" disabled>
+                                        <mat-option [value]="clientParticulier.typePieceIdentite">{{ clientParticulier.typePieceIdentite }}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Numéro de pièce</mat-label>
+                                    <input matInput [value]="clientParticulier.numeroPieceIdentite" readonly>
+                                </mat-form-field>
+                            </div>
 
-                            <!-- Client Anonyme -->
-                            <ng-container *ngIf="clientAnonyme">
-                                <div class="info-item">
-                                    <label>TYPE</label>
-                                    <span>Client Anonyme</span>
-                                </div>
-                                <div class="info-item" *ngIf="clientAnonyme.telephone">
-                                    <label>TÉLÉPHONE</label>
-                                    <span>{{ clientAnonyme.telephone }}</span>
-                                </div>
-                                <div class="info-item" *ngIf="clientAnonyme.ville">
-                                    <label>VILLE</label>
-                                    <span>{{ clientAnonyme.ville }}</span>
-                                </div>
-                            </ng-container>
-                        </div>
+                            <div class="section-title">CONTACT & LOCALISATION</div>
+                            <div class="form-row two-cols">
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Téléphone</mat-label>
+                                    <input matInput [value]="clientParticulier.telephone" readonly>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Email</mat-label>
+                                    <input matInput [value]="clientParticulier.email || ''" readonly>
+                                </mat-form-field>
+                            </div>
+                            <div class="form-row two-cols">
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Ville</mat-label>
+                                    <input matInput [value]="clientParticulier.ville" readonly>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Adresse</mat-label>
+                                    <input matInput [value]="clientParticulier.adresse || ''" readonly>
+                                </mat-form-field>
+                            </div>
+
+                            <div class="section-title">Couverture Sociale</div>
+                            <div class="form-row two-cols">
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Type de couverture</mat-label>
+                                    <mat-select [value]="clientParticulier.couvertureSociale?.type" disabled>
+                                        <mat-option [value]="clientParticulier.couvertureSociale?.type">{{ clientParticulier.couvertureSociale?.type || 'Aucune' }}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Numéro d'adhésion</mat-label>
+                                    <input matInput [value]="clientParticulier.couvertureSociale?.numeroAdhesion || ''" readonly>
+                                </mat-form-field>
+                            </div>
+
+                            <div class="section-title">Groupe Famille et Le Lien Parental</div>
+                            <div class="form-row two-cols">
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Rôle Client</mat-label>
+                                    <mat-select [value]="clientParticulier.groupeFamille?.role || 'Principal'" disabled>
+                                        <mat-option value="Principal">Principal</mat-option>
+                                        <mat-option value="Membre">Membre</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Lien Parental</mat-label>
+                                    <mat-select [value]="clientParticulier.groupeFamille?.lienParental" disabled>
+                                        <mat-option [value]="clientParticulier.groupeFamille?.lienParental">{{ clientParticulier.groupeFamille?.lienParental || '-' }}</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div class="form-row two-cols">
+                                <mat-form-field appearance="outline">
+                                    <mat-label>ID Famille</mat-label>
+                                    <input matInput disabled value="">
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Nom Famille</mat-label>
+                                    <input matInput [value]="clientParticulier.groupeFamille?.nomFamille || ''" readonly>
+                                </mat-form-field>
+                            </div>
+                        </ng-container>
+                        
+                        <!-- TODO: Implement Professionnel view if needed similar to above -->
                     </div>
+                </mat-tab>
 
-                    <!-- Right: Historique Compact -->
-                    <div class="historique-section">
-                        <h3>HISTORIQUE</h3>
-                        <div class="historique-list" *ngIf="fiches.length > 0">
-                            <div class="fiche-item" *ngFor="let fiche of fiches">
-                                <div class="fiche-info">
-                                    <div class="fiche-type">
-                                        <mat-icon>{{ getTypeIcon(fiche.type) }}</mat-icon>
-                                        <span>{{ fiche.type }}</span>
-                                    </div>
-                                    <div class="fiche-date">{{ fiche.dateCreation | date:'dd/MM/yyyy' }}</div>
-                                    <div class="fiche-id">ID: {{ fiche.id }}</div>
+                <!-- Onglet Dossier Médical -->
+                <mat-tab label="Dossier Médical">
+                    <div class="form-container medical-container" *ngIf="clientParticulier?.dossierMedical as dossier">
+                        <div class="medical-columns">
+                            <!-- Col 1: Antecedents Visuels -->
+                            <div class="medical-col">
+                                <div class="section-title">ANTÉCÉDENTS VISUELS</div>
+                                
+                                <label class="field-label">Portez-vous actuellement</label>
+                                <mat-radio-group [value]="dossier.correctionActuelle" disabled class="custom-radio-group">
+                                    <mat-radio-button value="Lunettes">Lunettes</mat-radio-button>
+                                    <mat-radio-button value="Lentilles de contact">Lentilles</mat-radio-button>
+                                    <mat-radio-button value="Rien">Rien</mat-radio-button>
+                                </mat-radio-group>
+
+                                <label class="field-label mt-4">Depuis combien de temps portez-vous une correction visuelle ?</label>
+                                <mat-radio-group [value]="dossier.dureePort" disabled class="custom-radio-group">
+                                    <mat-radio-button value="Moins de 1 an">Moins de 1 an</mat-radio-button>
+                                    <mat-radio-button value="1 à 5 ans">1 à 5 ans</mat-radio-button>
+                                    <mat-radio-button value="Plus de 5 ans">Plus de 5 ans</mat-radio-button>
+                                </mat-radio-group>
+
+                                <label class="field-label mt-4">Avez-vous déjà eu</label>
+                                <div class="checkbox-list">
+                                    <mat-checkbox [checked]="dossier.traumatisme" disabled>Un traumatisme oculaire</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.operation" disabled>Une opération des yeux</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.inflammation" disabled>Une inflammation</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.sensibiliteLumiere" disabled>Une sensibilité à la lumière</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.secheresse" disabled>Une sécheresse</mat-checkbox>
                                 </div>
-                                <div class="fiche-actions">
-                                    <button mat-icon-button (click)="viewFiche(fiche)" matTooltip="Voir">
-                                        <mat-icon>visibility</mat-icon>
-                                    </button>
-                                    <button mat-icon-button (click)="viewFiche(fiche)" matTooltip="Modifier">
-                                        <mat-icon>edit</mat-icon>
-                                    </button>
+
+                                <label class="field-label mt-4">Avez-vous des antécédents familiaux de</label>
+                                <div class="checkbox-row">
+                                    <mat-checkbox [checked]="dossier.antecedentsFamiliaux?.glaucome" disabled>Glaucome</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.antecedentsFamiliaux?.dmla" disabled>DMLA</mat-checkbox>
                                 </div>
+                                <div class="checkbox-row">
+                                    <mat-checkbox [checked]="dossier.antecedentsFamiliaux?.diabete" disabled>Diabète</mat-checkbox>
+                                </div>
+
+                                <mat-form-field appearance="outline" class="mt-2 full-width">
+                                    <mat-label>Autres maladies oculaires</mat-label>
+                                    <textarea matInput [value]="dossier.antecedentsFamiliaux?.autres || ''" readonly rows="2"></textarea>
+                                </mat-form-field>
+                            </div>
+
+                            <!-- Col 2: Antecedents Medicaux Gen -->
+                            <div class="medical-col">
+                                <div class="section-title">ANTÉCÉDENTS MÉDICAUX GÉNÉRAUX</div>
+                                
+                                <label class="field-label">Êtes-vous suivi pour une ou plusieurs maladies chroniques ?</label>
+                                <mat-checkbox [checked]="dossier.maladiesChroniques?.actif" disabled>Oui</mat-checkbox>
+
+                                <label class="field-label mt-4">Prenez-vous actuellement un traitement médicamenteux régulier ?</label>
+                                <mat-checkbox [checked]="dossier.traitementMedicamenteux?.actif" disabled>Oui</mat-checkbox>
+
+                                <label class="field-label mt-4">Avez-vous des allergies connues ?</label>
+                                <mat-checkbox [checked]="dossier.allergies?.actif" disabled>Oui</mat-checkbox>
+                            </div>
+
+                            <!-- Col 3: Habitudes -->
+                            <div class="medical-col">
+                                <div class="section-title">HABITUDES ET CONFORT VISUEL</div>
+                                
+                                <label class="field-label">Passez-vous plus de 4h par jour devant un écran ?</label>
+                                <mat-radio-group [value]="dossier.ecranPlus4h" disabled class="custom-radio-group">
+                                    <mat-radio-button [value]="true">Oui</mat-radio-button>
+                                    <mat-radio-button [value]="false">Non</mat-radio-button>
+                                </mat-radio-group>
+
+                                <label class="field-label mt-4">Ressentez-vous souvent :</label>
+                                <div class="checkbox-list">
+                                    <mat-checkbox [checked]="dossier.ressenti?.fatigue" disabled>Fatigue visuelle</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.ressenti?.mauxTete" disabled>Maux de tête</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.ressenti?.visionFloue" disabled>Vision floue</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.ressenti?.picotements" disabled>Picotements / démangeaisons</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.ressenti?.difficultePresLoin" disabled>Difficulté à voir de près / de loin</mat-checkbox>
+                                </div>
+
+                                <label class="field-label mt-4">Pratiquez-vous un sport ou une activité nécessitant une vision spécifique ?</label>
+                                <mat-checkbox [checked]="dossier.sport?.actif" disabled>Oui</mat-checkbox>
                             </div>
                         </div>
-                        <div class="empty-historique" *ngIf="fiches.length === 0">
-                            <mat-icon>inbox</mat-icon>
-                            <p>Aucune fiche</p>
-                        </div>
                     </div>
-                </div>
+                </mat-tab>
+
+                <!-- Onglet Notes -->
+                <mat-tab label="Notes">
+                    <div class="form-container">
+                        <mat-form-field appearance="outline" class="full-width notes-field">
+                            <mat-label>Notes et observations</mat-label>
+                            <textarea matInput [value]="clientParticulier?.dossierMedical?.notes || ''" readonly rows="15"></textarea>
+                        </mat-form-field>
+                    </div>
+                </mat-tab>
+            </mat-tab-group>
+
+            <!-- Bottom Actions -->
+            <div class="bottom-actions">
+                <button mat-flat-button color="primary" (click)="createFicheMonture()">
+                    <mat-icon>visibility</mat-icon> Nouveau Dossier Monture
+                </button>
+                <button mat-flat-button color="primary" (click)="createFicheLentilles()">
+                    <mat-icon>remove_red_eye</mat-icon> Nouveau Dossier Lentilles
+                </button>
+                <button mat-flat-button class="btn-success" (click)="createFicheProduit()">
+                    <mat-icon>shopping_cart</mat-icon> Nouveau Dossier Produit
+                </button>
             </div>
-        </mat-tab>
-
-        <!-- Onglet Notes Médicales (uniquement pour Particulier) -->
-        <mat-tab label="Notes Médicales" *ngIf="clientParticulier?.dossierMedical">
-            <div class="tab-content medical-notes" *ngIf="clientParticulier?.dossierMedical as dossier">
-                <div class="medical-section">
-                    <h3><mat-icon>visibility</mat-icon> Antécédents Visuels</h3>
-                    <div class="info-grid">
-                        <div class="info-item" *ngIf="dossier.correctionActuelle">
-                            <label>Correction actuelle</label>
-                            <span>{{ dossier.correctionActuelle }}</span>
-                        </div>
-                        <div class="info-item" *ngIf="dossier.dureePort">
-                            <label>Durée de port</label>
-                            <span>{{ dossier.dureePort }}</span>
-                        </div>
-                    </div>
-                    <div class="checkbox-grid">
-                        <mat-chip-set>
-                            <mat-chip *ngIf="dossier.traumatisme" color="warn">Traumatisme</mat-chip>
-                            <mat-chip *ngIf="dossier.operation" color="warn">Opération</mat-chip>
-                            <mat-chip *ngIf="dossier.inflammation" color="warn">Inflammation</mat-chip>
-                            <mat-chip *ngIf="dossier.sensibiliteLumiere" color="warn">Sensibilité
-                                lumière</mat-chip>
-                            <mat-chip *ngIf="dossier.secheresse" color="warn">Sécheresse</mat-chip>
-                        </mat-chip-set>
-                    </div>
-                </div>
-
-                <div class="medical-section"
-                    *ngIf="dossier.maladiesChroniques?.actif || dossier.traitementMedicamenteux?.actif || dossier.allergies?.actif">
-                    <h3><mat-icon>local_hospital</mat-icon> Antécédents Médicaux</h3>
-                    <div class="info-item" *ngIf="dossier.maladiesChroniques?.actif">
-                        <label>Maladies chroniques</label>
-                        <p>{{ dossier.maladiesChroniques.details }}</p>
-                    </div>
-                    <div class="info-item" *ngIf="dossier.traitementMedicamenteux?.actif">
-                        <label>Traitements médicamenteux</label>
-                        <p>{{ dossier.traitementMedicamenteux.details }}</p>
-                    </div>
-                    <div class="info-item" *ngIf="dossier.allergies?.actif">
-                        <label>Allergies</label>
-                        <p>{{ dossier.allergies.details }}</p>
-                    </div>
-                </div>
-
-                <div class="medical-section" *ngIf="dossier.remarques">
-                    <h3><mat-icon>notes</mat-icon> Remarques</h3>
-                    <p class="remarques">{{ dossier.remarques }}</p>
-                </div>
-            </div>
-        </mat-tab>
-    </mat-tab-group>
-
-    <!-- Footer Actions -->
-    <div class="footer-actions">
-        <div class="action-buttons">
-            <button mat-raised-button color="primary" (click)="createFicheMonture()">
-                <mat-icon>visibility</mat-icon>
-                Nouveau Dossier Monture
-            </button>
-            <button mat-raised-button color="primary" (click)="createFicheLentilles()">
-                <mat-icon>remove_red_eye</mat-icon>
-                Nouveau Dossier Lentilles
-            </button>
-            <button mat-raised-button color="accent" (click)="createFicheProduit()">
-                <mat-icon>shopping_cart</mat-icon>
-                Nouveau Dossier Produit
-            </button>
         </div>
-        <button mat-stroked-button (click)="goBack()">Fermer</button>
+
+        <!-- Right Side: Historique -->
+        <div class="right-section">
+            <div class="historique-panel">
+                <h3>HISTORIQUE</h3>
+                <div class="historique-list custom-scrollbar">
+                    <div class="fiche-item" *ngFor="let fiche of fiches">
+                        <div class="fiche-icon">
+                            <mat-icon>remove_red_eye</mat-icon>
+                        </div>
+                        <div class="fiche-details">
+                            <span class="fiche-type">{{ fiche.type }}</span>
+                            <span class="fiche-date">{{ fiche.dateCreation | date:'dd/MM/yyyy' }}</span>
+                            <span class="fiche-id">ID: {{ fiche.id }}</span>
+                        </div>
+                        <div class="fiche-actions">
+                            <button mat-icon-button class="action-btn view">
+                                <mat-icon>visibility</mat-icon>
+                            </button>
+                            <button mat-icon-button class="action-btn edit">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Point Fedilio -->
+            <div class="point-fedilio-section">
+                <label>Point Fedilio</label>
+                <input type="text" [value]="client?.pointsFidelite || 0" readonly>
+            </div>
+            
+            <div class="close-action">
+                <button mat-stroked-button (click)="goBack()">Fermer</button>
+            </div>
+        </div>
     </div>
 </div>
