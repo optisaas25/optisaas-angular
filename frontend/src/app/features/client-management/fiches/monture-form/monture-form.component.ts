@@ -1274,6 +1274,13 @@ export class MontureFormComponent implements OnInit {
      * Open virtual centering modal with camera measurement
      */
     openVirtualCentering(): void {
+        // Get frame data from form
+        const taille = this.ficheForm.get('monture.taille')?.value || '52-18-140';
+        const [calibreStr, pontStr] = taille.split('-');
+        const calibre = parseInt(calibreStr) || 52;
+        const pont = parseInt(pontStr) || 18;
+        const typeMontage = this.ficheForm.get('montage.typeMontage')?.value || '';
+
         // Dynamically import the modal component
         import('../../../measurement/components/virtual-centering-modal/virtual-centering-modal.component')
             .then(m => {
@@ -1282,7 +1289,12 @@ export class MontureFormComponent implements OnInit {
                     maxWidth: '1400px',
                     height: '90vh',
                     disableClose: true,
-                    panelClass: 'virtual-centering-dialog'
+                    panelClass: 'virtual-centering-dialog',
+                    data: {
+                        caliber: calibre,
+                        bridge: pont,
+                        mountingType: typeMontage
+                    }
                 });
 
                 dialogRef.afterClosed().subscribe((measurement) => {
