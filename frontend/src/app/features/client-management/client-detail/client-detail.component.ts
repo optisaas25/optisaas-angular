@@ -7,6 +7,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRadioModule } from '@angular/material/radio';
+import { FormsModule } from '@angular/forms';
 import { ClientService } from '../services/client.service';
 import { FicheService } from '../services/fiche.service';
 import { Client, TypeClient, ClientParticulier, ClientProfessionnel, ClientAnonyme } from '../models/client.model';
@@ -22,7 +28,13 @@ import { FicheClient, StatutFiche, TypeFiche } from '../models/fiche-client.mode
     MatIconModule,
     MatTableModule,
     MatChipsModule,
-    MatTabsModule
+    MatTabsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatCheckboxModule,
+    MatRadioModule,
+    FormsModule
   ],
   templateUrl: './client-detail.component.html',
   styleUrls: ['./client-detail.component.scss']
