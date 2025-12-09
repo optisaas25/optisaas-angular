@@ -32,7 +32,7 @@
                 <div class="tab-content" formGroupName="ordonnance">
                     <!-- Info Prescription -->
                     <mat-card class="section-card mb-4">
-                        <mat-card-content class="grid-2">
+                        <mat-card-content class="grid-3">
                             <mat-form-field appearance="outline">
                                 <mat-label>Date de prescription</mat-label>
                                 <input matInput [matDatepicker]="picker" formControlName="datePrescription">
@@ -43,6 +43,12 @@
                                 <mat-label>Prescripteur</mat-label>
                                 <input matInput formControlName="prescripteur" placeholder="Dr. Ophtalmologue">
                                 <mat-icon matSuffix>person_medical</mat-icon>
+                            </mat-form-field>
+                            <mat-form-field appearance="outline">
+                                <mat-label>Date de Contrôle</mat-label>
+                                <input matInput [matDatepicker]="pickerControle" formControlName="dateControle">
+                                <mat-datepicker-toggle matIconSuffix [for]="pickerControle"></mat-datepicker-toggle>
+                                <mat-datepicker #pickerControle></mat-datepicker>
                             </mat-form-field>
                         </mat-card-content>
                     </mat-card>

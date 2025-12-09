@@ -255,7 +255,8 @@ export class MontureFormComponent implements OnInit {
                     ep: [null]
                 }),
                 datePrescription: [new Date()],
-                prescripteur: ['']
+                prescripteur: [''],
+                dateControle: [null]
             }),
 
             // Onglet 2: Monture & Verres
