@@ -984,10 +984,9 @@ export class MontureFormComponent implements OnInit {
 
     setActiveTab(index: number): void {
         this.activeTab = index;
-        // Draw canvases when switching to Fiche Montage tab
+        // Draw canvas when switching to Fiche Montage tab
         if (index === 2) {
             setTimeout(() => {
-                this.drawCenteringCanvas();
                 this.drawFrameVisualization();
             }, 100);
         }
@@ -999,7 +998,7 @@ export class MontureFormComponent implements OnInit {
             this.activeTab++;
             // Draw canvas when entering Fiche Montage tab
             if (this.activeTab === 2) {
-                setTimeout(() => this.drawCenteringCanvas(), 100);
+                setTimeout(() => this.drawFrameVisualization(), 100);
             }
         }
     }
@@ -1009,7 +1008,7 @@ export class MontureFormComponent implements OnInit {
             this.activeTab--;
             // Draw canvas when entering Fiche Montage tab
             if (this.activeTab === 2) {
-                setTimeout(() => this.drawCenteringCanvas(), 100);
+                setTimeout(() => this.drawFrameVisualization(), 100);
             }
         }
     }
@@ -1163,12 +1162,12 @@ export class MontureFormComponent implements OnInit {
 
         // Initialize canvas drawing with longer delay to ensure DOM is ready
         setTimeout(() => {
-            this.drawCenteringCanvas();
+            this.drawFrameVisualization();
         }, 500);
 
         // Listen to montage form changes for real-time canvas updates
         this.ficheForm.get('montage')?.valueChanges.subscribe(() => {
-            this.drawCenteringCanvas();
+            this.drawFrameVisualization();
         });
     }
 
