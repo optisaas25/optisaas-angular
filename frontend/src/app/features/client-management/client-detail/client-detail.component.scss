@@ -183,11 +183,18 @@ mat-form-field {
 
 .readonly-state {
     pointer-events: none;
-    // tab-index is not a valid CSS property, creating lint error. Removed.
+
+    // Hide the select arrow to make it look like a static field
+    ::ng-deep .mat-mdc-select-arrow-wrapper {
+        display: none !important;
+    }
 
     // Maintain default colors instead of disabled grey
-    ::ng-deep .mat-mdc-checkbox-disabled .mat-mdc-checkbox-label {
+    ::ng-deep .mat-mdc-checkbox-disabled .mat-mdc-checkbox-label,
+    ::ng-deep .mat-mdc-radio-disabled .mat-mdc-radio-label,
+    ::ng-deep .mat-mdc-select-disabled .mat-mdc-select-value {
         color: rgba(0, 0, 0, 0.87) !important;
+        cursor: default !important;
     }
 }
 
