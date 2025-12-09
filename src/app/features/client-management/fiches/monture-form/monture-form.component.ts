@@ -1475,11 +1475,14 @@ export class MontureFormComponent implements OnInit {
         ctx.font = '11px Arial';
         ctx.fillText(`Pont: ${pont}mm`, centerX, lensY - lensHeight / 2 - 35);
 
-        // EP label (above bridge, more visible)
-        const totalEP = epOD + epOG;
+        // EP labels (separate for OD and OG)
         ctx.font = 'bold 11px Arial';
         ctx.fillStyle = '#0066FF';
-        ctx.fillText(`EP: ${totalEP}mm`, centerX, lensY - lensHeight / 2 - 50);
+        ctx.textAlign = 'center';
+        // EP OD (right side)
+        ctx.fillText(`EP OD: ${epOD}mm`, rightLensX, lensY - lensHeight / 2 - 50);
+        // EP OG (left side)
+        ctx.fillText(`EP OG: ${epOG}mm`, leftLensX, lensY - lensHeight / 2 - 50);
 
         // Height labels
         ctx.font = '10px Arial';
