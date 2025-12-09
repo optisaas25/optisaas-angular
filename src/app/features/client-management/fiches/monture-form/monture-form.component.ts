@@ -1354,6 +1354,19 @@ export class MontureFormComponent implements OnInit {
         const epOD = this.ficheForm.get('montage.ecartPupillaireOD')?.value || 32;
         const epOG = this.ficheForm.get('montage.ecartPupillaireOG')?.value || 32;
 
+        // Get mounting type for frame adjustment
+        const typeMontage = this.ficheForm.get('montage.typeMontage')?.value || '';
+
+        // Frame width adjustment based on mounting type
+        let frameAdjustment = 0;
+        if (typeMontage.includes('Cerclé') || typeMontage.includes('Complet')) {
+            frameAdjustment = 5; // +5mm for full frame (thick rim)
+        } else if (typeMontage.includes('Percé') || typeMontage.includes('Nylor')) {
+            frameAdjustment = -5; // -5mm for rimless/drilled (no rim)
+        } else if (typeMontage.includes('Demi')) {
+            frameAdjustment = 0; // +0mm for semi-rimless (thin rim)
+        }
+
         // Canvas dimensions and scale
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
@@ -1408,11 +1421,12 @@ export class MontureFormComponent implements OnInit {
         ctx.lineTo(centerX, lensY + lensHeight / 2 + 30);
         ctx.stroke();
 
-        // ORANGE LINES - Frame total width (vertical at outer edges)
+        // ORANGE LINES - Frame total width (vertical at outer edges with adjustment)
         ctx.strokeStyle = '#FF8800';
         ctx.lineWidth = 3;
-        const leftEdge = leftLensX - lensWidth / 2;
-        const rightEdge = rightLensX + lensWidth / 2;
+        const adjustmentScaled = frameAdjustment * scale;
+        const leftEdge = leftLensX - lensWidth / 2 - adjustmentScaled / 2;
+        const rightEdge = rightLensX + lensWidth / 2 + adjustmentScaled / 2;
         ctx.beginPath();
         ctx.moveTo(leftEdge, lensY - lensHeight / 2 - 20);
         ctx.lineTo(leftEdge, lensY + lensHeight / 2 + 20);
@@ -1498,10 +1512,10 @@ export class MontureFormComponent implements OnInit {
         ctx.fillStyle = '#22c55e';
         ctx.fillText('OG', leftLensX, lensY - lensHeight / 2 + 20);
 
-        // Total width label
+        // Total width label (with frame adjustment)
         ctx.fillStyle = '#FF8800';
         ctx.font = 'bold 11px Arial';
-        const totalWidth = calibre * 2 + pont;
+        const totalWidth = calibre * 2 + pont + frameAdjustment;
         ctx.fillText(`${totalWidth}mm`, centerX, lensY + lensHeight / 2 + 65);
     }
 
