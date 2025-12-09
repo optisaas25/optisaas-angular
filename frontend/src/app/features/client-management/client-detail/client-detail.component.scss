@@ -181,6 +181,16 @@ mat-form-field {
     }
 }
 
+.readonly-state {
+    pointer-events: none;
+    // tab-index is not a valid CSS property, creating lint error. Removed.
+
+    // Maintain default colors instead of disabled grey
+    ::ng-deep .mat-mdc-checkbox-disabled .mat-mdc-checkbox-label {
+        color: rgba(0, 0, 0, 0.87) !important;
+    }
+}
+
 .checkbox-list {
     display: flex;
     flex-direction: column;
