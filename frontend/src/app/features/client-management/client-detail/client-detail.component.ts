@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -66,7 +66,8 @@ export class ClientDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private clientService: ClientService,
-    private ficheService: FicheService
+    private ficheService: FicheService,
+    private cdr: ChangeDetectorRef
   ) {
     this.clientId = this.route.snapshot.paramMap.get('id');
   }
@@ -98,6 +99,7 @@ export class ClientDetailComponent implements OnInit {
       next: (client) => {
         this.client = client || null;
         this.loading = false;
+        this.cdr.markForCheck();
       },
       error: (error) => {
         console.error('Erreur chargement client:', error);
