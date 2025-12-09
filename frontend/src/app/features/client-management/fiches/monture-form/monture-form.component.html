@@ -363,17 +363,17 @@
                             <div class="suggestions-panel" *ngIf="showSuggestions && activeSuggestionIndex === -1">
                                 <div class="suggestion-item" *ngFor="let suggestion of suggestions">
                                     <div class="suggestion-content">
-                                        <strong>[{{ suggestion.type }}] {{ suggestion.matiere }}</strong>
-                                        <p class="whitespace-pre-line">{{ suggestion.raison }}</p>
-                                        <p class="text-sm text-blue-600" *ngIf="suggestion.epaisseur">
-                                            📏 Épaisseur estimée: <strong>{{ suggestion.epaisseur }}</strong>
-                                        </p>
-                                        <div *ngIf="suggestion.warnings && suggestion.warnings.length > 0"
-                                            class="warnings mt-2">
-                                            <p *ngFor="let warning of suggestion.warnings"
-                                                class="text-sm text-orange-600">
-                                                {{ warning }}
-                                            </p>
+                                        <div style="line-height: 1.4;">
+                                            <div><strong class="text-blue-700">[{{ suggestion.type }}]</strong> <span
+                                                    class="font-semibold">{{ suggestion.matiere }}</span> <span
+                                                    class="text-gray-400">•</span> Indice {{ suggestion.indice }} <span
+                                                    *ngIf="suggestion.epaisseur" class="text-gray-400">•</span> <span
+                                                    *ngIf="suggestion.epaisseur" class="text-blue-600">📏 {{
+                                                    suggestion.epaisseur }}</span></div>
+                                            <div class="text-xs text-gray-600">{{ suggestion.raison.replace(/\n/g, ' •
+                                                ') }}<span *ngIf="suggestion.warnings && suggestion.warnings.length > 0"
+                                                    class="text-orange-600"> • ⚠️ {{ suggestion.warnings[0] }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <button type="button" class="btn-apply"
