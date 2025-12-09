@@ -1567,8 +1567,8 @@ export class MontureFormComponent implements OnInit {
         const dimensionX1End = leftLensX + lensWidth / 2 - 20; // Inside lens, with margin
         drawDimension(dimensionX1Start, dimensionY1, dimensionX1End, `${calibre}mm`, '#000000');
 
-        // COTATION 2: Largeur totale de la monture - en bas
-        const dimensionY2 = lensY + lensHeight / 2 + 80;
+        // COTATION 2: Largeur totale de la monture - en bas (plus bas pour meilleure visibilité)
+        const dimensionY2 = lensY + lensHeight / 2 + 100; // Increased from 80 to 100
         const totalLeftEdge = leftLensX - lensWidth / 2 - adjustmentScaled / 2;
         const totalRightEdge = rightLensX + lensWidth / 2 + adjustmentScaled / 2;
         drawDimension(totalLeftEdge, dimensionY2, totalRightEdge, `Largeur totale: ${totalWidth}mm`, '#FF8800');
