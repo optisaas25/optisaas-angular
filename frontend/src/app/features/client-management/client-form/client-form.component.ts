@@ -590,7 +590,7 @@ export class ClientFormComponent implements OnInit {
         groupeFamille: formValue.roleFamille ? {
           role: formValue.roleFamille,
           lienParental: formValue.roleFamille === RoleClientFamille.MEMBRE ? formValue.lienParental : undefined,
-          nomFamille: formValue.roleFamille === RoleClientFamille.MEMBRE ? formValue.nomFamille : undefined,
+          nomFamille: formValue.roleFamille === RoleClientFamille.MEMBRE ? formValue.nomFamille : (formValue.roleFamille === RoleClientFamille.PRINCIPAL ? `Famille ${formValue.nom}` : undefined),
           beneficiaireOptique: formValue.beneficiaireOptique,
           responsableFinancier: formValue.responsableFinancier,
           mutuellePartagee: formValue.mutuellePartagee,
@@ -646,7 +646,7 @@ export class ClientFormComponent implements OnInit {
     this.clientService.updateClient(id, clientData as Partial<Client>).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/p/clients']);
+        this.router.navigate(['/p/clients', id]);
       },
       error: (error) => {
         console.error('Erreur lors de la mise à jour du client:', error);
