@@ -1351,6 +1351,24 @@ export class MontureFormComponent implements OnInit {
 
         const hauteurOD = this.ficheForm.get('montage.hauteurOD')?.value || 20;
         const hauteurOG = this.ficheForm.get('montage.hauteurOG')?.value || 20;
+        const epOD = this.ficheForm.get('montage.ecartPupillaireOD')?.value || 32;
+        const epOG = this.ficheForm.get('montage.ecartPupillaireOG')?.value || 32;
+
+        // Get mounting type for frame adjustment
+        const typeMontage = this.ficheForm.get('montage.typeMontage')?.value || '';
+
+        // Frame width adjustment based on mounting type (simplified)
+        let frameAdjustment = 0;
+        if (typeMontage.includes('Percé') || typeMontage.includes('Nylor')) {
+            frameAdjustment = 0; // 0mm for rimless/drilled (no frame)
+        } else {
+            frameAdjustment = 5; // +5mm for framed (Cerclé, Demi-Cerclé, Complet)
+        }
+
+        // Canvas dimensions and scale
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const scale = 3.5; // 1mm = 3.5px (increased for better visibility)
 
         // Lens dimensions
         const lensWidth = calibre * scale;
