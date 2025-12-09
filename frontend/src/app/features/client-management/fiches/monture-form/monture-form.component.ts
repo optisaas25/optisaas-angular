@@ -271,9 +271,9 @@ export class MontureFormComponent implements OnInit {
             }),
 
             verres: this.fb.group({
-                matiere: [null, Validators.required],
+                matiere: [null],
                 marque: [null],
-                indice: [null, Validators.required],
+                indice: [null],
                 traitement: [[]],
                 prixOD: [0],
                 prixOG: [0],
