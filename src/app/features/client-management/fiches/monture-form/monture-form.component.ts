@@ -1492,6 +1492,13 @@ export class MontureFormComponent implements OnInit {
     }
 
     /**
+     * Print Fiche Montage
+     */
+    printFicheMontage(): void {
+        window.print();
+    }
+
+    /**
      * Generate and download montage sheet PDF (placeholder)
      */
     generateMontageSheet(): void {
