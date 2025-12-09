@@ -11,6 +11,9 @@
             <button mat-raised-button color="primary" *ngIf="isEditMode" (click)="saveClient()">
                 <mat-icon>save</mat-icon> Enregistrer
             </button>
+            <button mat-stroked-button color="warn" *ngIf="!isEditMode" (click)="deleteClient()" class="ml-2">
+                <mat-icon>delete</mat-icon> Supprimer
+            </button>
             <button mat-icon-button (click)="goBack()" class="close-btn">
                 <mat-icon>close</mat-icon>
             </button>
