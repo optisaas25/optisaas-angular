@@ -145,21 +145,17 @@ export function getLensSuggestion(
     if (frame.mount === "rimless" && option.index < 1.67)
         option = lensDatabase.find(l => l.material === "1.67") || option;
 
-    // 4. Thickness Estimation
-    const baseThickness = 1.2;
-    // Thinner index -> lower factor
-    const indexFactor = option.index < 1.6 ? 0.8 : option.index < 1.67 ? 0.6 : 0.45;
-    const edgeFactor = effectivePower * indexFactor;
+    // 4. Calculate Edge Thickness using new function
+    const estimatedThickness = calculateEdgeThickness(corr, frame.ed, option.index);
 
-    let frameFactor = 1;
-    if (frame.ed > 55) frameFactor += 0.2;
-    else if (frame.ed >= 50) frameFactor += 0.1;
-    if (frame.shape === "rectangular") frameFactor += 0.1;
-    if (frame.shape === "cat-eye") frameFactor += 0.15;
-    if (frame.mount === "semi-rim") frameFactor -= 0.1;
-    if (frame.mount === "rimless") frameFactor -= 0.2;
-
-    const estimatedThickness = parseFloat((baseThickness + edgeFactor * frameFactor).toFixed(2));
+    // 5. Check Frame Constraints
+    const constraints = getFrameConstraints(cerclage);
+    if (estimatedThickness > constraints.maxThickness) {
+        warnings.push(`⚠️ ${constraints.warning} - Épaisseur estimée: ${estimatedThickness}mm`);
+        if (cerclage === 'percée') {
+            warnings.push('Recommandation: Choisir un indice supérieur ou une autre monture');
+        }
+    }
 
     // 6. Construct Rationale
     let powerMsg = `Puissance (Sph+Cyl): ${distancePower.toFixed(2)}D`;
