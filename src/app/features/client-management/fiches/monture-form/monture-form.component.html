@@ -286,7 +286,8 @@
                                     class="text-sm text-gray-500">
                                     {{ ficheForm.get('verres.indice')?.value }}
                                 </span>
-                                <span *ngIf="ficheForm.get('monture.prixMonture')?.value"
+                                <span
+                                    *ngIf="(ficheForm.get('monture.prixMonture')?.value * 1 + ficheForm.get('verres.prixOD')?.value * 1 + ficheForm.get('verres.prixOG')?.value * 1) > 0"
                                     class="text-green-600 font-bold ml-2">
                                     {{ (ficheForm.get('monture.prixMonture')?.value * 1 +
                                     ficheForm.get('verres.prixOD')?.value * 1 +
@@ -548,7 +549,8 @@
                                         class="text-sm text-gray-500">
                                         {{ equipment.get('verres.indice')?.value }}
                                     </span>
-                                    <span *ngIf="equipment.get('monture.prixMonture')?.value"
+                                    <span
+                                        *ngIf="(equipment.get('monture.prixMonture')?.value * 1 + equipment.get('verres.prixOD')?.value * 1 + equipment.get('verres.prixOG')?.value * 1) > 0"
                                         class="text-green-600 font-bold ml-2">
                                         {{ (equipment.get('monture.prixMonture')?.value * 1 +
                                         equipment.get('verres.prixOD')?.value * 1 +
