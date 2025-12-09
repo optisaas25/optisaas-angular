@@ -1321,11 +1321,23 @@ export class MontureFormComponent implements OnInit {
      * Draw frame visualization with TWO LENSES and measurement indicators
      */
     drawFrameVisualization(): void {
-        if (!this.frameCanvas) return;
+        console.log('drawFrameVisualization called');
+        console.log('frameCanvas:', this.frameCanvas);
+
+        if (!this.frameCanvas) {
+            console.warn('frameCanvas not initialized');
+            return;
+        }
 
         const canvas = this.frameCanvas.nativeElement;
+        console.log('Canvas element:', canvas);
+        console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
+
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) {
+            console.error('Could not get 2D context');
+            return;
+        }
 
         // Clear canvas with WHITE background (save ink!)
         ctx.fillStyle = '#FFFFFF';
