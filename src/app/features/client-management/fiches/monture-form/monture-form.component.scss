@@ -1504,6 +1504,13 @@ span[matSuffix] {
     }
 }
 
+// Canvas container - white background
+.canvas-container {
+    background: #ffffff !important; // WHITE background instead of blue
+    padding: 20px;
+    border-radius: 12px;
+}
+
 // Print styles
 @media print {
     .frame-visualization-container {
