@@ -1561,12 +1561,11 @@ export class MontureFormComponent implements OnInit {
             ctx.fillText(label, (x1 + x2) / 2, y - 8);
         };
 
-        // COTATION 1: Largeur du verre (calibre) - à GAUCHE du verre OG
-        const lensLeftEdge = leftLensX - lensWidth / 2;
+        // COTATION 1: Largeur du verre (calibre) - INSIDE verre OG
         const dimensionY1 = lensY; // Au centre du verre
-        const dimensionX1End = lensLeftEdge - 15;
-        const dimensionX1Start = dimensionX1End - (calibre * scale);
-        drawDimension(dimensionX1Start, dimensionY1, dimensionX1End, `Verre: ${calibre}mm`, '#000000');
+        const dimensionX1Start = leftLensX - lensWidth / 2 + 20; // Inside lens, with margin
+        const dimensionX1End = leftLensX + lensWidth / 2 - 20; // Inside lens, with margin
+        drawDimension(dimensionX1Start, dimensionY1, dimensionX1End, `${calibre}mm`, '#000000');
 
         // COTATION 2: Largeur totale de la monture - en bas
         const dimensionY2 = lensY + lensHeight / 2 + 80;
