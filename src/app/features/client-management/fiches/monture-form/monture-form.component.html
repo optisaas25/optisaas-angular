@@ -897,9 +897,8 @@
                                 placeholder="ex: 65/70">
                         </div>
 
-                        <!-- Suggestion Panel (Relocated) -->
                         <!-- Suggestion Panel (Summary Only) -->
-                        <div class="mb-4" *ngIf="showSuggestions && activeSuggestionIndex === -1">
+                        <div class="mb-4" *ngIf="suggestions && suggestions.length > 0">
                             <div class="suggestions-panel">
                                 <h5 class="text-sm font-bold text-blue-800 mb-2">Analyse IA & Recommandations</h5>
                                 <div class="suggestion-item" *ngFor="let suggestion of suggestions">
