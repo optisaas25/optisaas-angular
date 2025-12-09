@@ -182,19 +182,53 @@ mat-form-field {
 }
 
 .readonly-state {
-    pointer-events: none;
+    pointer-events: none; // Still useful for non-input elements if any
 
     // Hide the select arrow to make it look like a static field
     ::ng-deep .mat-mdc-select-arrow-wrapper {
         display: none !important;
     }
 
-    // Maintain default colors instead of disabled grey
-    ::ng-deep .mat-mdc-checkbox-disabled .mat-mdc-checkbox-label,
-    ::ng-deep .mat-mdc-radio-disabled .mat-mdc-radio-label,
+    // OVERRIDE disabled styles to look like normal text
+    ::ng-deep .mat-mdc-checkbox-disabled {
+        opacity: 1 !important;
+
+        .mat-mdc-checkbox-label {
+            color: rgba(0, 0, 0, 0.87) !important;
+            cursor: default !important;
+        }
+
+        // Force the box itself to look active if checked
+        .mdc-checkbox--disabled.mdc-checkbox--selected .mdc-checkbox__background {
+            border-color: #673ab7 !important;
+            background-color: #673ab7 !important;
+            cursor: default !important;
+        }
+    }
+
+    ::ng-deep .mat-mdc-radio-disabled {
+        opacity: 1 !important;
+
+        .mat-mdc-radio-button .mdc-label {
+            color: rgba(0, 0, 0, 0.87) !important;
+            cursor: default !important;
+        }
+
+        // Force radio circle color
+        .mat-mdc-radio-checked .mdc-radio__background::before {
+            background-color: #673ab7 !important;
+        }
+
+        .mat-mdc-radio-checked .mdc-radio__outer-circle {
+            border-color: #673ab7 !important;
+        }
+    }
+
     ::ng-deep .mat-mdc-select-disabled .mat-mdc-select-value {
         color: rgba(0, 0, 0, 0.87) !important;
         cursor: default !important;
+        opacity: 1 !important;
+        -webkit-text-fill-color: rgba(0, 0, 0, 0.87) !important;
     }
 }
 
