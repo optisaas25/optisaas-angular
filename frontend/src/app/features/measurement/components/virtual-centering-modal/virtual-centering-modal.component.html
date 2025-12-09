@@ -21,7 +21,9 @@
         }
     </div>
 
-    <app-camera-view (measurementChange)="onMeasurementChange($event)"></app-camera-view>
+    <app-camera-view [caliber]="caliber" [bridge]="bridge" [mountingType]="mountingType"
+        (measurementChange)="onMeasurementChange($event)">
+    </app-camera-view>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
