@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ViewEncapsulation } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -37,14 +37,14 @@ import { FicheClient, StatutFiche, TypeFiche } from '../models/fiche-client.mode
     FormsModule
   ],
   templateUrl: './client-detail.component.html',
-  styleUrls: ['./client-detail.component.scss'],
-  encapsulation: ViewEncapsulation.None
+  styleUrls: ['./client-detail.component.scss']
 })
 export class ClientDetailComponent implements OnInit {
   clientId: string | null = null;
   client: Client | null = null;
   fiches: FicheClient[] = [];
   loading = true;
+  isEditMode = false;
 
   // Stats
   stats = {
