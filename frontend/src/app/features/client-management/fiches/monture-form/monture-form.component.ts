@@ -1319,6 +1319,179 @@ export class MontureFormComponent implements OnInit {
     }
 
     /**
+     * Draw frame visualization with TWO LENSES and measurement indicators
+     */
+    drawFrameVisualization(): void {
+        if (!this.frameCanvas) return;
+
+        const canvas = this.frameCanvas.nativeElement;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Clear canvas with WHITE background (save ink!)
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Get frame data
+        const taille = this.ficheForm.get('monture.taille')?.value || '52-18-140';
+        const [calibreStr, pontStr] = taille.split('-');
+        const calibre = parseInt(calibreStr) || 52;
+        const pont = parseInt(pontStr) || 18;
+
+        const hauteurOD = this.ficheForm.get('montage.hauteurOD')?.value || 20;
+        const hauteurOG = this.ficheForm.get('montage.hauteurOG')?.value || 20;
+        const epOD = this.ficheForm.get('montage.ecartPupillaireOD')?.value || 32;
+        const epOG = this.ficheForm.get('montage.ecartPupillaireOG')?.value || 32;
+
+        // Canvas dimensions and scale
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const scale = 2.0; // 1mm = 2px
+
+        // Lens dimensions
+        const lensWidth = calibre * scale;
+        const lensHeight = lensWidth * 0.65;
+        const bridgeWidth = pont * scale;
+
+        // Calculate positions for TWO LENSES
+        const leftLensX = centerX - bridgeWidth / 2 - lensWidth / 2;
+        const rightLensX = centerX + bridgeWidth / 2 + lensWidth / 2;
+        const lensY = centerY;
+
+        // Helper function to draw rounded rectangle
+        const drawRoundedRect = (x: number, y: number, width: number, height: number, radius: number) => {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.stroke();
+        };
+
+        // Draw LEFT LENS (OG)
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2.5;
+        drawRoundedRect(leftLensX - lensWidth / 2, lensY - lensHeight / 2, lensWidth, lensHeight, 15);
+
+        // Draw RIGHT LENS (OD)
+        drawRoundedRect(rightLensX - lensWidth / 2, lensY - lensHeight / 2, lensWidth, lensHeight, 15);
+
+        // Draw BRIDGE
+        ctx.strokeStyle = '#666666';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(leftLensX + lensWidth / 2, lensY - 10);
+        ctx.lineTo(rightLensX - lensWidth / 2, lensY - 10);
+        ctx.stroke();
+
+        // RED LINE - Bridge center (vertical)
+        ctx.strokeStyle = '#FF0000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, lensY - lensHeight / 2 - 30);
+        ctx.lineTo(centerX, lensY + lensHeight / 2 + 30);
+        ctx.stroke();
+
+        // ORANGE LINES - Frame total width (vertical at outer edges)
+        ctx.strokeStyle = '#FF8800';
+        ctx.lineWidth = 3;
+        const leftEdge = leftLensX - lensWidth / 2;
+        const rightEdge = rightLensX + lensWidth / 2;
+        ctx.beginPath();
+        ctx.moveTo(leftEdge, lensY - lensHeight / 2 - 20);
+        ctx.lineTo(leftEdge, lensY + lensHeight / 2 + 20);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(rightEdge, lensY - lensHeight / 2 - 20);
+        ctx.lineTo(rightEdge, lensY + lensHeight / 2 + 20);
+        ctx.stroke();
+
+        // PUPIL POSITIONS (centers of each lens)
+        const pupilODX = rightLensX;
+        const pupilOGX = leftLensX;
+        const pupilY = lensY; // Center height
+
+        // BLUE DOTTED LINE - Distance between pupils (EP horizontal)
+        ctx.strokeStyle = '#0066FF';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]); // Dotted line
+        ctx.beginPath();
+        ctx.moveTo(pupilOGX, pupilY);
+        ctx.lineTo(pupilODX, pupilY);
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset to solid
+
+        // Draw pupil markers (small circles)
+        ctx.fillStyle = '#0066FF';
+        ctx.beginPath();
+        ctx.arc(pupilODX, pupilY, 4, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(pupilOGX, pupilY, 4, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // BLUE VERTICAL LINES - Height from pupil to bottom of lens
+        const bottomOD = lensY + lensHeight / 2;
+        const bottomOG = lensY + lensHeight / 2;
+
+        ctx.strokeStyle = '#0066FF';
+        ctx.lineWidth = 2;
+        // OD height
+        ctx.beginPath();
+        ctx.moveTo(pupilODX, pupilY);
+        ctx.lineTo(pupilODX, bottomOD);
+        ctx.stroke();
+        // OG height
+        ctx.beginPath();
+        ctx.moveTo(pupilOGX, pupilY);
+        ctx.lineTo(pupilOGX, bottomOG);
+        ctx.stroke();
+
+        // Labels
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+
+        // Caliber label (bottom center)
+        ctx.fillText(`${calibre}mm`, centerX, lensY + lensHeight / 2 + 50);
+
+        // Bridge label (top center)
+        ctx.font = '11px Arial';
+        ctx.fillText(`Pont: ${pont}mm`, centerX, lensY - lensHeight / 2 - 35);
+
+        // EP label (between pupils)
+        const totalEP = epOD + epOG;
+        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = '#0066FF';
+        ctx.fillText(`EP: ${totalEP}mm`, centerX, pupilY - 10);
+
+        // Height labels
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(`H: ${hauteurOD}mm`, pupilODX + 8, (pupilY + bottomOD) / 2);
+        ctx.fillText(`H: ${hauteurOG}mm`, pupilOGX + 8, (pupilY + bottomOG) / 2);
+
+        // Lens labels
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillText('OD', rightLensX, lensY - lensHeight / 2 + 20);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillText('OG', leftLensX, lensY - lensHeight / 2 + 20);
+
+        // Total width label
+        ctx.fillStyle = '#FF8800';
+        ctx.font = 'bold 11px Arial';
+        const totalWidth = calibre * 2 + pont;
+        ctx.fillText(`${totalWidth}mm`, centerX, lensY + lensHeight / 2 + 65);
+    }
+
+    /**
      * Generate and download montage sheet PDF (placeholder)
      */
     generateMontageSheet(): void {
