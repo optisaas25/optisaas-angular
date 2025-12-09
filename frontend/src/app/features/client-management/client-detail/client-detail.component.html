@@ -20,7 +20,8 @@
                             <div class="form-row three-cols">
                                 <mat-form-field appearance="outline">
                                     <mat-label>Titre</mat-label>
-                                    <mat-select [value]="clientParticulier.titre" class="readonly-state">
+                                    <mat-select [value]="clientParticulier.titre" class="readonly-state"
+                                        disabled="true">
                                         <mat-option [value]="clientParticulier.titre">{{ clientParticulier.titre
                                             }}</mat-option>
                                     </mat-select>
@@ -45,7 +46,8 @@
                             <div class="form-row two-cols">
                                 <mat-form-field appearance="outline">
                                     <mat-label>Type de pièce</mat-label>
-                                    <mat-select [value]="clientParticulier.typePieceIdentite" class="readonly-state">
+                                    <mat-select [value]="clientParticulier.typePieceIdentite" class="readonly-state"
+                                        disabled="true">
                                         <mat-option [value]="clientParticulier.typePieceIdentite">{{
                                             clientParticulier.typePieceIdentite }}</mat-option>
                                     </mat-select>
@@ -83,7 +85,7 @@
                                 <mat-form-field appearance="outline">
                                     <mat-label>Type de couverture</mat-label>
                                     <mat-select [value]="clientParticulier.couvertureSociale?.type"
-                                        class="readonly-state">
+                                        class="readonly-state" disabled="true">
                                         <mat-option [value]="clientParticulier.couvertureSociale?.type">{{
                                             clientParticulier.couvertureSociale?.type || 'Aucune' }}</mat-option>
                                     </mat-select>
@@ -101,7 +103,7 @@
                                 <div class="form-row two-cols">
                                     <mat-form-field appearance="outline">
                                         <mat-label>Rôle Client</mat-label>
-                                        <mat-select value="Principal" class="readonly-state">
+                                        <mat-select value="Principal" class="readonly-state" disabled="true">
                                             <mat-option value="Principal">Principal</mat-option>
                                         </mat-select>
                                     </mat-form-field>
@@ -118,14 +120,14 @@
                                 <div class="form-row two-cols">
                                     <mat-form-field appearance="outline">
                                         <mat-label>Rôle Client</mat-label>
-                                        <mat-select value="Membre" class="readonly-state">
+                                        <mat-select value="Membre" class="readonly-state" disabled="true">
                                             <mat-option value="Membre">Membre</mat-option>
                                         </mat-select>
                                     </mat-form-field>
                                     <mat-form-field appearance="outline">
                                         <mat-label>Lien Parental</mat-label>
                                         <mat-select [value]="clientParticulier.groupeFamille?.lienParental"
-                                            class="readonly-state">
+                                            class="readonly-state" disabled="true">
                                             <mat-option [value]="clientParticulier.groupeFamille?.lienParental">{{
                                                 clientParticulier.groupeFamille?.lienParental || '-' }}</mat-option>
                                         </mat-select>
@@ -196,8 +198,8 @@
 
                             <div class="section-title">FISCALITÉ</div>
                             <div class="form-row two-cols">
-                                <mat-checkbox [checked]="clientProfessionnel.tvaAssujetti"
-                                    class="readonly-state">Assujetti à la TVA</mat-checkbox>
+                                <mat-checkbox [checked]="clientProfessionnel.tvaAssujetti" class="readonly-state"
+                                    disabled="true">Assujetti à la TVA</mat-checkbox>
                                 <mat-form-field appearance="outline" *ngIf="clientProfessionnel.tvaAssujetti">
                                     <mat-label>Numéro d'Autorisation</mat-label>
                                     <input matInput [value]="clientProfessionnel.numeroAutorisation || ''" readonly>
@@ -217,7 +219,7 @@
 
                                 <label class="field-label">Portez-vous actuellement</label>
                                 <mat-radio-group [value]="dossier.correctionActuelle"
-                                    class="custom-radio-group readonly-state">
+                                    class="custom-radio-group readonly-state" disabled="true">
                                     <mat-radio-button value="Lunettes">Lunettes</mat-radio-button>
                                     <mat-radio-button value="Lentilles de contact">Lentilles</mat-radio-button>
                                     <mat-radio-button value="Rien">Rien</mat-radio-button>
@@ -225,7 +227,8 @@
 
                                 <label class="field-label mt-4">Depuis combien de temps portez-vous une correction
                                     visuelle ?</label>
-                                <mat-radio-group [value]="dossier.dureePort" class="custom-radio-group readonly-state">
+                                <mat-radio-group [value]="dossier.dureePort" class="custom-radio-group readonly-state"
+                                    disabled="true">
                                     <mat-radio-button value="Moins de 1 an">Moins de 1 an</mat-radio-button>
                                     <mat-radio-button value="1 à 5 ans">1 à 5 ans</mat-radio-button>
                                     <mat-radio-button value="Plus de 5 ans">Plus de 5 ans</mat-radio-button>
@@ -233,28 +236,33 @@
 
                                 <label class="field-label mt-4">Avez-vous déjà eu</label>
                                 <div class="checkbox-list">
-                                    <mat-checkbox [checked]="dossier.traumatisme" class="readonly-state">Un traumatisme
+                                    <mat-checkbox [checked]="dossier.traumatisme" class="readonly-state"
+                                        disabled="true">Un traumatisme
                                         oculaire</mat-checkbox>
-                                    <mat-checkbox [checked]="dossier.operation" class="readonly-state">Une opération des
+                                    <mat-checkbox [checked]="dossier.operation" class="readonly-state"
+                                        disabled="true">Une opération des
                                         yeux</mat-checkbox>
-                                    <mat-checkbox [checked]="dossier.inflammation" class="readonly-state">Une
+                                    <mat-checkbox [checked]="dossier.inflammation" class="readonly-state"
+                                        disabled="true">Une
                                         inflammation</mat-checkbox>
-                                    <mat-checkbox [checked]="dossier.sensibiliteLumiere" class="readonly-state">Une
+                                    <mat-checkbox [checked]="dossier.sensibiliteLumiere" class="readonly-state"
+                                        disabled="true">Une
                                         sensibilité à la lumière</mat-checkbox>
-                                    <mat-checkbox [checked]="dossier.secheresse" class="readonly-state">Une
+                                    <mat-checkbox [checked]="dossier.secheresse" class="readonly-state"
+                                        disabled="true">Une
                                         sécheresse</mat-checkbox>
                                 </div>
 
                                 <label class="field-label mt-4">Avez-vous des antécédents familiaux de</label>
                                 <div class="checkbox-row">
                                     <mat-checkbox [checked]="dossier.antecedentsFamiliaux?.glaucome"
-                                        class="readonly-state">Glaucome</mat-checkbox>
-                                    <mat-checkbox [checked]="dossier.antecedentsFamiliaux?.dmla"
-                                        class="readonly-state">DMLA</mat-checkbox>
+                                        class="readonly-state" disabled="true">Glaucome</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.antecedentsFamiliaux?.dmla" class="readonly-state"
+                                        disabled="true">DMLA</mat-checkbox>
                                 </div>
                                 <div class="checkbox-row">
                                     <mat-checkbox [checked]="dossier.antecedentsFamiliaux?.diabete"
-                                        class="readonly-state">Diabète</mat-checkbox>
+                                        class="readonly-state" disabled="true">Diabète</mat-checkbox>
                                 </div>
 
                                 <mat-form-field appearance="outline" class="mt-2 full-width">
@@ -270,17 +278,17 @@
 
                                 <label class="field-label">Êtes-vous suivi pour une ou plusieurs maladies chroniques
                                     ?</label>
-                                <mat-checkbox [checked]="dossier.maladiesChroniques?.actif"
-                                    class="readonly-state">Oui</mat-checkbox>
+                                <mat-checkbox [checked]="dossier.maladiesChroniques?.actif" class="readonly-state"
+                                    disabled="true">Oui</mat-checkbox>
 
                                 <label class="field-label mt-4">Prenez-vous actuellement un traitement médicamenteux
                                     régulier ?</label>
-                                <mat-checkbox [checked]="dossier.traitementMedicamenteux?.actif"
-                                    class="readonly-state">Oui</mat-checkbox>
+                                <mat-checkbox [checked]="dossier.traitementMedicamenteux?.actif" class="readonly-state"
+                                    disabled="true">Oui</mat-checkbox>
 
                                 <label class="field-label mt-4">Avez-vous des allergies connues ?</label>
-                                <mat-checkbox [checked]="dossier.allergies?.actif"
-                                    class="readonly-state">Oui</mat-checkbox>
+                                <mat-checkbox [checked]="dossier.allergies?.actif" class="readonly-state"
+                                    disabled="true">Oui</mat-checkbox>
                             </div>
 
                             <!-- Col 3: Habitudes -->
@@ -288,29 +296,33 @@
                                 <div class="section-title">HABITUDES ET CONFORT VISUEL</div>
 
                                 <label class="field-label">Passez-vous plus de 4h par jour devant un écran ?</label>
-                                <mat-radio-group [value]="dossier.ecranPlus4h"
-                                    class="custom-radio-group readonly-state">
+                                <mat-radio-group [value]="dossier.ecranPlus4h" class="custom-radio-group readonly-state"
+                                    disabled="true">
                                     <mat-radio-button [value]="true">Oui</mat-radio-button>
                                     <mat-radio-button [value]="false">Non</mat-radio-button>
                                 </mat-radio-group>
 
                                 <label class="field-label mt-4">Ressentez-vous souvent :</label>
                                 <div class="checkbox-list">
-                                    <mat-checkbox [checked]="dossier.ressenti?.fatigue" class="readonly-state">Fatigue
+                                    <mat-checkbox [checked]="dossier.ressenti?.fatigue" class="readonly-state"
+                                        disabled="true">Fatigue
                                         visuelle</mat-checkbox>
-                                    <mat-checkbox [checked]="dossier.ressenti?.mauxTete" class="readonly-state">Maux de
+                                    <mat-checkbox [checked]="dossier.ressenti?.mauxTete" class="readonly-state"
+                                        disabled="true">Maux de
                                         tête</mat-checkbox>
-                                    <mat-checkbox [checked]="dossier.ressenti?.visionFloue"
-                                        class="readonly-state">Vision floue</mat-checkbox>
-                                    <mat-checkbox [checked]="dossier.ressenti?.picotements"
-                                        class="readonly-state">Picotements / démangeaisons</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.ressenti?.visionFloue" class="readonly-state"
+                                        disabled="true">Vision floue</mat-checkbox>
+                                    <mat-checkbox [checked]="dossier.ressenti?.picotements" class="readonly-state"
+                                        disabled="true">Picotements / démangeaisons</mat-checkbox>
                                     <mat-checkbox [checked]="dossier.ressenti?.difficultePresLoin"
-                                        class="readonly-state">Difficulté à voir de près / de loin</mat-checkbox>
+                                        class="readonly-state" disabled="true">Difficulté à voir de près / de
+                                        loin</mat-checkbox>
                                 </div>
 
                                 <label class="field-label mt-4">Pratiquez-vous un sport ou une activité nécessitant une
                                     vision spécifique ?</label>
-                                <mat-checkbox [checked]="dossier.sport?.actif" class="readonly-state">Oui</mat-checkbox>
+                                <mat-checkbox [checked]="dossier.sport?.actif" class="readonly-state"
+                                    disabled="true">Oui</mat-checkbox>
                             </div>
                         </div>
                     </div>
@@ -322,8 +334,8 @@
                         <div class="section-title">CONVENTION</div>
                         <div class="form-row two-cols">
                             <!-- Example Convention fields -->
-                            <mat-checkbox [checked]="clientProfessionnel.convention?.actif"
-                                class="readonly-state">Convention Active</mat-checkbox>
+                            <mat-checkbox [checked]="clientProfessionnel.convention?.actif" class="readonly-state"
+                                disabled="true">Convention Active</mat-checkbox>
                             <mat-form-field appearance="outline" *ngIf="clientProfessionnel.convention?.actif">
                                 <mat-label>Nom Convention</mat-label>
                                 <input matInput [value]="clientProfessionnel.convention?.nomConvention || ''" readonly>
