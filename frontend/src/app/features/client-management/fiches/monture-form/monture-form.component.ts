@@ -1357,7 +1357,7 @@ export class MontureFormComponent implements OnInit {
         // Canvas dimensions and scale
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
-        const scale = 3.0; // 1mm = 3px (increased for better visibility)
+        const scale = 3.5; // 1mm = 3.5px (increased for better visibility)
 
         // Lens dimensions
         const lensWidth = calibre * scale;
