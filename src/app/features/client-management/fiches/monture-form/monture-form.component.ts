@@ -259,6 +259,7 @@ export class MontureFormComponent implements OnInit {
                 marque: [''],
                 couleur: ['Noir mat'],
                 taille: ['52-18-145'],
+                cerclage: ['cerclée'], // Type de cerclage: cerclée/nylor/percée
                 prixMonture: [0, Validators.required]
             }),
 
@@ -420,15 +421,17 @@ export class MontureFormComponent implements OnInit {
             montureGroup = this.equipements.at(index)?.get('monture') || null;
         }
 
-        // Parse Frame Data (ED from 'taille')
+        // Parse Frame Data (ED from 'taille', cerclage from form)
         const tailleStr = montureGroup?.get('taille')?.value || '';
         const ed = parseInt(tailleStr.split('-')[0]) || 52; // Default 52 if parse fails
+        const cerclage = montureGroup?.get('cerclage')?.value || 'cerclée';
 
         // Frame shape and mount - using defaults for now (could be added to UI later)
         const frameData: FrameData = {
             ed,
             shape: 'rectangular', // Default
-            mount: 'full-rim'     // Default
+            mount: 'full-rim',     // Default
+            cerclage: cerclage as any // Type de cerclage
         };
 
         // Determine Equipment Type
@@ -479,13 +482,21 @@ export class MontureFormComponent implements OnInit {
             const bestRec = useOD ? recOD : recOG;
             const thicknessInfo = `~${bestRec.estimatedThickness}mm`;
 
+            // Combine warnings from both eyes
+            const allWarnings = [
+                ...(recOD.warnings || []),
+                ...(recOG.warnings || [])
+            ];
+            const uniqueWarnings = [...new Set(allWarnings)]; // Remove duplicates
+
             this.suggestions.push({
                 type: 'Paire',
                 matiere: this.mapMaterialToUI(bestRec.option.material),
                 indice: this.mapIndexToUI(bestRec.option.index),
                 traitements: this.mapTreatmentsToUI(bestRec.selectedTreatments),
                 raison: bestRec.rationale,
-                epaisseur: thicknessInfo
+                epaisseur: thicknessInfo,
+                warnings: uniqueWarnings.length > 0 ? uniqueWarnings : undefined
             });
 
         } else {
@@ -499,7 +510,8 @@ export class MontureFormComponent implements OnInit {
                 indice: this.mapIndexToUI(recOD.option.index),
                 traitements: this.mapTreatmentsToUI(recOD.selectedTreatments),
                 raison: recOD.rationale,
-                epaisseur: thickOD
+                epaisseur: thickOD,
+                warnings: recOD.warnings
             });
 
             this.suggestions.push({
@@ -508,7 +520,8 @@ export class MontureFormComponent implements OnInit {
                 indice: this.mapIndexToUI(recOG.option.index),
                 traitements: this.mapTreatmentsToUI(recOG.selectedTreatments),
                 raison: recOG.rationale,
-                epaisseur: thickOG
+                epaisseur: thickOG,
+                warnings: recOG.warnings
             });
         }
 
