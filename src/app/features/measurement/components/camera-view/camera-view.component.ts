@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, Output, EventEmitter, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, Output, EventEmitter, Input, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MediaPipeEngineService } from '../../services/mediapipe-engine.service';
@@ -20,7 +20,12 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
     @Output() measurementChange = new EventEmitter<Measurement>();
 
-    frameWidthMm: number = 140; // Default frame width
+    // Frame data inputs for automatic width calculation
+    @Input() caliber: number = 52; // Lens width in mm
+    @Input() bridge: number = 18; // Bridge width in mm
+    @Input() mountingType: string = ''; // Type de montage
+
+    frameWidthMm: number = 140; // Will be calculated automatically
     pixelsPerMm: number | null = null;
     isCalibrated = false;
     isReady = false;
@@ -59,6 +64,15 @@ export class CameraViewComponent implements OnInit, AfterViewInit, OnDestroy {
     ) { }
 
     async ngOnInit(): Promise<void> {
+        // Calculate frame width automatically based on inputs
+        let frameAdjustment = 0;
+        if (this.mountingType.includes('Percé') || this.mountingType.includes('Nylor')) {
+            frameAdjustment = 0; // 0mm for rimless/drilled
+        } else {
+            frameAdjustment = 5; // +5mm for framed (Cerclé, Demi-Cerclé, Complet)
+        }
+        this.frameWidthMm = (this.caliber * 2) + this.bridge + frameAdjustment;
+
         // Load saved calibration
         const savedCalibration = this.calibrationService.loadCalibration();
         if (savedCalibration && this.calibrationService.isCalibrationValid()) {
