@@ -135,6 +135,21 @@ export class ClientDetailComponent implements OnInit {
     });
   }
 
+  toggleEditMode(): void {
+    this.isEditMode = !this.isEditMode;
+  }
+
+  saveClient(): void {
+    if (this.isEditMode) {
+      // Logic to save client would go here
+      // For now just toggle back to view mode
+      console.log('Client saved:', this.client);
+      this.isEditMode = false;
+      // Optional: Trigger a snackbar or alert
+    }
+  }
+
+
   /**
    * Créer une nouvelle fiche monture
    */
