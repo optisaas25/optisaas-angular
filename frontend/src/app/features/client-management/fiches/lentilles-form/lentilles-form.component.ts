@@ -85,6 +85,7 @@ export class LentillesFormComponent implements OnInit {
             ordonnance: this.fb.group({
                 datePrescription: [new Date()],
                 prescripteur: [''],
+                dateControle: [''],
                 od: this.fb.group({
                     sphere: [''],
                     cylindre: [''],
