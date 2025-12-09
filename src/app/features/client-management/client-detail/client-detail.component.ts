@@ -149,6 +149,21 @@ export class ClientDetailComponent implements OnInit {
     }
   }
 
+  deleteClient(): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) {
+      if (this.clientId) {
+        this.clientService.deleteClient(this.clientId).subscribe({
+          next: () => {
+            this.router.navigate(['/p/clients']);
+          },
+          error: (error) => {
+            console.error('Erreur lors de la suppression du client:', error);
+          }
+        });
+      }
+    }
+  }
+
 
   /**
    * Créer une nouvelle fiche monture
