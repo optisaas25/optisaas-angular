@@ -17,7 +17,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FicheService } from '../../services/fiche.service';
 import { FicheMontureCreate, TypeFiche, StatutFiche, TypeEquipement, SuggestionIA } from '../../models/fiche-client.model';
-import { getLensSuggestion, Correction, FrameData, calculateLensPrice } from '../../utils/lensLogic';
+import { getLensSuggestion, Correction, FrameData, calculateLensPrice, determineLensType } from '../../utils/lensLogic';
 import { getLensMaterials, getLensIndices } from '../../utils/lensDatabase';
 
 interface PrescriptionFile {
@@ -214,6 +214,9 @@ export class MontureFormComponent implements OnInit {
         // Setup generic listeners for Main Equipment
         this.setupLensListeners(this.ficheForm);
 
+        // Auto-update lens type based on equipment type and addition
+        this.setupLensTypeAutoUpdate();
+
         // Sync selectedEquipmentType with Main Equipment Type if no added equipments
         this.selectedEquipmentType.valueChanges.subscribe(value => {
             if (value && this.equipements.length === 0) {
@@ -339,6 +342,29 @@ export class MontureFormComponent implements OnInit {
                 verresGroup.get('prixOG')?.setValue(val, { emitEvent: false });
             }
         });
+    }
+
+    // Auto-update lens type based on equipment type and addition
+    setupLensTypeAutoUpdate(): void {
+        // Main equipment
+        const updateMainLensType = () => {
+            const equipmentType = this.ficheForm.get('monture.typeEquipement')?.value;
+            const addOD = parseFloat(this.ficheForm.get('ordonnance.od.addition')?.value) || 0;
+            const addOG = parseFloat(this.ficheForm.get('ordonnance.og.addition')?.value) || 0;
+            const maxAdd = Math.max(addOD, addOG);
+
+            if (equipmentType) {
+                const recommendedType = determineLensType(equipmentType, maxAdd);
+                this.ficheForm.get('verres.type')?.setValue(recommendedType, { emitEvent: false });
+            }
+        };
+
+        // Listen to equipment type changes
+        this.ficheForm.get('monture.typeEquipement')?.valueChanges.subscribe(() => updateMainLensType());
+
+        // Listen to addition changes
+        this.ficheForm.get('ordonnance.od.addition')?.valueChanges.subscribe(() => updateMainLensType());
+        this.ficheForm.get('ordonnance.og.addition')?.valueChanges.subscribe(() => updateMainLensType());
     }
 
     calculateLensPrices(group: AbstractControl = this.ficheForm): void {

@@ -66,6 +66,41 @@ export function getFrameConstraints(cerclage?: CerclageType): { maxThickness: nu
     }
 }
 
+/**
+ * Determine lens type based on equipment type and addition
+ * Implements intelligent type selection logic
+ */
+export function determineLensType(equipmentType: string, addition: number): string {
+    const add = addition || 0;
+
+    // Vision de loin: always unifocal
+    if (equipmentType === 'Vision de loin') {
+        return 'Unifocal';
+    }
+
+    // Vision de près: depends on addition
+    if (equipmentType === 'Vision de près') {
+        if (add === 0) return 'Unifocal';
+        // With addition, recommend progressive
+        if (add <= 1.0) return 'Progressif'; // Entry level
+        if (add <= 2.0) return 'Progressif'; // Standard
+        return 'Progressif'; // Premium (>2.0)
+    }
+
+    // Progressifs: always progressive
+    if (equipmentType === 'Progressifs') {
+        return 'Progressif';
+    }
+
+    // Vision intermédiaire
+    if (equipmentType === 'Vision intermédiaire') {
+        return 'Mi-distance';
+    }
+
+    // Monture générique ou autres: unifocal par défaut
+    return 'Unifocal';
+}
+
 export function getLensSuggestion(
     corr: Correction,
     frame: FrameData,
