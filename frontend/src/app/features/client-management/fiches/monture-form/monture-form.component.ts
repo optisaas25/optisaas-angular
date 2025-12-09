@@ -715,9 +715,9 @@ export class MontureFormComponent implements OnInit {
 
     goBack(): void {
         if (this.clientId) {
-            this.router.navigate(['/clients', this.clientId]);
+            this.router.navigate(['/p/clients', this.clientId]);
         } else {
-            this.router.navigate(['/clients']);
+            this.router.navigate(['/p/clients']);
         }
     }
 
@@ -1146,7 +1146,7 @@ export class MontureFormComponent implements OnInit {
         this.ficheService.createFicheMonture(ficheData).subscribe({
             next: () => {
                 this.loading = false;
-                this.router.navigate(['/clients', this.clientId]);
+                this.router.navigate(['/p/clients', this.clientId]);
             },
             error: (err) => {
                 console.error('Error creating fiche:', err);
