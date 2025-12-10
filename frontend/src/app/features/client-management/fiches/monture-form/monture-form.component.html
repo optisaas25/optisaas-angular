@@ -14,9 +14,33 @@
             </div>
         </div>
         <div class="header-actions">
-            <button type="button" class="btn-secondary" (click)="goBack()">Annuler</button>
-            <button type="button" class="btn-primary" (click)="onSubmit()" [disabled]="ficheForm.invalid || loading">
-                Enregistrer
+            <!-- View Mode: Retour -->
+            <button type="button" class="btn-secondary" (click)="goBack()" *ngIf="!isEditMode">
+                <mat-icon>arrow_back</mat-icon> Retour
+            </button>
+
+            <!-- New Mode: Annuler Creation -->
+            <button type="button" class="btn-secondary" (click)="goBack()"
+                *ngIf="isEditMode && (!ficheId || ficheId === 'new')">
+                Annuler
+            </button>
+
+            <!-- Edit Mode: Annuler Modification -->
+            <button type="button" class="btn-secondary" (click)="toggleEditMode()"
+                *ngIf="isEditMode && ficheId && ficheId !== 'new'">
+                Annuler modification
+            </button>
+
+            <!-- View Mode: Modifier -->
+            <button type="button" class="btn-primary" (click)="toggleEditMode()"
+                *ngIf="!isEditMode && ficheId && ficheId !== 'new'">
+                <mat-icon>edit</mat-icon> Modifier
+            </button>
+
+            <!-- Edit Mode: Enregistrer -->
+            <button type="button" class="btn-primary" (click)="onSubmit()" [disabled]="ficheForm.invalid || loading"
+                *ngIf="isEditMode">
+                <mat-icon>save</mat-icon> Enregistrer
             </button>
         </div>
     </div>
@@ -85,13 +109,13 @@
                 <!-- Actions -->
                 <div class="header-actions-inline">
 
-                    <button type="button" class="btn-icon-success" (click)="openFileUpload()">
+                    <button type="button" class="btn-icon-success" (click)="openFileUpload()" *ngIf="isEditMode">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                         </svg>
                         Importer Files
                     </button>
-                    <button type="button" class="btn-camera-stylish" (click)="openCamera()">
+                    <button type="button" class="btn-camera-stylish" (click)="openCamera()" *ngIf="isEditMode">
                         <span class="icon-wrapper">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                 <path
@@ -130,7 +154,7 @@
                                 </svg>
                             </button>
                             <button type="button" class="btn-delete" (click)="deleteFile(i); $event.stopPropagation()"
-                                title="Supprimer">
+                                title="Supprimer" *ngIf="isEditMode">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                     <path
                                         d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />

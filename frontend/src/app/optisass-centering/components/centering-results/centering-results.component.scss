@@ -1,0 +1,27 @@
+.results {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+
+    h3 {
+        margin-top: 0;
+    }
+
+    .save-btn {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 10px;
+
+        &:hover {
+            background: #218838;
+        }
+    }
+}

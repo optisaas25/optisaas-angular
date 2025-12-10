@@ -1,0 +1,36 @@
+.camera-capture {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+
+    .video-preview {
+        width: 100%;
+        border-radius: 8px;
+        background: #000;
+    }
+
+    .controls {
+        margin-top: 10px;
+        text-align: center;
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+
+            &:hover {
+                background: #0056b3;
+            }
+        }
+
+        .error {
+            color: red;
+            margin-top: 5px;
+        }
+    }
+}

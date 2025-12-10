@@ -15,7 +15,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { FormsModule } from '@angular/forms';
 import { ClientService } from '../services/client.service';
 import { FicheService } from '../services/fiche.service';
-import { Client, TypeClient, ClientParticulier, ClientProfessionnel, ClientAnonyme } from '../models/client.model';
+import { Client, TypeClient, ClientParticulier, ClientProfessionnel, ClientAnonyme, StatutClient } from '../models/client.model';
 import { FicheClient, StatutFiche, TypeFiche } from '../models/fiche-client.model';
 
 @Component({
@@ -62,6 +62,7 @@ export class ClientDetailComponent implements OnInit {
   // Enums pour le template
   StatutFiche = StatutFiche;
   TypeFiche = TypeFiche;
+  StatutClient = StatutClient;
 
   constructor(
     private route: ActivatedRoute,
@@ -135,34 +136,7 @@ export class ClientDetailComponent implements OnInit {
     });
   }
 
-  toggleEditMode(): void {
-    this.isEditMode = !this.isEditMode;
-  }
 
-  saveClient(): void {
-    if (this.isEditMode) {
-      // Logic to save client would go here
-      // For now just toggle back to view mode
-      console.log('Client saved:', this.client);
-      this.isEditMode = false;
-      // Optional: Trigger a snackbar or alert
-    }
-  }
-
-  deleteClient(): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce client ?')) {
-      if (this.clientId) {
-        this.clientService.deleteClient(this.clientId).subscribe({
-          next: () => {
-            this.router.navigate(['/p/clients']);
-          },
-          error: (error) => {
-            console.error('Erreur lors de la suppression du client:', error);
-          }
-        });
-      }
-    }
-  }
 
 
   /**
@@ -259,6 +233,53 @@ export class ClientDetailComponent implements OnInit {
         return 'shopping_cart';
       default:
         return 'description';
+    }
+  }
+
+  completeProfile(): void {
+    if (!this.clientId) return;
+    this.router.navigate(['/p/clients', this.clientId, 'edit']);
+  }
+
+  toggleEditMode(): void {
+    this.isEditMode = !this.isEditMode;
+  }
+
+  saveClient(): void {
+    if (!this.clientId) return;
+    // Implement save logic here if needed or relying on child components
+    // For now, toggle back to view mode
+    this.isEditMode = false;
+  }
+
+  deleteClient(): void {
+    if (!this.clientId) return;
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce client ?\n\nAttention: Cette action supprimera également tous les dossiers associés non-facturés.')) {
+      this.clientService.deleteClient(this.clientId).subscribe({
+        next: () => {
+          this.router.navigate(['/p/clients']);
+        },
+        error: (err) => {
+          console.error('Erreur suppression client:', err);
+          // Backend returns 500/400 with message, display it
+          alert(err.error?.message || err.message || 'Impossible de supprimer ce client.');
+        }
+      });
+    }
+  }
+
+  deleteFiche(fiche: FicheClient): void {
+    if (confirm(`Voulez-vous vraiment supprimer ce dossier ${fiche.type} du ${new Date(fiche.dateCreation).toLocaleDateString()} ?`)) {
+      this.ficheService.deleteFiche(fiche.id).subscribe({
+        next: () => {
+          this.loadFiches();
+          this.loadStats();
+        },
+        error: (err) => {
+          console.error('Erreur suppression fiche:', err);
+          alert(err.error?.message || err.message || 'Impossible de supprimer cette fiche.');
+        }
+      });
     }
   }
 
