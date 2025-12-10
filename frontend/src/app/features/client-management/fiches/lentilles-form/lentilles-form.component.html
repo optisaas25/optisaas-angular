@@ -11,10 +11,31 @@
             </div>
         </div>
         <div class="header-actions">
-            <button mat-stroked-button (click)="goBack()">Annuler</button>
-            <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="ficheForm.invalid || loading">
-                <mat-icon>save</mat-icon>
-                {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
+            <!-- View Mode: Retour -->
+            <button mat-stroked-button (click)="goBack()" *ngIf="!isEditMode">
+                <mat-icon>arrow_back</mat-icon> Retour
+            </button>
+
+            <!-- Create Mode: Annuler -->
+            <button mat-stroked-button (click)="goBack()" *ngIf="isEditMode && (!ficheId || ficheId === 'new')">
+                Annuler
+            </button>
+
+            <!-- Edit Mode: Annuler -->
+            <button mat-stroked-button (click)="toggleEditMode()" *ngIf="isEditMode && ficheId && ficheId !== 'new'">
+                Annuler
+            </button>
+
+            <!-- View Mode: Modifier -->
+            <button mat-raised-button color="primary" (click)="toggleEditMode()"
+                *ngIf="!isEditMode && ficheId && ficheId !== 'new'">
+                <mat-icon>edit</mat-icon> Modifier
+            </button>
+
+            <!-- Edit Mode: Enregistrer -->
+            <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="ficheForm.invalid || loading"
+                *ngIf="isEditMode">
+                <mat-icon>save</mat-icon> Enregistrer
             </button>
         </div>
     </div>

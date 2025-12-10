@@ -1,0 +1,22 @@
+<div class="analysis">
+    <canvas #canvas style="width:100%; border:1px solid #ddd;"></canvas>
+    <div class="controls" style="margin-top:8px;">
+        <label>Largeur monture (mm):
+            <input type="number" [(ngModel)]="frameWidthMM" (change)="drawPreview()" />
+        </label>
+        <button (click)="adjustBottomGlass(-2)">Haut</button>
+        <button (click)="adjustBottomGlass(2)">Bas</button>
+        <button (click)="generateAnimation()" [disabled]="!data">Générer animation</button>
+        <a *ngIf="animUrl" [href]="animUrl" download="optisass_anim.webm">Télécharger animation</a>
+    </div>
+
+    <div *ngIf="measures" class="measures"
+        style="margin-top:8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="grid-column: 1 / -1"><strong>Mesures Calculées</strong></div>
+        <div>PD Total: {{measures.pd | number:'1.1-1'}} mm</div>
+        <div>PD G (Img D): {{measures.pdLeft | number:'1.1-1'}} mm</div>
+        <div>PD D (Img G): {{measures.pdRight | number:'1.1-1'}} mm</div>
+        <div>Hauteur G: {{measures.hpLeft | number:'1.1-1'}} mm</div>
+        <div>Hauteur D: {{measures.hpRight | number:'1.1-1'}} mm</div>
+    </div>
+</div>

@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { environment } from 'environments/environment';
 import {
     FicheClient,
     FicheMonture,
@@ -9,150 +12,80 @@ import {
     FicheLentillesCreate,
     FicheProduitCreate,
     StatutFiche,
-    TypeFiche,
-    TypeVerre,
-    TypeLentille
+    TypeFiche
 } from '../models/fiche-client.model';
 
 @Injectable({
     providedIn: 'root'
 })
 export class FicheService {
-    // Mock data pour démonstration
-    private fiches: FicheClient[] = [
-        // Fiche Monture exemple
-        // Fiche Monture exemple supprimée pour ne pas ralentir/polluer l'affichage
-        // { ... }
-        // Fiche Lentilles exemple
-        {
-            id: 'f2',
-            clientId: '1',
-            type: TypeFiche.LENTILLES,
-            dateCreation: new Date('2024-10-20'),
-            statut: StatutFiche.COMMANDE,
-            montantTotal: 450,
-            montantPaye: 200,
-            montantRestant: 250,
-            prescription: {
-                od: { sphere: -3.0, cylindre: -0.5, axe: 180, rayonCourbure: 8.6, diametre: 14.2 },
-                og: { sphere: -2.75, cylindre: -0.25, axe: 175, rayonCourbure: 8.6, diametre: 14.2 },
-                dateOrdonnance: new Date('2024-10-15'),
-                nomMedecin: 'Dr. Bennani'
-            },
-            lentilles: {
-                type: TypeLentille.MENSUELLE,
-                usage: 'Myopie',
-                od: {
-                    marque: 'Acuvue',
-                    modele: 'Oasys',
-                    rayon: 8.6,
-                    diametre: 14.2,
-                    prix: 75
-                },
-                og: {
-                    marque: 'Acuvue',
-                    modele: 'Oasys',
-                    rayon: 8.6,
-                    diametre: 14.2,
-                    prix: 75
-                }
-            }
-        }
-    ];
+    private apiUrl = `${environment.apiUrl}/fiches`;
 
-    constructor() { }
+    constructor(private http: HttpClient) { }
 
     /**
      * Récupérer toutes les fiches d'un client
      */
     getFichesByClient(clientId: string): Observable<FicheClient[]> {
-        const clientFiches = this.fiches.filter(f => f.clientId === clientId);
-        return of(clientFiches);
+        return this.http.get<any[]>(`${this.apiUrl}?clientId=${clientId}`).pipe(
+            map(fiches => fiches.map(f => this.mapBackendToFrontend(f)))
+        );
     }
 
     /**
      * Récupérer une fiche par ID
      */
     getFicheById(id: string): Observable<FicheClient | undefined> {
-        const fiche = this.fiches.find(f => f.id === id);
-        return of(fiche);
+        return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+            map(f => f ? this.mapBackendToFrontend(f) : undefined)
+        );
     }
 
     /**
      * Créer une fiche monture
      */
     createFicheMonture(fiche: FicheMontureCreate): Observable<FicheMonture> {
-        const newFiche: FicheMonture = {
-            ...fiche,
-            id: this.generateId(),
-            dateCreation: new Date(),
-            montantRestant: fiche.montantTotal - fiche.montantPaye
-        };
-        this.fiches.push(newFiche);
-        return of(newFiche);
+        const payload = this.mapFrontendToBackendCreate(fiche);
+        return this.http.post<any>(this.apiUrl, payload).pipe(
+            map(created => this.mapBackendToFrontend(created) as FicheMonture)
+        );
     }
 
     /**
      * Créer une fiche lentilles
      */
     createFicheLentilles(fiche: FicheLentillesCreate): Observable<FicheLentilles> {
-        const newFiche: FicheLentilles = {
-            ...fiche,
-            id: this.generateId(),
-            dateCreation: new Date(),
-            montantRestant: fiche.montantTotal - fiche.montantPaye
-        };
-        this.fiches.push(newFiche);
-        return of(newFiche);
+        const payload = this.mapFrontendToBackendCreate(fiche);
+        return this.http.post<any>(this.apiUrl, payload).pipe(
+            map(created => this.mapBackendToFrontend(created) as FicheLentilles)
+        );
     }
 
     /**
      * Créer une fiche produit
      */
     createFicheProduit(fiche: FicheProduitCreate): Observable<FicheProduit> {
-        const newFiche: FicheProduit = {
-            ...fiche,
-            id: this.generateId(),
-            dateCreation: new Date(),
-            montantRestant: fiche.montantTotal - fiche.montantPaye
-        };
-        this.fiches.push(newFiche);
-        return of(newFiche);
+        const payload = this.mapFrontendToBackendCreate(fiche);
+        return this.http.post<any>(this.apiUrl, payload).pipe(
+            map(created => this.mapBackendToFrontend(created) as FicheProduit)
+        );
     }
 
     /**
      * Mettre à jour une fiche
      */
     updateFiche(id: string, updates: Partial<FicheClient>): Observable<FicheClient> {
-        const index = this.fiches.findIndex(f => f.id === id);
-        if (index !== -1) {
-            this.fiches[index] = { ...this.fiches[index], ...updates } as FicheClient;
-            // Recalculer le montant restant si nécessaire
-            if (updates.montantTotal !== undefined || updates.montantPaye !== undefined) {
-                this.fiches[index].montantRestant =
-                    this.fiches[index].montantTotal - this.fiches[index].montantPaye;
-            }
-            return of(this.fiches[index]);
-        }
-        throw new Error('Fiche non trouvée');
+        const payload = this.mapFrontendToBackendUpdate(updates);
+        return this.http.put<any>(`${this.apiUrl}/${id}`, payload).pipe(
+            map(updated => this.mapBackendToFrontend(updated))
+        );
     }
 
     /**
      * Supprimer une fiche
      */
     deleteFiche(id: string): Observable<void> {
-        const index = this.fiches.findIndex(f => f.id === id);
-        if (index !== -1) {
-            this.fiches.splice(index, 1);
-        }
-        return of(void 0);
-    }
-
-    /**
-     * Générer un ID unique
-     */
-    private generateId(): string {
-        return 'f' + Date.now() + Math.random().toString(36).substr(2, 9);
+        return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
     /**
@@ -166,17 +99,65 @@ export class FicheService {
         montantTotal: number;
         montantRestant: number;
     }> {
-        const clientFiches = this.fiches.filter(f => f.clientId === clientId);
+        return this.getFichesByClient(clientId).pipe(
+            map(clientFiches => {
+                const stats = {
+                    total: clientFiches.length,
+                    enCours: clientFiches.filter(f => f.statut === StatutFiche.EN_COURS).length,
+                    commande: clientFiches.filter(f => f.statut === StatutFiche.COMMANDE).length,
+                    livre: clientFiches.filter(f => f.statut === StatutFiche.LIVRE).length,
+                    montantTotal: clientFiches.reduce((sum, f) => sum + f.montantTotal, 0),
+                    montantRestant: clientFiches.reduce((sum, f) => sum + (f.montantRestant || 0), 0)
+                };
+                return stats;
+            })
+        );
+    }
 
-        const stats = {
-            total: clientFiches.length,
-            enCours: clientFiches.filter(f => f.statut === StatutFiche.EN_COURS).length,
-            commande: clientFiches.filter(f => f.statut === StatutFiche.COMMANDE).length,
-            livre: clientFiches.filter(f => f.statut === StatutFiche.LIVRE).length,
-            montantTotal: clientFiches.reduce((sum, f) => sum + f.montantTotal, 0),
-            montantRestant: clientFiches.reduce((sum, f) => sum + f.montantRestant, 0)
+    // --- Mappers ---
+
+    private mapFrontendToBackendCreate(fiche: any): any {
+        const { id, clientId, statut, type, montantTotal, montantPaye, dateCreation, ...content } = fiche;
+
+        return {
+            clientId,
+            statut,
+            type,
+            montantTotal,
+            montantPaye: montantPaye || 0,
+            content: content // Store the rest as JSON content
         };
+    }
 
-        return of(stats);
+    private mapFrontendToBackendUpdate(updates: Partial<FicheClient>): any {
+        const { id, clientId, statut, type, montantTotal, montantPaye, dateCreation, ...content } = updates as any;
+
+        const payload: any = {};
+        if (statut !== undefined) payload.statut = statut;
+        if (type !== undefined) payload.type = type;
+        if (montantTotal !== undefined) payload.montantTotal = montantTotal;
+        if (montantPaye !== undefined) payload.montantPaye = montantPaye;
+
+        // If there are content fields, we ideally need to merge them with existing content or replace.
+        // For simplicity with PUT, we might be replacing or needing to fetch first.
+        // Backend PUT usually replaces. If we want partial update of content, we need a smarter backend or fetch-merge-save.
+        // Assuming updates contains the specific fields we want to save into content.
+        if (Object.keys(content).length > 0) {
+            payload.content = content;
+        }
+
+        return payload;
+    }
+
+    private mapBackendToFrontend(backendFiche: any): FicheClient {
+        const { content, ...meta } = backendFiche;
+        // recalculate montantRestant as it is not stored in DB usually (calculated)
+        const montantRestant = meta.montantTotal - meta.montantPaye;
+
+        return {
+            ...meta,
+            ...content, // Spread content back to top level
+            montantRestant
+        } as FicheClient;
     }
 }

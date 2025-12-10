@@ -114,7 +114,7 @@
                     <!-- Type Column -->
                     <ng-container matColumnDef="type">
                         <th mat-header-cell *matHeaderCellDef>Type</th>
-                        <td mat-cell *matCellDef="let client">{{ client.type }}</td>
+                        <td mat-cell *matCellDef="let client">{{ client.typeClient | titlecase }}</td>
                     </ng-container>
 
                     <!-- Nom Column -->
@@ -151,7 +151,8 @@
                     <ng-container matColumnDef="statut">
                         <th mat-header-cell *matHeaderCellDef>Statut</th>
                         <td mat-cell *matCellDef="let client">
-                            <span class="status-badge" [class.status-actif]="client.statut === 'Actif'">
+                            <span class="status-badge" [class.status-actif]="client.statut === 'Actif'"
+                                [class.status-inactif]="client.statut === 'Inactif'">
                                 {{ client.statut }}
                             </span>
                         </td>
