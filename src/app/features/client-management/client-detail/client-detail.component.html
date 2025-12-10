@@ -3,9 +3,17 @@
     <div class="header">
         <div class="header-content">
             <h1>Dossier Fiches Client</h1>
+            <span class="status-badge" [class.actif]="client?.statut === StatutClient.ACTIF"
+                [class.inactif]="client?.statut === StatutClient.INACTIF">
+                {{ client?.statut || 'N/A' }}
+            </span>
         </div>
         <div class="header-actions">
-            <!-- Actions moved to footer -->
+            <!-- Complete Profile Button for Inactive Clients -->
+            <button mat-stroked-button class="complete-profile-btn" *ngIf="client?.statut === StatutClient.INACTIF"
+                (click)="completeProfile()">
+                <mat-icon>edit_note</mat-icon> Compléter le profil
+            </button>
         </div>
     </div>
 
@@ -438,6 +446,10 @@
                             </button>
                             <button mat-icon-button class="action-btn edit" (click)="viewFiche(fiche)" title="Modifier">
                                 <mat-icon>edit</mat-icon>
+                            </button>
+                            <button mat-icon-button class="action-btn delete"
+                                (click)="deleteFiche(fiche); $event.stopPropagation()" title="Supprimer">
+                                <mat-icon color="warn">delete</mat-icon>
                             </button>
                         </div>
                     </div>

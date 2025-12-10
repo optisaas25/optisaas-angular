@@ -74,8 +74,22 @@ export class LentillesFormComponent implements OnInit {
         }
 
         if (this.ficheId && this.ficheId !== 'new') {
-            this.isEditMode = true;
+            this.isEditMode = false;
+            this.ficheForm.disable();
             this.loadFiche();
+        } else {
+            this.isEditMode = true;
+            this.ficheForm.enable();
+        }
+    }
+
+
+    toggleEditMode(): void {
+        this.isEditMode = !this.isEditMode;
+        if (this.isEditMode) {
+            this.ficheForm.enable();
+        } else {
+            this.ficheForm.disable();
         }
     }
 
@@ -231,6 +245,18 @@ export class LentillesFormComponent implements OnInit {
             error: (err) => {
                 console.error('Error creating fiche lentilles:', err);
                 this.loading = false;
+
+                // Handle incomplete profile error
+                if (err.status === 400 && err.error?.missingFields) {
+                    const message = `Profil client incomplet.\n\nChamps manquants:\n${err.error.missingFields.join('\n')}\n\nVoulez-vous compléter le profil maintenant?`;
+
+                    if (confirm(message)) {
+                        this.router.navigate(['/p/clients', this.clientId, 'edit']);
+                    }
+                } else {
+                    alert('Erreur lors de la création de la fiche: ' + (err.message || 'Erreur inconnue'));
+                }
+
                 this.cdr.markForCheck();
             }
         });

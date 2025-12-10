@@ -214,8 +214,14 @@ export class MontureFormComponent implements OnInit {
         this.ficheId = this.route.snapshot.paramMap.get('ficheId');
 
         if (this.ficheId && this.ficheId !== 'new') {
-            this.isEditMode = true;
+            // VIEW MODE: Existing Fiche
+            this.isEditMode = false;
+            this.ficheForm.disable();
             this.loadFiche();
+        } else {
+            // CREATE MODE: New Fiche
+            this.isEditMode = true;
+            this.ficheForm.enable();
         }
 
         // Setup generic listeners for Main Equipment
@@ -230,6 +236,20 @@ export class MontureFormComponent implements OnInit {
                 this.ficheForm.get('monture.typeEquipement')?.setValue(value);
             }
         });
+    }
+
+
+    toggleEditMode(): void {
+        this.isEditMode = !this.isEditMode;
+        if (this.isEditMode) {
+            this.ficheForm.enable();
+        } else {
+            this.ficheForm.disable();
+            // Optional: Reload to reset if cancelling edits?
+            if (this.ficheId && this.ficheId !== 'new') {
+                this.loadFiche(); // Reset data to saved state on cancel
+            }
+        }
     }
 
     initForm(): FormGroup {
@@ -256,7 +276,8 @@ export class MontureFormComponent implements OnInit {
                 }),
                 datePrescription: [new Date()],
                 prescripteur: [''],
-                dateControle: [null]
+                dateControle: [null],
+                prescriptionFiles: [[]]  // Store prescription attachments
             }),
 
             // Onglet 2: Monture & Verres
@@ -303,6 +324,9 @@ export class MontureFormComponent implements OnInit {
                 diametreEffectif: ['65/70'],
                 remarques: ['']
             }),
+
+            // AI suggestions
+            suggestions: [[]],
 
             // Liste des équipements additionnels
             equipements: this.fb.array([])
@@ -483,6 +507,8 @@ export class MontureFormComponent implements OnInit {
         const diffCyl = Math.abs(corrOD.cyl - corrOG.cyl);
 
         this.suggestions = [];
+        // Sync with FormControl
+        this.ficheForm.get('suggestions')?.setValue([]);
 
         if (diffSph <= 0.5 && diffCyl <= 0.75) {
             // Case A: Similar Prescriptions -> Suggest Single Pair (Aesthetic Priority)
@@ -533,6 +559,9 @@ export class MontureFormComponent implements OnInit {
                 warnings: recOG.warnings
             });
         }
+
+        // Sync with FormControl
+        this.ficheForm.get('suggestions')?.setValue(this.suggestions);
 
         this.showSuggestions = true;
         this.cdr.markForCheck();
@@ -752,6 +781,8 @@ export class MontureFormComponent implements OnInit {
                     uploadDate: new Date()
                 };
                 this.prescriptionFiles.push(prescriptionFile);
+                // Sync with FormControl
+                this.ficheForm.get('ordonnance.prescriptionFiles')?.setValue(this.prescriptionFiles);
                 if (file.type.startsWith('image/')) {
                     this.extractData(prescriptionFile);
                 }
@@ -849,6 +880,8 @@ export class MontureFormComponent implements OnInit {
                 };
 
                 this.prescriptionFiles.push(prescriptionFile);
+                // Sync with FormControl
+                this.ficheForm.get('ordonnance.prescriptionFiles')?.setValue(this.prescriptionFiles);
                 this.extractData(prescriptionFile);
                 this.closeCameraModal();
                 this.cdr.markForCheck();
@@ -980,7 +1013,64 @@ export class MontureFormComponent implements OnInit {
     }
 
     loadFiche(): void {
-        // TODO: Charger la fiche existante
+        if (!this.ficheId) return;
+
+        this.loading = true;
+        this.ficheService.getFicheById(this.ficheId).subscribe({
+            next: (fiche: any) => {
+                if (fiche) {
+                    // Patch Form Values
+                    this.ficheForm.patchValue({
+                        ordonnance: fiche.ordonnance,
+                        monture: fiche.monture,
+                        verres: fiche.verres,
+                        montage: fiche.montage,
+                        suggestions: fiche.suggestions
+                    }, { emitEvent: false });
+
+                    // Restore suggestions and prescription files for display
+                    if (fiche.suggestions) {
+                        this.suggestions = fiche.suggestions;
+                        this.showSuggestions = this.suggestions.length > 0;
+                    }
+
+                    if (fiche.ordonnance && fiche.ordonnance.prescriptionFiles) {
+                        this.prescriptionFiles = fiche.ordonnance.prescriptionFiles;
+                    }
+
+                    // Handle Equipments (FormArray)
+                    if (fiche.equipements && Array.isArray(fiche.equipements)) {
+                        const equipementsArray = this.ficheForm.get('equipements') as FormArray;
+                        equipementsArray.clear(); // Clear existing
+                        fiche.equipements.forEach((eq: any) => {
+                            const eqGroup = this.fb.group({
+                                type: [eq.type],
+                                dateAjout: [eq.dateAjout],
+                                monture: this.fb.group(eq.monture),
+                                verres: this.fb.group(eq.verres)
+                            });
+                            this.setupLensListeners(eqGroup);
+                            equipementsArray.push(eqGroup);
+                            this.addedEquipmentsExpanded.push(false);
+                        });
+                    }
+
+                    // Trigger visuals
+                    setTimeout(() => {
+                        this.calculateLensPrices();
+                        this.drawFrameVisualization();
+                        if (this.activeTab === 2) this.drawCenteringCanvas();
+                    }, 500);
+                }
+                this.loading = false;
+                this.cdr.markForCheck();
+            },
+            error: (err) => {
+                console.error('Error loading fiche:', err);
+                this.loading = false;
+                alert('Erreur lors du chargement de la fiche.');
+            }
+        });
     }
 
     setActiveTab(index: number): void {
@@ -1129,21 +1219,42 @@ export class MontureFormComponent implements OnInit {
         if (this.ficheForm.invalid || !this.clientId) return;
         this.loading = true;
         const formValue = this.ficheForm.value;
+
         // Fix: Parse as floats to avoid string concatenation
         const pMonture = parseFloat(formValue.monture.prixMonture) || 0;
         const pOD = parseFloat(formValue.verres.prixOD) || 0;
         const pOG = parseFloat(formValue.verres.prixOG) || 0;
         const montantTotal = pMonture + pOD + pOG;
+
+        // Convert prescription files to serializable format (remove File objects)
+        const serializableFiles = this.prescriptionFiles.map(file => ({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            preview: typeof file.preview === 'string' ? file.preview : file.preview.toString(),
+            uploadDate: file.uploadDate
+        }));
+
+        // Build complete fiche data with ALL fields
         const ficheData: FicheMontureCreate = {
             clientId: this.clientId,
             type: TypeFiche.MONTURE,
             statut: StatutFiche.EN_COURS,
-            ordonnance: formValue.ordonnance,
+            ordonnance: {
+                ...formValue.ordonnance,
+                prescriptionFiles: serializableFiles  // ✅ Serializable prescription attachments
+            },
             monture: formValue.monture,
             verres: formValue.verres,
+            montage: formValue.montage,
+            suggestions: this.suggestions,  // ✅ Add AI suggestions
+            equipements: formValue.equipements || [],  // ✅ Add additional equipment
             montantTotal,
             montantPaye: 0
         };
+
+        console.log('📤 Submitting fiche data:', ficheData);
+
         this.ficheService.createFicheMonture(ficheData).subscribe({
             next: () => {
                 this.loading = false;
@@ -1152,6 +1263,18 @@ export class MontureFormComponent implements OnInit {
             error: (err) => {
                 console.error('Error creating fiche:', err);
                 this.loading = false;
+
+                // Handle incomplete profile error
+                if (err.status === 400 && err.error?.missingFields) {
+                    const message = `Profil client incomplet.\n\nChamps manquants:\n${err.error.missingFields.join('\n')}\n\nVoulez-vous compléter le profil maintenant?`;
+
+                    if (confirm(message)) {
+                        this.router.navigate(['/p/clients', this.clientId, 'edit']);
+                    }
+                } else {
+                    alert('Erreur lors de la création de la fiche: ' + (err.message || 'Erreur inconnue'));
+                }
+
                 this.cdr.markForCheck();
             }
         });

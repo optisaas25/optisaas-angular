@@ -14,6 +14,9 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog } from '@angular/material/dialog';
+import { debounceTime, distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
+import { FamilyCheckDialogComponent, FamilyCheckDialogResult } from '../components/family-check-dialog/family-check-dialog.component';
 import { ClientService } from '../services/client.service';
 import {
   TypeClient,
@@ -97,7 +100,8 @@ export class ClientFormComponent implements OnInit {
     private fb: FormBuilder,
     private clientService: ClientService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -128,6 +132,10 @@ export class ClientFormComponent implements OnInit {
     // Écouter les changements de rôle famille
     this.clientForm.get('roleFamille')?.valueChanges.subscribe(role => {
       this.toggleFamilleFields(role);
+      // Re-apply validation when role changes
+      if (this.clientForm.get('typeClient')?.value === TypeClient.PARTICULIER) {
+        this.setParticulierValidators();
+      }
     });
 
     // Écouter les changements de convention
@@ -151,6 +159,44 @@ export class ClientFormComponent implements OnInit {
         authControl?.setValue('');
       }
       authControl?.updateValueAndValidity();
+    });
+
+    // Smart Family Group Check
+    this.clientForm.get('nom')?.valueChanges.pipe(
+      debounceTime(800),
+      distinctUntilChanged(),
+      filter(nom => !!nom && nom.length > 2 && !this.isEditMode() && this.clientForm.get('typeClient')?.value === TypeClient.PARTICULIER),
+      switchMap(nom => this.clientService.searchClientsByNom(nom))
+    ).subscribe(clients => {
+      if (clients && clients.length > 0) {
+        this.openFamilyCheckDialog(clients, this.clientForm.get('nom')?.value);
+      }
+    });
+
+    // Default to PRINCIPAL and INACTIF on Create
+    if (!this.isEditMode()) {
+      this.clientForm.get('roleFamille')?.setValue(RoleClientFamille.PRINCIPAL);
+      this.clientForm.get('statut')?.setValue(StatutClient.INACTIF);
+    }
+  }
+
+  private openFamilyCheckDialog(existingClients: Client[], currentNom: string): void {
+    const dialogRef = this.dialog.open(FamilyCheckDialogComponent, {
+      width: '600px',
+      data: { existingClients, currentNom },
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe((result: FamilyCheckDialogResult) => {
+      if (result) {
+        if (result.action === 'join') {
+          this.clientForm.get('roleFamille')?.setValue(RoleClientFamille.MEMBRE);
+          this.clientForm.get('statut')?.setValue(StatutClient.INACTIF);
+        } else {
+          this.clientForm.get('roleFamille')?.setValue(RoleClientFamille.PRINCIPAL);
+          this.clientForm.get('statut')?.setValue(StatutClient.INACTIF);
+        }
+      }
     });
   }
 
@@ -229,7 +275,7 @@ export class ClientFormComponent implements OnInit {
       }),
 
       // Groupe Famille
-      roleFamille: [''],
+      roleFamille: [RoleClientFamille.PRINCIPAL],
       lienParental: [''],
       nomFamille: [''],
       beneficiaireOptique: [false],
@@ -299,16 +345,33 @@ export class ClientFormComponent implements OnInit {
   }
 
   private setParticulierValidators(): void {
+    const isMembre = this.clientForm.get('roleFamille')?.value === RoleClientFamille.MEMBRE;
+
+    // Always required: nom and prenom
     this.clientForm.get('titre')?.setValidators([Validators.required]);
     this.clientForm.get('nom')?.setValidators([Validators.required]);
     this.clientForm.get('prenom')?.setValidators([Validators.required]);
-    this.clientForm.get('prenom')?.setValidators([Validators.required]);
+
+    if (isMembre) {
+      // MEMBRE: Minimal validation (nom, prenom only)
+      // Clear validators for other fields
+      this.clientForm.get('dateNaissance')?.clearValidators();
+      this.clientForm.get('telephone')?.clearValidators();
+      this.clientForm.get('ville')?.clearValidators();
+    } else {
+      // PRINCIPAL: Full validation
+      this.clientForm.get('dateNaissance')?.setValidators([Validators.required]);
+      this.clientForm.get('telephone')?.setValidators([Validators.required]);
+      this.clientForm.get('ville')?.setValidators([Validators.required]);
+    }
+
     // Validation dynamique gérée par onTitreChange
-    // this.clientForm.get('numeroPieceIdentite')?.setValidators([Validators.required, Validators.minLength(5)]);
     this.onTitreChange(this.clientForm.get('titre')?.value);
-    this.clientForm.get('dateNaissance')?.setValidators([Validators.required]);
-    this.clientForm.get('telephone')?.setValidators([Validators.required]);
-    this.clientForm.get('ville')?.setValidators([Validators.required]);
+
+    // Update validity for all fields
+    ['dateNaissance', 'telephone', 'ville'].forEach(field => {
+      this.clientForm.get(field)?.updateValueAndValidity();
+    });
   }
 
   private setAnonymeValidators(): void {
@@ -367,13 +430,13 @@ export class ClientFormComponent implements OnInit {
     const cinParentControl = this.clientForm.get('cinParent');
 
     if (titre === TitreClient.ENF) {
-      // Si enfant : Numéro pièce masqué/optionnel, CIN Parent requis
+      // Si enfant : Numéro pièce masqué/optionnel, CIN Parent optionnel pour le moment
       numPieceControl?.clearValidators();
-      cinParentControl?.setValidators([Validators.required, Validators.minLength(5)]);
+      cinParentControl?.setValidators([Validators.minLength(5)]);
     } else {
-      // Si adulte : Numéro pièce requis, CIN Parent masqué/optionnel
+      // Si adulte : Numéro pièce optionnel pour le moment
       cinParentControl?.clearValidators();
-      numPieceControl?.setValidators([Validators.required, Validators.minLength(5)]);
+      numPieceControl?.setValidators([Validators.minLength(5)]);
     }
 
     numPieceControl?.updateValueAndValidity();
@@ -637,7 +700,9 @@ export class ClientFormComponent implements OnInit {
       error: (error) => {
         console.error('Erreur lors de la création du client:', error);
         this.loading.set(false);
-        alert(error.message || 'Erreur lors de la création du client');
+        const errorMsg = `Erreur ${error.status}: ${error.statusText}\n${error.message}\nURL: ${error.url}`;
+        alert(errorMsg);
+        console.error('Erreur détaillée:', error);
       }
     });
   }

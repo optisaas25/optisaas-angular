@@ -96,6 +96,11 @@ th.mat-header-cell {
     color: #155724;
 }
 
+.status-inactif {
+    background-color: #fee4e0;
+    color: #c0392b;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .stat-number {
