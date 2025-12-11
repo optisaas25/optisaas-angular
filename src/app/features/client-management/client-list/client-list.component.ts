@@ -11,7 +11,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { ClientService } from '../services/client.service';
-import { Client, StatutClient } from '../models/client.model';
+import { Client, StatutClient, TypeClient, isClientParticulier, isClientProfessionnel } from '../models/client.model';
 
 interface ClientStats {
     actifs: number;
@@ -48,7 +48,7 @@ export class ClientListComponent implements OnInit {
     pageIndex = 0;
     totalItems = 0;
 
-    clientTypes = ['Particulier', 'Professionnel', 'Anonyme'];
+    clientTypes = ['Particulier', 'Professionnel', 'Client de passage'];
     statuts = ['Actif', 'Inactif', 'En compte', 'De passage'];
 
     constructor(
@@ -139,5 +139,69 @@ export class ClientListComponent implements OnInit {
     exportClients() {
         console.log('Export des clients');
         // TODO: Implémenter l'export
+    }
+
+    // Helper methods for display
+    getClientName(client: Client): string {
+        if (isClientProfessionnel(client)) {
+            return client.raisonSociale || '-';
+        }
+        if (isClientParticulier(client)) {
+            return client.nom || '-';
+        }
+        // For anonyme clients
+        return (client as any).nom || '-';
+    }
+
+    getClientPrenom(client: Client): string {
+        if (isClientProfessionnel(client)) {
+            return '-';
+        }
+        if (isClientParticulier(client)) {
+            return client.prenom || '-';
+        }
+        // For anonyme clients
+        return (client as any).prenom || '-';
+    }
+
+    getPieceIdentite(client: Client): string {
+        if (isClientProfessionnel(client)) {
+            return client.registreCommerce || '-';
+        }
+        if (isClientParticulier(client)) {
+            const particulier = client as any;
+            if (particulier.titre === 'Enf') {
+                return particulier.cinParent || '-';
+            }
+            return particulier.numeroPieceIdentite || '-';
+        }
+        return '-';
+    }
+
+    getClientTitle(client: Client): string {
+        if (isClientProfessionnel(client)) {
+            return 'Prof';
+        }
+        const typeStr = typeof client.typeClient === 'string' ? client.typeClient.toLowerCase() : '';
+        if (typeStr === 'anonyme' || client.typeClient === TypeClient.ANONYME) {
+            return 'Client';
+        }
+        if (isClientParticulier(client)) {
+            return (client as any).titre || '-';
+        }
+        return '-';
+    }
+
+    getTypeLabel(typeClient: string): string {
+        if (typeClient === 'anonyme' || typeClient === TypeClient.ANONYME) {
+            return 'Client de passage';
+        }
+        if (typeClient === 'particulier') {
+            return 'Particulier';
+        }
+        if (typeClient === 'professionnel') {
+            return 'Professionnel';
+        }
+        return typeClient;
     }
 }

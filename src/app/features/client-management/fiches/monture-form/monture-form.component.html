@@ -42,10 +42,10 @@
                 <mat-icon>edit</mat-icon> Modifier
             </button>
 
-            <!-- Edit Mode: Enregistrer -->
+            <!-- Edit Mode: Enregistrer / Mettre à jour -->
             <button type="button" class="btn-primary" (click)="onSubmit()" [disabled]="ficheForm.invalid || loading"
                 *ngIf="isEditMode">
-                <mat-icon>save</mat-icon> Enregistrer
+                <mat-icon>save</mat-icon> {{ (ficheId && ficheId !== 'new') ? 'Mettre à jour' : 'Enregistrer' }}
             </button>
         </div>
     </div>
@@ -459,26 +459,26 @@
                                 <div class="grid grid-cols-5 gap-4 mb-4">
                                     <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                         <mat-label>Marque</mat-label>
-                                        <mat-select formControlName="marque">
+                                        <mat-select formControlName="marque" [disabled]="!isEditMode">
                                             <mat-option *ngFor="let b of lensBrands" [value]="b">{{ b }}</mat-option>
                                         </mat-select>
                                     </mat-form-field>
 
                                     <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                         <mat-label>Matière</mat-label>
-                                        <mat-select formControlName="matiere">
+                                        <mat-select formControlName="matiere" [disabled]="!isEditMode">
                                             <mat-option *ngFor="let m of lensMaterials" [value]="m">{{ m }}</mat-option>
                                         </mat-select>
                                     </mat-form-field>
                                     <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                         <mat-label>Indice</mat-label>
-                                        <mat-select formControlName="indice">
+                                        <mat-select formControlName="indice" [disabled]="!isEditMode">
                                             <mat-option *ngFor="let i of lensIndices" [value]="i">{{ i }}</mat-option>
                                         </mat-select>
                                     </mat-form-field>
                                     <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                         <mat-label>Traitement</mat-label>
-                                        <mat-select formControlName="traitement" multiple>
+                                        <mat-select formControlName="traitement" multiple [disabled]="!isEditMode">
                                             <mat-option *ngFor="let t of lensTreatments" [value]="t">{{ t
                                                 }}</mat-option>
                                         </mat-select>
@@ -486,7 +486,7 @@
 
                                     <mat-form-field appearance="outline" class="w-full">
                                         <mat-label>Prix Unitaire</mat-label>
-                                        <input matInput type="text" formControlName="prixOD"
+                                        <input matInput type="text" formControlName="prixOD" [readonly]="!isEditMode"
                                             (blur)="formatPrice(ficheForm.get('verres.prixOD'), $event)">
                                         <span matSuffix>DH</span>
                                         <mat-hint>Calcul auto (x2)</mat-hint>
@@ -501,28 +501,29 @@
                                     <div class="grid grid-cols-1 gap-4 mb-4">
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Marque</mat-label>
-                                            <mat-select formControlName="marqueOD">
+                                            <mat-select formControlName="marqueOD" [disabled]="!isEditMode">
                                                 <mat-option *ngFor="let b of lensBrands" [value]="b">{{ b
                                                     }}</mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Matière</mat-label>
-                                            <mat-select formControlName="matiereOD">
+                                            <mat-select formControlName="matiereOD" [disabled]="!isEditMode">
                                                 <mat-option *ngFor="let m of lensMaterials" [value]="m">{{ m
                                                     }}</mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Indice</mat-label>
-                                            <mat-select formControlName="indiceOD">
+                                            <mat-select formControlName="indiceOD" [disabled]="!isEditMode">
                                                 <mat-option *ngFor="let i of lensIndices" [value]="i">{{ i
                                                     }}</mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Traitement</mat-label>
-                                            <mat-select formControlName="traitementOD" multiple>
+                                            <mat-select formControlName="traitementOD" multiple
+                                                [disabled]="!isEditMode">
                                                 <mat-option *ngFor="let t of lensTreatments" [value]="t">{{ t
                                                     }}</mat-option>
                                             </mat-select>
@@ -530,6 +531,7 @@
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Prix Verre OD</mat-label>
                                             <input matInput type="text" formControlName="prixOD"
+                                                [readonly]="!isEditMode"
                                                 (blur)="formatPrice(ficheForm.get('verres.prixOD'), $event)">
                                             <span matSuffix>DH</span>
                                         </mat-form-field>
@@ -540,28 +542,29 @@
                                     <div class="grid grid-cols-1 gap-4 mb-4">
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Marque</mat-label>
-                                            <mat-select formControlName="marqueOG">
+                                            <mat-select formControlName="marqueOG" [disabled]="!isEditMode">
                                                 <mat-option *ngFor="let b of lensBrands" [value]="b">{{ b
                                                     }}</mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Matière</mat-label>
-                                            <mat-select formControlName="matiereOG">
+                                            <mat-select formControlName="matiereOG" [disabled]="!isEditMode">
                                                 <mat-option *ngFor="let m of lensMaterials" [value]="m">{{ m
                                                     }}</mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Indice</mat-label>
-                                            <mat-select formControlName="indiceOG">
+                                            <mat-select formControlName="indiceOG" [disabled]="!isEditMode">
                                                 <mat-option *ngFor="let i of lensIndices" [value]="i">{{ i
                                                     }}</mat-option>
                                             </mat-select>
                                         </mat-form-field>
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Traitement</mat-label>
-                                            <mat-select formControlName="traitementOG" multiple>
+                                            <mat-select formControlName="traitementOG" multiple
+                                                [disabled]="!isEditMode">
                                                 <mat-option *ngFor="let t of lensTreatments" [value]="t">{{ t
                                                     }}</mat-option>
                                             </mat-select>
@@ -569,6 +572,7 @@
                                         <mat-form-field appearance="outline" class="w-full" floatLabel="always">
                                             <mat-label>Prix Verre OG</mat-label>
                                             <input matInput type="text" formControlName="prixOG"
+                                                [readonly]="!isEditMode"
                                                 (blur)="formatPrice(ficheForm.get('verres.prixOG'), $event)">
                                             <span matSuffix>DH</span>
                                         </mat-form-field>

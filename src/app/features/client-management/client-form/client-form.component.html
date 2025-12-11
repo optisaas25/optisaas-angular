@@ -88,9 +88,10 @@
                                 </mat-form-field>
                                 }
 
-                                <!-- CHAMP NOM CONJOINT POUR MME ET MR -->
-                                @if (clientForm.get('titre')?.value === 'Mme' || clientForm.get('titre')?.value ===
-                                'Mr') {
+
+                                <!-- CHAMP NOM CONJOINT POUR MME ET MR (PARTICULIER UNIQUEMENT) -->
+                                @if (clientForm.get('typeClient')?.value === TypeClient.PARTICULIER &&
+                                (clientForm.get('titre')?.value === 'Mme' || clientForm.get('titre')?.value === 'Mr')) {
                                 <mat-form-field appearance="outline" class="col-span-4 w-full">
                                     <mat-label>Nom du conjoint (Optionnel)</mat-label>
                                     <input matInput formControlName="nomConjoint"

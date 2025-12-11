@@ -117,7 +117,7 @@ export class FicheService {
     // --- Mappers ---
 
     private mapFrontendToBackendCreate(fiche: any): any {
-        const { id, clientId, statut, type, montantTotal, montantPaye, dateCreation, ...content } = fiche;
+        const { id, clientId, statut, type, montantTotal, montantPaye, dateCreation, dateLivraisonEstimee, ...content } = fiche;
 
         return {
             clientId,
@@ -125,18 +125,20 @@ export class FicheService {
             type,
             montantTotal,
             montantPaye: montantPaye || 0,
+            dateLivraisonEstimee,
             content: content // Store the rest as JSON content
         };
     }
 
     private mapFrontendToBackendUpdate(updates: Partial<FicheClient>): any {
-        const { id, clientId, statut, type, montantTotal, montantPaye, dateCreation, ...content } = updates as any;
+        const { id, clientId, statut, type, montantTotal, montantPaye, dateCreation, dateLivraisonEstimee, ...content } = updates as any;
 
         const payload: any = {};
         if (statut !== undefined) payload.statut = statut;
         if (type !== undefined) payload.type = type;
         if (montantTotal !== undefined) payload.montantTotal = montantTotal;
         if (montantPaye !== undefined) payload.montantPaye = montantPaye;
+        if (dateLivraisonEstimee !== undefined) payload.dateLivraisonEstimee = dateLivraisonEstimee;
 
         // If there are content fields, we ideally need to merge them with existing content or replace.
         // For simplicity with PUT, we might be replacing or needing to fetch first.

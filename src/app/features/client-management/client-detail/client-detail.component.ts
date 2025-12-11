@@ -177,6 +177,86 @@ export class ClientDetailComponent implements OnInit {
     this.router.navigate(['/p/clients', this.clientId, 'fiche-lentilles', 'new']);
   }
 
+  getVerresSummary(fiche: any): string {
+    if (!fiche.verres) return '-';
+    const v = fiche.verres;
+
+    if (v.differentODOG) {
+      // Format for OD
+      const odParts = [];
+      if (v.marqueOD) odParts.push(v.marqueOD);
+      if (v.matiereOD) odParts.push(v.matiereOD);
+      if (v.indiceOD) odParts.push(`Indice ${v.indiceOD}`);
+      if (v.traitementOD && v.traitementOD.length > 0) {
+        odParts.push(Array.isArray(v.traitementOD) ? v.traitementOD.join(', ') : v.traitementOD);
+      }
+      const od = odParts.join(' | ');
+
+      // Format for OG
+      const ogParts = [];
+      if (v.marqueOG) ogParts.push(v.marqueOG);
+      if (v.matiereOG) ogParts.push(v.matiereOG);
+      if (v.indiceOG) ogParts.push(`Indice ${v.indiceOG}`);
+      if (v.traitementOG && v.traitementOG.length > 0) {
+        ogParts.push(Array.isArray(v.traitementOG) ? v.traitementOG.join(', ') : v.traitementOG);
+      }
+      const og = ogParts.join(' | ');
+
+      return `OD: ${od}\nOG: ${og}`;
+    } else {
+      // Single lens configuration
+      const parts = [];
+      if (v.marque) parts.push(v.marque);
+      if (v.matiere) parts.push(v.matiere);
+      if (v.indice) parts.push(`Indice ${v.indice}`);
+      if (v.traitement && v.traitement.length > 0) {
+        parts.push(Array.isArray(v.traitement) ? v.traitement.join(', ') : v.traitement);
+      }
+      return parts.join(' | ');
+    }
+  }
+
+  getCorrectionSummary(fiche: any): string {
+    if (!fiche.ordonnance) return '-';
+    const od = fiche.ordonnance.od;
+    const og = fiche.ordonnance.og;
+
+    const formatEye = (eye: any) => {
+      if (!eye) return '0.00 (0.00) 0° Add 0.00';
+
+      // Sphere - always display
+      let sphereStr = eye.sphere ? String(eye.sphere) : '0.00';
+      let val = sphereStr;
+
+      // Cylinder - always display in parentheses
+      let cylStr = eye.cylindre ? String(eye.cylindre) : '0.00';
+      val += ` (${cylStr})`;
+
+      // Axis - always display with degree symbol
+      if (eye.axe) {
+        let axeStr = String(eye.axe);
+        axeStr = axeStr.replace('°', '');
+        val += ` ${axeStr}°`;
+      } else {
+        val += ` 00°`;
+      }
+
+      // Addition - always display
+      if (eye.addition) {
+        val += ` Add ${eye.addition}`;
+      } else {
+        val += ` Add 0.00`;
+      }
+
+      return val;
+    };
+
+    const odStr = formatEye(od);
+    const ogStr = formatEye(og);
+
+    return `OD: ${odStr}\nOG: ${ogStr}`;
+  }
+
   /**
    * Créer une nouvelle fiche produit
    */
