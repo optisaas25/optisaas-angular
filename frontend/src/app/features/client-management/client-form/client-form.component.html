@@ -55,6 +55,8 @@
                                 </mat-form-field>
                                 }
 
+
+
                                 <mat-form-field appearance="outline">
                                     <mat-label>Nom</mat-label>
                                     <input matInput formControlName="nom" placeholder="Nom du client">
@@ -83,6 +85,18 @@
                                     clientForm.get('dateNaissance')?.touched) {
                                     <mat-error>La date de naissance est obligatoire</mat-error>
                                     }
+                                </mat-form-field>
+                                }
+
+                                <!-- CHAMP NOM CONJOINT POUR MME ET MR -->
+                                @if (clientForm.get('titre')?.value === 'Mme' || clientForm.get('titre')?.value ===
+                                'Mr') {
+                                <mat-form-field appearance="outline" class="col-span-4 w-full">
+                                    <mat-label>Nom du conjoint (Optionnel)</mat-label>
+                                    <input matInput formControlName="nomConjoint"
+                                        placeholder="Pour rejoindre le groupe du conjoint"
+                                        (blur)="onNomConjointChange(clientForm.get('nomConjoint')?.value)">
+                                    <mat-hint>Saisir pour rechercher le groupe familial du conjoint</mat-hint>
                                 </mat-form-field>
                                 }
                             </div>
@@ -473,34 +487,44 @@
                                     </div>
 
                                     <!-- Checkboxes Antécédents -->
-                                    <div class="mb-4">
-                                        <label class="block font-medium mb-2">Avez-vous déjà eu</label>
+                                    <div
+                                        class="border border-gray-300 rounded-lg p-4 mb-4 hover:border-gray-400 transition-colors">
+                                        <label class="block font-medium mb-2 text-gray-700">Avez-vous déjà eu</label>
                                         <div class="flex flex-col gap-2">
-                                            <mat-checkbox formControlName="traumatisme">Un traumatisme oculaire (coup,
+                                            <mat-checkbox formControlName="traumatisme" color="primary">Un traumatisme
+                                                oculaire (coup,
                                                 corps
                                                 étranger, etc.)</mat-checkbox>
-                                            <mat-checkbox formControlName="operation">Une opération des yeux (ex :
+                                            <mat-checkbox formControlName="operation" color="primary">Une opération des
+                                                yeux (ex :
                                                 cataracte, LASIK...)</mat-checkbox>
-                                            <mat-checkbox formControlName="inflammation">Une inflammation ou infection
+                                            <mat-checkbox formControlName="inflammation" color="primary">Une
+                                                inflammation ou infection
                                                 oculaire</mat-checkbox>
-                                            <mat-checkbox formControlName="sensibiliteLumiere">Une sensibilité à la
+                                            <mat-checkbox formControlName="sensibiliteLumiere" color="primary">Une
+                                                sensibilité à la
                                                 lumière
                                                 (photophobie)</mat-checkbox>
-                                            <mat-checkbox formControlName="secheresse">Une sécheresse ou larmoiement
+                                            <mat-checkbox formControlName="secheresse" color="primary">Une sécheresse ou
+                                                larmoiement
                                                 excessif</mat-checkbox>
                                         </div>
                                     </div>
 
                                     <!-- Antécédents familiaux -->
-                                    <div class="mb-4" formGroupName="antecedentsFamiliaux">
-                                        <label class="block font-medium mb-2">Avez-vous des antécédents familiaux
+                                    <div class="border border-gray-300 rounded-lg p-4 mb-4 hover:border-gray-400 transition-colors"
+                                        formGroupName="antecedentsFamiliaux">
+                                        <label class="block font-medium mb-2 text-gray-700">Avez-vous des antécédents
+                                            familiaux
                                             de</label>
                                         <div class="grid grid-cols-2 gap-2">
-                                            <mat-checkbox formControlName="glaucome">Glaucome</mat-checkbox>
-                                            <mat-checkbox formControlName="dmla">DMLA</mat-checkbox>
-                                            <mat-checkbox formControlName="diabete">Diabète</mat-checkbox>
+                                            <mat-checkbox formControlName="glaucome"
+                                                color="primary">Glaucome</mat-checkbox>
+                                            <mat-checkbox formControlName="dmla" color="primary">DMLA</mat-checkbox>
+                                            <mat-checkbox formControlName="diabete"
+                                                color="primary">Diabète</mat-checkbox>
                                         </div>
-                                        <mat-form-field appearance="outline" class="w-full mt-2">
+                                        <mat-form-field appearance="outline" class="w-full mt-4">
                                             <mat-label>Autres maladies oculaires</mat-label>
                                             <textarea matInput formControlName="autres" rows="3"></textarea>
                                         </mat-form-field>
@@ -512,14 +536,17 @@
                                     <h3 class="text-lg font-bold mb-4 text-gray-800">Antécédents médicaux généraux</h3>
 
                                     <!-- Maladies chroniques -->
-                                    <div class="mb-6" formGroupName="maladiesChroniques">
-                                        <label class="block font-medium mb-2">Êtes-vous suivi pour une ou plusieurs
+                                    <div class="border border-gray-300 rounded-lg p-4 mb-6 hover:border-gray-400 transition-colors"
+                                        formGroupName="maladiesChroniques">
+                                        <label class="block font-medium mb-2 text-gray-700">Êtes-vous suivi pour une ou
+                                            plusieurs
                                             maladies chroniques ?</label>
                                         <div class="flex items-center gap-4 mb-2">
-                                            <mat-checkbox formControlName="actif" #maladiesCheck>Oui</mat-checkbox>
+                                            <mat-checkbox formControlName="actif" #maladiesCheck
+                                                color="primary">Oui</mat-checkbox>
                                         </div>
                                         @if (maladiesCheck.checked) {
-                                        <mat-form-field appearance="outline" class="w-full">
+                                        <mat-form-field appearance="outline" class="w-full mt-2">
                                             <mat-label>Précisez</mat-label>
                                             <input matInput formControlName="details">
                                         </mat-form-field>
@@ -527,14 +554,17 @@
                                     </div>
 
                                     <!-- Traitement médicamenteux -->
-                                    <div class="mb-6" formGroupName="traitementMedicamenteux">
-                                        <label class="block font-medium mb-2">Prenez-vous actuellement un traitement
+                                    <div class="border border-gray-300 rounded-lg p-4 mb-6 hover:border-gray-400 transition-colors"
+                                        formGroupName="traitementMedicamenteux">
+                                        <label class="block font-medium mb-2 text-gray-700">Prenez-vous actuellement un
+                                            traitement
                                             médicamenteux régulier ?</label>
                                         <div class="flex items-center gap-4 mb-2">
-                                            <mat-checkbox formControlName="actif" #traitementCheck>Oui</mat-checkbox>
+                                            <mat-checkbox formControlName="actif" #traitementCheck
+                                                color="primary">Oui</mat-checkbox>
                                         </div>
                                         @if (traitementCheck.checked) {
-                                        <mat-form-field appearance="outline" class="w-full">
+                                        <mat-form-field appearance="outline" class="w-full mt-2">
                                             <mat-label>Précisez</mat-label>
                                             <input matInput formControlName="details">
                                         </mat-form-field>
@@ -542,13 +572,16 @@
                                     </div>
 
                                     <!-- Allergies -->
-                                    <div class="mb-6" formGroupName="allergies">
-                                        <label class="block font-medium mb-2">Avez-vous des allergies connues ?</label>
+                                    <div class="border border-gray-300 rounded-lg p-4 mb-6 hover:border-gray-400 transition-colors"
+                                        formGroupName="allergies">
+                                        <label class="block font-medium mb-2 text-gray-700">Avez-vous des allergies
+                                            connues ?</label>
                                         <div class="flex items-center gap-4 mb-2">
-                                            <mat-checkbox formControlName="actif" #allergiesCheck>Oui</mat-checkbox>
+                                            <mat-checkbox formControlName="actif" #allergiesCheck
+                                                color="primary">Oui</mat-checkbox>
                                         </div>
                                         @if (allergiesCheck.checked) {
-                                        <mat-form-field appearance="outline" class="w-full">
+                                        <mat-form-field appearance="outline" class="w-full mt-2">
                                             <mat-label>Précisez</mat-label>
                                             <input matInput formControlName="details">
                                         </mat-form-field>
@@ -571,15 +604,21 @@
                                     </div>
 
                                     <!-- Ressenti -->
-                                    <div class="mb-6" formGroupName="ressenti">
-                                        <label class="block font-medium mb-2">Ressentez-vous souvent :</label>
+                                    <div class="border border-gray-300 rounded-lg p-4 mb-6 hover:border-gray-400 transition-colors"
+                                        formGroupName="ressenti">
+                                        <label class="block font-medium mb-2 text-gray-700">Ressentez-vous souvent
+                                            :</label>
                                         <div class="flex flex-col gap-2">
-                                            <mat-checkbox formControlName="fatigue">Fatigue visuelle</mat-checkbox>
-                                            <mat-checkbox formControlName="mauxTete">Maux de tête</mat-checkbox>
-                                            <mat-checkbox formControlName="visionFloue">Vision floue</mat-checkbox>
-                                            <mat-checkbox formControlName="picotements">Picotements /
+                                            <mat-checkbox formControlName="fatigue" color="primary">Fatigue
+                                                visuelle</mat-checkbox>
+                                            <mat-checkbox formControlName="mauxTete" color="primary">Maux de
+                                                tête</mat-checkbox>
+                                            <mat-checkbox formControlName="visionFloue" color="primary">Vision
+                                                floue</mat-checkbox>
+                                            <mat-checkbox formControlName="picotements" color="primary">Picotements /
                                                 démangeaisons</mat-checkbox>
-                                            <mat-checkbox formControlName="difficultePresLoin">Difficulté à voir de près
+                                            <mat-checkbox formControlName="difficultePresLoin"
+                                                color="primary">Difficulté à voir de près
                                                 / de loin</mat-checkbox>
                                         </div>
                                     </div>

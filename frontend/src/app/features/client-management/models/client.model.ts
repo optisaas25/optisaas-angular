@@ -20,10 +20,10 @@ export enum TypeClient {
 }
 
 export enum StatutClient {
-    ACTIF = 'Actif',
-    INACTIF = 'Inactif',
-    EN_COMPTE = 'En compte',
-    DE_PASSAGE = 'De passage'
+    ACTIF = 'ACTIF',
+    INACTIF = 'INACTIF',
+    EN_COMPTE = 'EN_COMPTE',
+    DE_PASSAGE = 'DE_PASSAGE'
 }
 
 export enum RoleClientFamille {
@@ -34,7 +34,7 @@ export enum RoleClientFamille {
 export enum LienParental {
     PARENT = 'Parent',
     ENFANT = 'Enfant',
-    CONJOINT = 'Conjoint',
+    CONJOINT = 'Conjoint(e)',
     TUTEUR = 'Tuteur',
     AIDANT = 'Aidant'
 }

@@ -58,7 +58,12 @@
                                             clientParticulier.typePieceIdentite }}</mat-option>
                                     </mat-select>
                                 </mat-form-field>
-                                <mat-form-field appearance="outline">
+                                <!-- Show CIN Parent for children, regular ID for adults -->
+                                <mat-form-field appearance="outline" *ngIf="clientParticulier.titre === 'Enf'">
+                                    <mat-label>CIN Parent</mat-label>
+                                    <input matInput [value]="clientParticulier.cinParent || ''" readonly>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline" *ngIf="clientParticulier.titre !== 'Enf'">
                                     <mat-label>Numéro de pièce</mat-label>
                                     <input matInput [value]="clientParticulier.numeroPieceIdentite" readonly>
                                 </mat-form-field>

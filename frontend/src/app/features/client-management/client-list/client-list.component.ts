@@ -11,7 +11,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { ClientService } from '../services/client.service';
-import { Client } from '../models/client.model';
+import { Client, StatutClient } from '../models/client.model';
 
 interface ClientStats {
     actifs: number;
@@ -42,7 +42,7 @@ export class ClientListComponent implements OnInit {
     searchForm: FormGroup;
     stats = signal<ClientStats>({ actifs: 0, enCompte: 0, passage: 0, inactifs: 0 });
     clients = signal<Client[]>([]);
-    displayedColumns: string[] = ['type', 'nom', 'prenom', 'telephone', 'cin', 'ville', 'statut', 'actions'];
+    displayedColumns: string[] = ['type', 'titre', 'nom', 'prenom', 'telephone', 'cin', 'ville', 'statut', 'actions'];
 
     pageSize = 10;
     pageIndex = 0;
@@ -96,10 +96,10 @@ export class ClientListComponent implements OnInit {
 
     updateStats(clients: Client[]) {
         const stats = {
-            actifs: clients.filter(c => c.statut === 'Actif').length,
-            enCompte: clients.filter(c => c.statut === 'En compte').length,
-            passage: clients.filter(c => c.statut === 'De passage').length,
-            inactifs: clients.filter(c => c.statut === 'Inactif').length
+            actifs: clients.filter(c => c.statut === StatutClient.ACTIF).length,
+            enCompte: clients.filter(c => c.statut === StatutClient.EN_COMPTE).length,
+            passage: clients.filter(c => c.statut === StatutClient.DE_PASSAGE).length,
+            inactifs: clients.filter(c => c.statut === StatutClient.INACTIF).length
         };
         this.stats.set(stats);
     }

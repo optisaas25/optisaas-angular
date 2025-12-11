@@ -180,21 +180,104 @@ export class ClientFormComponent implements OnInit {
     }
   }
 
-  private openFamilyCheckDialog(existingClients: Client[], currentNom: string): void {
+  onNomConjointChange(nomConjoint: string): void {
+    if (nomConjoint && nomConjoint.length >= 2) {
+      this.checkFamilyGroup(nomConjoint, true);
+    }
+  }
+
+  private checkFamilyGroup(nom: string, isSpouseSearch: boolean = false): void {
+    if (!nom || nom.length < 2) return;
+    this.clientService.searchClientsByNom(nom).subscribe(clients => {
+      if (clients && clients.length > 0) {
+        this.openFamilyCheckDialog(clients, nom, isSpouseSearch);
+      }
+    });
+  }
+
+  private openFamilyCheckDialog(existingClients: Client[], currentNom: string, isSpouseSearch: boolean = false): void {
     const dialogRef = this.dialog.open(FamilyCheckDialogComponent, {
-      width: '600px',
+      width: '900px',
       data: { existingClients, currentNom },
       disableClose: true
     });
 
+    if (isSpouseSearch) {
+      dialogRef.componentInstance.selectedLienParental = 'Conjoint';
+    }
+
     dialogRef.afterClosed().subscribe((result: FamilyCheckDialogResult) => {
       if (result) {
-        if (result.action === 'join') {
-          this.clientForm.get('roleFamille')?.setValue(RoleClientFamille.MEMBRE);
-          this.clientForm.get('statut')?.setValue(StatutClient.INACTIF);
+        if (result.action === 'join' && result.targetClient) {
+          const principal = result.targetClient;
+          const lienParental = result.lienParental || 'Enfant';
+
+          // Use any for safe access as we handled in the dialog
+          const principalAny = principal as any;
+
+          // Common updates
+          const updates: any = {
+            roleFamille: RoleClientFamille.MEMBRE,
+            statut: StatutClient.INACTIF,
+            // Family Tab fields (Root level in this form)
+            nomFamille: principalAny.nom || principalAny.raisonSociale || '',
+            lienParental: lienParental
+          };
+
+          // Auto-fill based on lien parental
+          if (lienParental === 'Enfant') {
+            // ENFANT: Auto-fill everything from parent profile
+            // Identity & Contact
+            updates.cinParent = principalAny.numeroPieceIdentite || '';
+            updates.email = principalAny.email || '';
+            updates.adresse = principalAny.adresse || '';
+            updates.ville = principalAny.ville || '';
+            updates.telephone = principalAny.telephone || '';
+
+            // Family Tab Checkboxes
+            updates.adressePartagee = true;
+            updates.mutuellePartagee = true;
+            updates.beneficiaireOptique = true;
+            updates.responsableFinancier = false;
+
+            // Coverage Tab
+            if (principalAny.couvertureSociale) {
+              updates.couvertureSocialeActif = true;
+              updates.couvertureSocialeType = principalAny.couvertureSociale.type;
+              updates.couvertureSocialeNumero = principalAny.couvertureSociale.numeroAdhesion;
+            }
+          } else {
+            // OTHER LINKS: Conditional based on checkboxes
+            if (result.adressePartagee) {
+              updates.adresse = principalAny.adresse || '';
+              updates.ville = principalAny.ville || '';
+              updates.adressePartagee = true;
+            }
+
+            if (result.responsableFinancierPartage) {
+              updates.responsableFinancier = true;
+            }
+
+            if (result.couvertureSocialePartagee) {
+              updates.mutuellePartagee = true;
+              if (principalAny.couvertureSociale) {
+                updates.couvertureSocialeActif = true;
+                updates.couvertureSocialeType = principalAny.couvertureSociale.type;
+                updates.couvertureSocialeNumero = principalAny.couvertureSociale.numeroAdhesion;
+              }
+            }
+          }
+
+          this.clientForm.patchValue(updates);
+
         } else {
           this.clientForm.get('roleFamille')?.setValue(RoleClientFamille.PRINCIPAL);
           this.clientForm.get('statut')?.setValue(StatutClient.INACTIF);
+          if (isSpouseSearch) {
+            this.clientForm.patchValue({
+              nomFamille: this.clientForm.get('nom')?.value
+            });
+          }
         }
       }
     });
@@ -278,6 +361,7 @@ export class ClientFormComponent implements OnInit {
       roleFamille: [RoleClientFamille.PRINCIPAL],
       lienParental: [''],
       nomFamille: [''],
+      nomConjoint: [''],
       beneficiaireOptique: [false],
       responsableFinancier: [false],
       mutuellePartagee: [false],
@@ -428,15 +512,28 @@ export class ClientFormComponent implements OnInit {
   private onTitreChange(titre: TitreClient): void {
     const numPieceControl = this.clientForm.get('numeroPieceIdentite');
     const cinParentControl = this.clientForm.get('cinParent');
+    const nomConjointControl = this.clientForm.get('nomConjoint');
 
     if (titre === TitreClient.ENF) {
       // Si enfant : Numéro pièce masqué/optionnel, CIN Parent optionnel pour le moment
       numPieceControl?.clearValidators();
       cinParentControl?.setValidators([Validators.minLength(5)]);
+
+      // Disable spouse search for children
+      nomConjointControl?.disable();
+      nomConjointControl?.setValue('');
     } else {
       // Si adulte : Numéro pièce optionnel pour le moment
       cinParentControl?.clearValidators();
       numPieceControl?.setValidators([Validators.minLength(5)]);
+
+      // Enable spouse search for Mr and Mme
+      if (titre === TitreClient.MME || titre === TitreClient.MR) {
+        nomConjointControl?.enable();
+      } else {
+        nomConjointControl?.disable();
+        nomConjointControl?.setValue('');
+      }
     }
 
     numPieceControl?.updateValueAndValidity();

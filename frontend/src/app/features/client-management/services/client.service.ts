@@ -14,12 +14,28 @@ export class ClientService {
     constructor(private http: HttpClient) { }
 
     /**
+     * Map backend response to frontend model
+     * Backend uses 'civilite', frontend uses 'titre'
+     */
+    private mapBackendResponse(client: any): Client {
+        if (client && client.civilite) {
+            return {
+                ...client,
+                titre: client.civilite
+            };
+        }
+        return client;
+    }
+
+    /**
      * Récupérer tous les clients
      */
     getClients(nom?: string): Observable<Client[]> {
         const params: any = {};
         if (nom) params.nom = nom;
-        return this.http.get<Client[]>(this.apiUrl, { params });
+        return this.http.get<any[]>(this.apiUrl, { params }).pipe(
+            map(clients => clients.map(c => this.mapBackendResponse(c)))
+        );
     }
 
     searchClientsByNom(nom: string): Observable<Client[]> {
@@ -30,7 +46,9 @@ export class ClientService {
      * Récupérer un client par ID
      */
     getClient(id: string): Observable<Client | undefined> {
-        return this.http.get<Client>(`${this.apiUrl}/${id}`);
+        return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+            map(client => this.mapBackendResponse(client))
+        );
     }
 
     /**

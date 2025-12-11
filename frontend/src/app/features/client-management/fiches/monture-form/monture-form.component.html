@@ -326,12 +326,20 @@
                                 <!-- Lens Details Summary -->
                                 <span class="text-sm text-gray-400 mx-1">|</span>
                                 <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 text-sm">
-                                    Verres: {{ ficheForm.get('verres.differentODOG')?.value ? 'Différenciés' :
-                                    ficheForm.get('verres.matiere')?.value }}
-                                </span>
-                                <span *ngIf="!ficheForm.get('verres.differentODOG')?.value"
-                                    class="text-sm text-gray-500">
-                                    {{ ficheForm.get('verres.indice')?.value }}
+                                    <ng-container *ngIf="ficheForm.get('verres.differentODOG')?.value; else sameLens">
+                                        OD: {{ ficheForm.get('verres.matiereOD')?.value }} {{
+                                        ficheForm.get('verres.indiceOD')?.value }}
+                                        <span class="text-gray-400 mx-1">|</span>
+                                        OG: {{ ficheForm.get('verres.matiereOG')?.value }} {{
+                                        ficheForm.get('verres.indiceOG')?.value }}
+                                    </ng-container>
+                                    <ng-template #sameLens>
+                                        Verres: {{ ficheForm.get('verres.matiere')?.value }}
+                                        <span *ngIf="ficheForm.get('verres.indice')?.value"
+                                            class="text-sm text-gray-500">
+                                            {{ ficheForm.get('verres.indice')?.value }}
+                                        </span>
+                                    </ng-template>
                                 </span>
                                 <span
                                     *ngIf="(ficheForm.get('monture.prixMonture')?.value * 1 + ficheForm.get('verres.prixOD')?.value * 1 + ficheForm.get('verres.prixOG')?.value * 1) > 0"
@@ -589,12 +597,21 @@
                                     <span class="text-sm text-gray-400 mx-1">|</span>
                                     <span
                                         class="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 text-sm">
-                                        Verres: {{ equipment.get('verres.differentODOG')?.value ? 'Différenciés' :
-                                        equipment.get('verres.matiere')?.value }}
-                                    </span>
-                                    <span *ngIf="!equipment.get('verres.differentODOG')?.value"
-                                        class="text-sm text-gray-500">
-                                        {{ equipment.get('verres.indice')?.value }}
+                                        <ng-container
+                                            *ngIf="equipment.get('verres.differentODOG')?.value; else sameLensEquip">
+                                            OD: {{ equipment.get('verres.matiereOD')?.value }} {{
+                                            equipment.get('verres.indiceOD')?.value }}
+                                            <span class="text-gray-400 mx-1">|</span>
+                                            OG: {{ equipment.get('verres.matiereOG')?.value }} {{
+                                            equipment.get('verres.indiceOG')?.value }}
+                                        </ng-container>
+                                        <ng-template #sameLensEquip>
+                                            Verres: {{ equipment.get('verres.matiere')?.value }}
+                                            <span *ngIf="equipment.get('verres.indice')?.value"
+                                                class="text-sm text-gray-500">
+                                                {{ equipment.get('verres.indice')?.value }}
+                                            </span>
+                                        </ng-template>
                                     </span>
                                     <span
                                         *ngIf="(equipment.get('monture.prixMonture')?.value * 1 + equipment.get('verres.prixOD')?.value * 1 + equipment.get('verres.prixOG')?.value * 1) > 0"
