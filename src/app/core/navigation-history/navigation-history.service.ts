@@ -14,6 +14,7 @@ export class NavigationHistoryService {
 
   // Signal pour stocker l’historique localement (réactif)
   private readonly history = signal<string[]>(this.loadFromStorage());
+  private isGoingBack = false;
 
   constructor() {
     this.router.events
@@ -29,6 +30,16 @@ export class NavigationHistoryService {
    * @param url URL visitée
    */
   private push(url: string): void {
+    // Si on est en train de revenir en arrière, on dépile le dernier élément
+    if (this.isGoingBack) {
+      this.isGoingBack = false;
+      const current = this.history();
+      const updated = current.slice(0, -1);
+      this.history.set(updated);
+      this.saveToStorage(updated);
+      return;
+    }
+
     // Ignorer les URLs techniques comme 'redirection'
     if (url.includes('/redirection')) return;
     const current = this.history();
@@ -65,6 +76,7 @@ export class NavigationHistoryService {
   goBack(): boolean {
     const previous = this.getPreviousUrl();
     if (previous) {
+      this.isGoingBack = true;
       this.router.navigateByUrl(previous);
       return true;
     }

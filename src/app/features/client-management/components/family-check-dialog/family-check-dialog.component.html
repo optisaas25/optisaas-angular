@@ -37,6 +37,53 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
 
+    <!-- Lien Parental Selection -->
+    <div class="mt-4">
+        <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Lien Parental</mat-label>
+            <mat-select [(ngModel)]="selectedLienParental">
+                <mat-option value="Enfant">Enfant</mat-option>
+                <mat-option value="Conjoint">Conjoint(e)</mat-option>
+                <mat-option value="Parent">Parent</mat-option>
+                <mat-option value="Tuteur">Tuteur/Tutrice</mat-option>
+                <mat-option value="Aidant">Aidant(e)</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <!-- Parent Profile Selection (visible only if Enfant AND multiple parents) -->
+    <div *ngIf="selectedLienParental === 'Enfant' && data.existingClients.length > 1"
+        class="mt-3 p-3 bg-green-50 rounded">
+        <p class="text-sm font-medium text-gray-700 mb-2">
+            <mat-icon class="align-middle text-base mr-1">info</mat-icon>
+            Plusieurs parents disponibles. Choisissez le profil à appliquer à l'enfant :
+        </p>
+        <mat-radio-group [(ngModel)]="selectedParentProfile" class="flex flex-col gap-2">
+            <mat-radio-button *ngFor="let client of data.existingClients" [value]="client.id" class="text-sm">
+                <strong>{{ getClientName(client) }}</strong>
+                <span class="text-gray-600">
+                    ({{ client.telephone || 'Pas de tél.' }}, {{ client.ville || 'Pas de ville' }})
+                </span>
+            </mat-radio-button>
+        </mat-radio-group>
+    </div>
+
+    <!-- Sharing Options (visible only if NOT Enfant) -->
+    <div *ngIf="selectedLienParental !== 'Enfant'" class="mt-3 p-3 bg-blue-50 rounded">
+        <p class="text-sm font-medium text-gray-700 mb-2">Options de partage :</p>
+        <div class="flex flex-col gap-2">
+            <mat-checkbox [(ngModel)]="adressePartagee">
+                Adresse partagée avec le membre principal
+            </mat-checkbox>
+            <mat-checkbox [(ngModel)]="couvertureSocialePartagee">
+                Couverture sociale partagée
+            </mat-checkbox>
+            <mat-checkbox [(ngModel)]="responsableFinancierPartage">
+                Responsable Financier (Partagé/Délégué)
+            </mat-checkbox>
+        </div>
+    </div>
+
     <div class="mt-4 p-4 bg-gray-50 rounded text-sm text-gray-600">
         <mat-icon class="align-middle text-base mr-1">info</mat-icon>
         Si le client est différent, créez un nouveau groupe "Principal". Il sera distingué par son prénom et CIN.

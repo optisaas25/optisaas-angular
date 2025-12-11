@@ -6,6 +6,49 @@
     min-height: 100vh;
 }
 
+// Keep readonly/disabled fields readable with white background
+::ng-deep {
+
+    // Material form fields
+    .mat-mdc-form-field.mat-form-field-disabled,
+    .mat-mdc-form-field-disabled .mat-mdc-text-field-wrapper {
+        opacity: 1 !important;
+    }
+
+    .mat-mdc-form-field-disabled .mdc-text-field--filled,
+    .mat-mdc-form-field-disabled .mdc-text-field--outlined {
+        background-color: white !important;
+    }
+
+    .mat-mdc-form-field-disabled .mat-mdc-input-element,
+    .mat-mdc-form-field-disabled .mat-mdc-select-value {
+        color: #1e293b !important;
+        -webkit-text-fill-color: #1e293b !important;
+    }
+
+    // Regular inputs
+    input:disabled,
+    textarea:disabled,
+    select:disabled {
+        background-color: white !important;
+        color: #1e293b !important;
+        opacity: 1 !important;
+        -webkit-text-fill-color: #1e293b !important;
+        cursor: default !important;
+    }
+
+    // Readonly inputs
+    input[readonly],
+    textarea[readonly],
+    select[readonly] {
+        background-color: white !important;
+        color: #1e293b !important;
+        opacity: 1 !important;
+        -webkit-text-fill-color: #1e293b !important;
+        cursor: default !important;
+    }
+}
+
 // Header Styles
 .header {
     display: flex;

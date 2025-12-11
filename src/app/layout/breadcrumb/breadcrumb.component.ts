@@ -18,7 +18,7 @@ import {
 import { MatButton } from '@angular/material/button';
 import { MENU } from '../../config/menu.config';
 import { NavigationHistoryService } from '../../core/navigation-history/navigation-history.service';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatDivider } from '@angular/material/divider';
 import { findMenuItemByUrl } from '@app/helpers';
 import { Title } from '@angular/platform-browser';
@@ -32,6 +32,7 @@ import { Title } from '@angular/platform-browser';
 export class BreadcrumbComponent {
   #store = inject(Store);
   #history = inject(NavigationHistoryService);
+  #router = inject(Router);
   #titleService = inject(Title);
   readonly isMobile = input.required<boolean>();
   private readonly menuItems = signal<MenuItem[]>(MENU);
@@ -85,10 +86,12 @@ export class BreadcrumbComponent {
   }
 
   /**
-   * Navigue vers la précédente URL (stockée en mémoire).
+   * Navigate back to clients list
    * @returns void
    */
   goBack(): void {
-    this.#history.goBack();
+    // Navigate directly to clients list instead of using history
+    // to avoid navigating to empty/intermediate pages
+    this.#router.navigate(['/p/clients']);
   }
 }
