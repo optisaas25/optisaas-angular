@@ -226,12 +226,11 @@ export class MontureFormComponent implements OnInit {
         if (this.ficheId && this.ficheId !== 'new') {
             // VIEW MODE: Existing Fiche
             this.isEditMode = false;
-            this.ficheForm.disable();
+            this.ficheForm.disable(); // Disable form in view mode
             this.loadFiche();
         } else {
             // CREATE MODE: New Fiche
             this.isEditMode = true;
-            this.ficheForm.enable();
         }
 
         // Setup generic listeners for Main Equipment
@@ -239,6 +238,9 @@ export class MontureFormComponent implements OnInit {
 
         // Auto-update lens type based on equipment type and addition
         this.setupLensTypeAutoUpdate();
+
+        // Sync EP fields between tabs
+        this.setupSynchronization();
 
         // Sync selectedEquipmentType with Main Equipment Type if no added equipments
         this.selectedEquipmentType.valueChanges.subscribe(value => {
@@ -248,14 +250,52 @@ export class MontureFormComponent implements OnInit {
         });
     }
 
+    setupSynchronization(): void {
+        const ordonnance = this.ficheForm.get('ordonnance');
+        const montage = this.ficheForm.get('montage');
+
+        if (!ordonnance || !montage) return;
+
+        // Ordonnance -> Montage
+        // OD
+        ordonnance.get('od.ep')?.valueChanges.subscribe(val => {
+            if (val && val !== montage.get('ecartPupillaireOD')?.value) {
+                montage.patchValue({ ecartPupillaireOD: val }, { emitEvent: false });
+            }
+        });
+        // OG
+        ordonnance.get('og.ep')?.valueChanges.subscribe(val => {
+            if (val && val !== montage.get('ecartPupillaireOG')?.value) {
+                montage.patchValue({ ecartPupillaireOG: val }, { emitEvent: false });
+            }
+        });
+
+        // Montage -> Ordonnance
+        // OD
+        montage.get('ecartPupillaireOD')?.valueChanges.subscribe(val => {
+            if (val && val !== ordonnance.get('od.ep')?.value) {
+                ordonnance.patchValue({ od: { ep: val } }, { emitEvent: false });
+            }
+        });
+        // OG
+        montage.get('ecartPupillaireOG')?.valueChanges.subscribe(val => {
+            if (val && val !== ordonnance.get('og.ep')?.value) {
+                ordonnance.patchValue({ og: { ep: val } }, { emitEvent: false });
+            }
+        });
+    }
+
 
     toggleEditMode(): void {
         this.isEditMode = !this.isEditMode;
+
         if (this.isEditMode) {
+            // Enable form for editing
             this.ficheForm.enable();
         } else {
+            // Disable form for viewing
             this.ficheForm.disable();
-            // Optional: Reload to reset if cancelling edits?
+            // Reload to reset if cancelling edits
             if (this.ficheId && this.ficheId !== 'new') {
                 this.loadFiche(); // Reset data to saved state on cancel
             }
@@ -1057,10 +1097,15 @@ export class MontureFormComponent implements OnInit {
                     this.ficheForm.patchValue({
                         ordonnance: fiche.ordonnance,
                         monture: fiche.monture,
-                        verres: fiche.verres,
                         montage: fiche.montage,
-                        suggestions: fiche.suggestions
+                        suggestions: fiche.suggestions,
+                        dateLivraisonEstimee: fiche.dateLivraisonEstimee
                     }, { emitEvent: false });
+
+                    // Explicitly patch verres to ensure UI updates for differentODOG
+                    if (fiche.verres) {
+                        this.ficheForm.get('verres')?.patchValue(fiche.verres, { emitEvent: false });
+                    }
 
                     // Restore suggestions and prescription files for display
                     if (fiche.suggestions) {
@@ -1290,13 +1335,17 @@ export class MontureFormComponent implements OnInit {
 
         console.log('📤 Submitting fiche data:', ficheData);
 
-        this.ficheService.createFicheMonture(ficheData).subscribe({
+        const submitObservable = (this.isEditMode && this.ficheId && this.ficheId !== 'new')
+            ? this.ficheService.updateFiche(this.ficheId, ficheData)
+            : this.ficheService.createFicheMonture(ficheData);
+
+        submitObservable.subscribe({
             next: () => {
                 this.loading = false;
                 this.router.navigate(['/p/clients', this.clientId]);
             },
             error: (err) => {
-                console.error('Error creating fiche:', err);
+                console.error('Error saving fiche:', err);
                 this.loading = false;
 
                 // Handle incomplete profile error
@@ -1307,7 +1356,7 @@ export class MontureFormComponent implements OnInit {
                         this.router.navigate(['/p/clients', this.clientId, 'edit']);
                     }
                 } else {
-                    alert('Erreur lors de la création de la fiche: ' + (err.message || 'Erreur inconnue'));
+                    alert('Erreur lors de la sauvegarde de la fiche: ' + (err.message || 'Erreur inconnue'));
                 }
 
                 this.cdr.markForCheck();

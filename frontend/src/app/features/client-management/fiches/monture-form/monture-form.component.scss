@@ -9,43 +9,79 @@
 // Keep readonly/disabled fields readable with white background
 ::ng-deep {
 
-    // Material form fields
+    // Force white background on Material form field containers
+    .mat-mdc-text-field-wrapper,
+    .mdc-text-field,
+    .mdc-text-field--filled,
+    .mdc-text-field--outlined,
+    .mat-mdc-form-field-flex,
+    .mat-mdc-select-trigger {
+        background: white !important;
+        background-color: white !important;
+        background-image: none !important;
+    }
+
+    // Material form fields - disabled state
     .mat-mdc-form-field.mat-form-field-disabled,
-    .mat-mdc-form-field-disabled .mat-mdc-text-field-wrapper {
+    .mat-mdc-form-field-disabled .mat-mdc-text-field-wrapper,
+    .mat-mdc-form-field-disabled .mdc-text-field--filled,
+    .mat-mdc-form-field-disabled .mdc-text-field--outlined,
+    .mat-mdc-form-field-disabled .mat-mdc-form-field-flex,
+    .mat-mdc-form-field-disabled .mat-mdc-select-trigger,
+    .mat-mdc-form-field-disabled input.mat-mdc-input-element,
+    .mat-mdc-form-field-disabled .mat-mdc-select-value {
+        background: white !important;
+        background-color: white !important;
+        background-image: none !important;
         opacity: 1 !important;
     }
 
-    .mat-mdc-form-field-disabled .mdc-text-field--filled,
-    .mat-mdc-form-field-disabled .mdc-text-field--outlined {
-        background-color: white !important;
-    }
-
     .mat-mdc-form-field-disabled .mat-mdc-input-element,
-    .mat-mdc-form-field-disabled .mat-mdc-select-value {
+    .mat-mdc-form-field-disabled .mat-mdc-select-value,
+    .mat-mdc-form-field-disabled .mat-mdc-select-value-text {
         color: #1e293b !important;
         -webkit-text-fill-color: #1e293b !important;
+        opacity: 1 !important;
+    }
+
+    // Force labels to be visible
+    .mat-mdc-form-field-disabled .mat-mdc-floating-label,
+    .mat-mdc-floating-label {
+        color: #475569 !important;
+        opacity: 1 !important;
+    }
+
+    // Force select arrow to be visible
+    .mat-mdc-form-field-disabled .mat-mdc-select-arrow,
+    .mat-mdc-select-arrow {
+        color: #475569 !important;
+        opacity: 1 !important;
     }
 
     // Regular inputs
     input:disabled,
     textarea:disabled,
     select:disabled {
+        background: white !important;
         background-color: white !important;
         color: #1e293b !important;
         opacity: 1 !important;
         -webkit-text-fill-color: #1e293b !important;
         cursor: default !important;
+        border-color: #e2e8f0 !important;
     }
 
     // Readonly inputs
     input[readonly],
     textarea[readonly],
     select[readonly] {
+        background: white !important;
         background-color: white !important;
         color: #1e293b !important;
         opacity: 1 !important;
         -webkit-text-fill-color: #1e293b !important;
         cursor: default !important;
+        border-color: #e2e8f0 !important;
     }
 }
 

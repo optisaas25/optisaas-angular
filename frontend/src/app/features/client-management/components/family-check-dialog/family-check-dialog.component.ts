@@ -32,7 +32,7 @@ export interface FamilyCheckDialogResult {
     imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatTableModule, MatIconModule, MatSelectModule, MatFormFieldModule, MatCheckboxModule, MatRadioModule],
     templateUrl: './family-check-dialog.component.html',
     styles: [`
-    .dialog-content { min-width: 900px; max-width: 95vw; }
+    .dialog-content { width: 100%; box-sizing: border-box; }
     table { width: 100%; margin-bottom: 20px; }
     .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
     .action-col { min-width: 180px; }

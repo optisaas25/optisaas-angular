@@ -114,25 +114,25 @@
                     <!-- Type Column -->
                     <ng-container matColumnDef="type">
                         <th mat-header-cell *matHeaderCellDef>Type</th>
-                        <td mat-cell *matCellDef="let client">{{ client.typeClient | titlecase }}</td>
+                        <td mat-cell *matCellDef="let client">{{ getTypeLabel(client.typeClient) }}</td>
                     </ng-container>
 
                     <!-- Titre Column -->
                     <ng-container matColumnDef="titre">
                         <th mat-header-cell *matHeaderCellDef>Titre</th>
-                        <td mat-cell *matCellDef="let client">{{ client.titre || '-' }}</td>
+                        <td mat-cell *matCellDef="let client">{{ getClientTitle(client) }}</td>
                     </ng-container>
 
                     <!-- Nom Column -->
                     <ng-container matColumnDef="nom">
                         <th mat-header-cell *matHeaderCellDef>Nom</th>
-                        <td mat-cell *matCellDef="let client">{{ client.nom }}</td>
+                        <td mat-cell *matCellDef="let client">{{ getClientName(client) }}</td>
                     </ng-container>
 
                     <!-- Prénom Column -->
                     <ng-container matColumnDef="prenom">
                         <th mat-header-cell *matHeaderCellDef>Prénom</th>
-                        <td mat-cell *matCellDef="let client">{{ client.prenom }}</td>
+                        <td mat-cell *matCellDef="let client">{{ getClientPrenom(client) }}</td>
                     </ng-container>
 
                     <!-- Téléphone Column -->
@@ -144,10 +144,7 @@
                     <!-- Identity Column -->
                     <ng-container matColumnDef="cin">
                         <th mat-header-cell *matHeaderCellDef>Pièce d'identité</th>
-                        <td mat-cell *matCellDef="let client">
-                            {{ client.titre === 'Enf' ? (client.cinParent || '-') : (client.numeroPieceIdentite || '-')
-                            }}
-                        </td>
+                        <td mat-cell *matCellDef="let client">{{ getPieceIdentite(client) }}</td>
                     </ng-container>
 
                     <!-- Ville Column -->

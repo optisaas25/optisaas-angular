@@ -21,6 +21,27 @@ $white: #ffffff;
     .readonly-state .mat-mdc-select-value {
         color: #1e293b !important;
     }
+
+    // Allow line breaks in correction and type verre columns
+    .mat-column-nomenclature,
+    .mat-column-typeVerre {
+        white-space: pre-line;
+        line-height: 1.5 !important;
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+    }
+
+    // Align content left, but keep headers centered
+    .mat-column-nomenclature.mat-cell,
+    .mat-column-typeVerre.mat-cell {
+        text-align: left !important;
+        vertical-align: top !important;
+    }
+
+    // Style for multi-line content in table cells
+    .table-multiline {
+        line-height: 1.5;
+    }
 }
 
 :host {

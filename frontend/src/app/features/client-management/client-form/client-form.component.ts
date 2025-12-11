@@ -196,9 +196,20 @@ export class ClientFormComponent implements OnInit {
   }
 
   private openFamilyCheckDialog(existingClients: Client[], currentNom: string, isSpouseSearch: boolean = false): void {
+    // Filter out Members: Only show Principals or those without a group (potential heads)
+    const validGroupHeads = existingClients.filter(c =>
+      c.typeClient === TypeClient.PARTICULIER &&
+      (c as any).groupeFamille?.role !== RoleClientFamille.MEMBRE
+    );
+
+    if (validGroupHeads.length === 0) {
+      return;
+    }
+
     const dialogRef = this.dialog.open(FamilyCheckDialogComponent, {
-      width: '900px',
-      data: { existingClients, currentNom },
+      width: '1200px',
+      maxWidth: '95vw',
+      data: { existingClients: validGroupHeads, currentNom },
       disableClose: true
     });
 
@@ -692,6 +703,15 @@ export class ClientFormComponent implements OnInit {
             canal: [contact.canal || '']
           });
           this.contacts.push(contactGroup);
+        });
+      }
+    } else if (client.typeClient === TypeClient.ANONYME) {
+      // Handle anonyme clients that may have nom/prenom
+      const anonymeClient = client as any;
+      if (anonymeClient.nom || anonymeClient.prenom) {
+        this.clientForm.patchValue({
+          nom: anonymeClient.nom || '',
+          prenom: anonymeClient.prenom || ''
         });
       }
     }
