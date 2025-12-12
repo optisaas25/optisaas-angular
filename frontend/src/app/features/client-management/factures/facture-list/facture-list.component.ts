@@ -10,6 +10,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { HttpClient } from '@angular/common/http';
 import { FactureService } from '../../services/facture.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { InvoiceSelectionDialogComponent } from '../invoice-selection-dialog/invoice-selection-dialog.component';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-facture-list',
@@ -35,11 +38,35 @@ export class FactureListComponent implements OnInit {
 
     constructor(
         private factureService: FactureService,
-        private snackBar: MatSnackBar
+        private snackBar: MatSnackBar,
+        private dialog: MatDialog,
+        private router: Router
     ) { }
 
     ngOnInit(): void {
         this.loadFactures();
+    }
+
+    createAvoir() {
+        if (!this.clientId) return;
+
+        const dialogRef = this.dialog.open(InvoiceSelectionDialogComponent, {
+            width: '1000px', // Increased width
+            maxWidth: '95vw',
+            data: { clientId: this.clientId }
+        });
+
+        dialogRef.afterClosed().subscribe(invoice => {
+            if (invoice) {
+                this.router.navigate(['/p/clients/factures/new'], {
+                    queryParams: {
+                        clientId: this.clientId,
+                        type: 'AVOIR',
+                        sourceFactureId: invoice.id
+                    }
+                });
+            }
+        });
     }
 
     loadFactures() {
