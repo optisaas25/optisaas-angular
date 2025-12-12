@@ -12,7 +12,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { FactureService } from '../../services/facture.service';
+import { PaymentDialogComponent, Payment } from '../payment-dialog/payment-dialog.component';
 
 @Component({
     selector: 'app-facture-form',
@@ -46,12 +48,18 @@ export class FactureFormComponent implements OnInit {
     totalTTC = 0;
     montantLettres = '';
 
+    // Payments
+    paiements: Payment[] = [];
+    montantPaye = 0;
+    resteAPayer = 0;
+
     constructor(
         private fb: FormBuilder,
         private route: ActivatedRoute,
         private router: Router,
         private factureService: FactureService,
-        private snackBar: MatSnackBar
+        private snackBar: MatSnackBar,
+        private dialog: MatDialog
     ) {
         this.form = this.fb.group({
             type: ['FACTURE', Validators.required],
@@ -148,7 +156,14 @@ export class FactureFormComponent implements OnInit {
                         this.lignes.push(lineGroup);
                     });
                 }
+
+                // Load payments
+                if (facture.paiements) {
+                    this.paiements = facture.paiements as any[];
+                }
+
                 this.calculateTotals();
+                this.calculatePaymentTotals();
                 this.isViewMode = true;
                 this.form.disable();
             },
@@ -168,7 +183,9 @@ export class FactureFormComponent implements OnInit {
             totalHT: this.totalHT,
             totalTVA: this.totalTVA,
             totalTTC: this.totalTTC,
-            montantLettres: this.montantLettres
+            montantLettres: this.montantLettres,
+            paiements: this.paiements,
+            resteAPayer: this.resteAPayer
         };
 
         const request = this.id && this.id !== 'new'
@@ -191,5 +208,66 @@ export class FactureFormComponent implements OnInit {
 
     numberToText(num: number): string {
         return `${Math.floor(num)} Dirhams`;
+    }
+
+    // ===== PAYMENT METHODS =====
+
+    openPaymentDialog() {
+        const dialogRef = this.dialog.open(PaymentDialogComponent, {
+            width: '550px',
+            data: { resteAPayer: this.resteAPayer }
+        });
+
+        dialogRef.afterClosed().subscribe((payment: Payment) => {
+            if (payment) {
+                this.addPayment(payment);
+            }
+        });
+    }
+
+    addPayment(payment: Payment) {
+        this.paiements.push(payment);
+        this.calculatePaymentTotals();
+        this.updateStatutFromPayments();
+    }
+
+    removePayment(index: number) {
+        this.paiements.splice(index, 1);
+        this.calculatePaymentTotals();
+        this.updateStatutFromPayments();
+    }
+
+    calculatePaymentTotals() {
+        this.montantPaye = this.paiements.reduce((sum, p) => sum + p.montant, 0);
+        this.resteAPayer = this.totalTTC - this.montantPaye;
+    }
+
+    updateStatutFromPayments() {
+        if (this.resteAPayer <= 0 && this.totalTTC > 0) {
+            this.form.patchValue({ statut: 'PAYEE' });
+        } else if (this.montantPaye > 0) {
+            this.form.patchValue({ statut: 'PARTIEL' });
+        }
+    }
+
+    getPaymentStatusBadge(): { label: string; class: string } {
+        if (this.resteAPayer <= 0 && this.totalTTC > 0) {
+            return { label: 'PAYÉE', class: 'badge-paid' };
+        } else if (this.montantPaye > 0) {
+            return { label: 'PARTIEL', class: 'badge-partial' };
+        } else {
+            return { label: 'IMPAYÉE', class: 'badge-unpaid' };
+        }
+    }
+
+    getPaymentModeLabel(mode: string): string {
+        const modes: any = {
+            'ESPECES': 'Espèces',
+            'CARTE': 'Carte',
+            'CHEQUE': 'Chèque',
+            'VIREMENT': 'Virement',
+            'AUTRE': 'Autre'
+        };
+        return modes[mode] || mode;
     }
 }

@@ -25,6 +25,7 @@ export interface Facture {
     totalTTC: number;
     resteAPayer: number;
     lignes: LigneFacture[];
+    paiements?: any[];  // Array of payments
     montantLettres?: string;
     notes?: string;
     createdAt?: string;

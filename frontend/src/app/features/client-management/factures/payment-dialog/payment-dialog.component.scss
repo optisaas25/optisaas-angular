@@ -1,0 +1,42 @@
+.payment-dialog {
+    min-width: 500px;
+
+    h2 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+        color: #1e293b;
+
+        mat-icon {
+            color: #10b981;
+            font-size: 28px;
+            width: 28px;
+            height: 28px;
+        }
+    }
+
+    mat-dialog-content {
+        padding: 24px 24px 16px;
+        min-height: 400px;
+    }
+
+    .form-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+
+        .full-width {
+            width: 100%;
+        }
+    }
+
+    mat-dialog-actions {
+        padding: 16px 24px;
+        gap: 12px;
+
+        button {
+            min-width: 100px;
+        }
+    }
+}
