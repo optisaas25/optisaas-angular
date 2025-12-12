@@ -76,8 +76,19 @@ export class FactureFormComponent implements OnInit {
     ngOnInit(): void {
         this.route.queryParams.subscribe(params => {
             const clientId = params['clientId'];
-            if (clientId) {
-                this.form.patchValue({ clientId });
+            const type = params['type'];
+            const sourceFactureId = params['sourceFactureId'];
+
+            const patchData: any = {};
+            if (clientId) patchData.clientId = clientId;
+            if (type) patchData.type = type;
+
+            if (Object.keys(patchData).length > 0) {
+                this.form.patchValue(patchData);
+            }
+
+            if (sourceFactureId) {
+                this.loadSourceFacture(sourceFactureId);
             }
         });
 
@@ -164,8 +175,19 @@ export class FactureFormComponent implements OnInit {
 
                 this.calculateTotals();
                 this.calculatePaymentTotals();
-                this.isViewMode = true;
-                this.form.disable();
+                this.updateStatutFromPayments();
+
+                // Check for explicit view mode from query params
+                const isExplicitViewMode = this.route.snapshot.queryParamMap.get('mode') === 'view';
+
+                // Only allow editing if status is BROUILLON AND not in explicit view mode
+                this.isViewMode = facture.statut !== 'BROUILLON' || isExplicitViewMode;
+
+                if (this.isViewMode) {
+                    this.form.disable();
+                } else {
+                    this.form.enable();
+                }
             },
             error: (err) => {
                 console.error(err);
