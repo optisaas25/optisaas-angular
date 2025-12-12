@@ -22,7 +22,7 @@
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let facture of dataSource.data">
+                <tr *ngFor="let facture of dataSource">
                     <td>{{ facture.numero }}</td>
                     <td>
                         <span class="badge" [ngClass]="'badge-' + facture.type.toLowerCase()">
@@ -61,7 +61,7 @@
         </table>
 
         <!-- Empty State -->
-        <div class="empty-state" *ngIf="!dataSource.data || dataSource.data.length === 0">
+        <div class="empty-state" *ngIf="!dataSource || dataSource.length === 0">
             <mat-icon>receipt_long</mat-icon>
             <h3>Aucune facture</h3>
             <p>Créez votre première facture pour commencer</p>
