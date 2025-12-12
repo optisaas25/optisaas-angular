@@ -14,17 +14,18 @@
 
         // Header
         thead {
-            background: #f8fafc;
-            border-bottom: 2px solid #e2e8f0;
+            background: #f1f5f9;
+            border-bottom: 2px solid #cbd5e1;
 
             th {
                 padding: 16px 20px;
                 text-align: left;
-                font-size: 13px;
-                font-weight: 600;
-                color: #64748b;
+                font-size: 12px;
+                font-weight: 700;
+                color: #475569;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
+                letter-spacing: 0.8px;
+                background: #f1f5f9;
                 border-bottom: none;
 
                 &:first-child {
