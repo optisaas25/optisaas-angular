@@ -7,7 +7,7 @@
             </div>
             <div class="title-section">
                 <h1>Fiche Lentilles</h1>
-                <p *ngIf="client" style="color: white; opacity: 0.9;">
+                <p *ngIf="client" style="color: black; opacity: 0.9;">
                     <span style="font-weight: bold; font-size: 1.1em;">{{ clientDisplayName }}</span>
                     <span style="opacity: 0.8; font-size: 0.9em;">
                         <span *ngIf="client.telephone"> • 📞 {{ client.telephone }}</span>
@@ -56,121 +56,113 @@
                     Ordonnance
                 </ng-template>
 
-                <div class="tab-content" formGroupName="ordonnance">
-                    <!-- Info Livraison -->
-                    <mat-card class="section-card mb-4" style="margin-bottom: 1rem;">
-                        <mat-card-content>
-                            <mat-form-field appearance="outline" class="w-full">
-                                <mat-label>Date Livraison Estimée</mat-label>
-                                <input matInput [matDatepicker]="pickerLivraison"
-                                    formControlName="dateLivraisonEstimee">
-                                <mat-datepicker-toggle matIconSuffix [for]="pickerLivraison"></mat-datepicker-toggle>
-                                <mat-datepicker #pickerLivraison></mat-datepicker>
-                            </mat-form-field>
-                        </mat-card-content>
-                    </mat-card>
+                <div class="tab-content">
+                    <div formGroupName="ordonnance">
 
-                    <!-- Info Prescription -->
-                    <mat-card class="section-card mb-4">
-                        <mat-card-content class="grid-3">
-                            <mat-form-field appearance="outline">
-                                <mat-label>Date de prescription</mat-label>
-                                <input matInput [matDatepicker]="picker" formControlName="datePrescription">
-                                <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-                                <mat-datepicker #picker></mat-datepicker>
-                            </mat-form-field>
-                            <mat-form-field appearance="outline">
-                                <mat-label>Prescripteur</mat-label>
-                                <input matInput formControlName="prescripteur" placeholder="Dr. Ophtalmologue">
-                                <mat-icon matSuffix>person_medical</mat-icon>
-                            </mat-form-field>
-                            <mat-form-field appearance="outline">
-                                <mat-label>Date de Contrôle</mat-label>
-                                <input matInput [matDatepicker]="pickerControle" formControlName="dateControle">
-                                <mat-datepicker-toggle matIconSuffix [for]="pickerControle"></mat-datepicker-toggle>
-                                <mat-datepicker #pickerControle></mat-datepicker>
-                            </mat-form-field>
-                        </mat-card-content>
-                    </mat-card>
-
-                    <div class="eyes-container">
-                        <!-- OD -->
-                        <mat-card class="eye-card od-card" formGroupName="od">
-                            <div class="eye-header">
-                                <span class="eye-badge">OD</span>
-                                <h3>Œil Droit</h3>
-                            </div>
-                            <mat-card-content>
-                                <div class="grid-3">
-                                    <mat-form-field appearance="outline" class="dense-field">
-                                        <mat-label>Sphère</mat-label>
-                                        <input matInput formControlName="sphere" placeholder="+0.00">
-                                    </mat-form-field>
-                                    <mat-form-field appearance="outline" class="dense-field">
-                                        <mat-label>Cylindre</mat-label>
-                                        <input matInput formControlName="cylindre" placeholder="-0.00">
-                                    </mat-form-field>
-                                    <mat-form-field appearance="outline" class="dense-field">
-                                        <mat-label>Axe</mat-label>
-                                        <input matInput formControlName="axe" placeholder="0°">
-                                    </mat-form-field>
-                                </div>
-                                <div class="grid-3">
-                                    <mat-form-field appearance="outline" class="dense-field">
-                                        <mat-label>Addition</mat-label>
-                                        <input matInput formControlName="addition" placeholder="+0.00">
-                                    </mat-form-field>
-                                    <mat-form-field appearance="outline" class="dense-field highlight-field">
-                                        <mat-label>K1 (mm)</mat-label>
-                                        <input matInput formControlName="k1" placeholder="7.80">
-                                    </mat-form-field>
-                                    <mat-form-field appearance="outline" class="dense-field highlight-field">
-                                        <mat-label>K2 (mm)</mat-label>
-                                        <input matInput formControlName="k2" placeholder="7.90">
-                                    </mat-form-field>
-                                </div>
+                        <!-- Info Prescription -->
+                        <mat-card class="section-card mb-4">
+                            <mat-card-content class="grid-3">
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Date de prescription</mat-label>
+                                    <input matInput [matDatepicker]="picker" formControlName="datePrescription">
+                                    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                                    <mat-datepicker #picker></mat-datepicker>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Prescripteur</mat-label>
+                                    <input matInput formControlName="prescripteur" placeholder="Dr. Ophtalmologue">
+                                    <mat-icon matSuffix>person_medical</mat-icon>
+                                </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Date de contrôle</mat-label>
+                                    <input matInput [matDatepicker]="pickerControleAdapt"
+                                        formControlName="dateControle">
+                                    <mat-datepicker-toggle matIconSuffix
+                                        [for]="pickerControleAdapt"></mat-datepicker-toggle>
+                                    <mat-datepicker #pickerControleAdapt></mat-datepicker>
+                                </mat-form-field>
                             </mat-card-content>
                         </mat-card>
 
-                        <!-- OG -->
-                        <mat-card class="eye-card og-card" formGroupName="og">
-                            <div class="eye-header">
-                                <span class="eye-badge">OG</span>
-                                <h3>Œil Gauche</h3>
-                            </div>
-                            <mat-card-content>
-                                <div class="grid-3">
-                                    <mat-form-field appearance="outline" class="dense-field">
-                                        <mat-label>Sphère</mat-label>
-                                        <input matInput formControlName="sphere" placeholder="+0.00">
-                                    </mat-form-field>
-                                    <mat-form-field appearance="outline" class="dense-field">
-                                        <mat-label>Cylindre</mat-label>
-                                        <input matInput formControlName="cylindre" placeholder="-0.00">
-                                    </mat-form-field>
-                                    <mat-form-field appearance="outline" class="dense-field">
-                                        <mat-label>Axe</mat-label>
-                                        <input matInput formControlName="axe" placeholder="0°">
-                                    </mat-form-field>
+                        <div class="eyes-container">
+                            <!-- OD -->
+                            <mat-card class="eye-card od-card" formGroupName="od">
+                                <div class="eye-header">
+                                    <span class="eye-badge">OD</span>
+                                    <h3>Œil Droit</h3>
                                 </div>
-                                <div class="grid-3">
-                                    <mat-form-field appearance="outline" class="dense-field">
-                                        <mat-label>Addition</mat-label>
-                                        <input matInput formControlName="addition" placeholder="+0.00">
-                                    </mat-form-field>
-                                    <mat-form-field appearance="outline" class="dense-field highlight-field">
-                                        <mat-label>K1 (mm)</mat-label>
-                                        <input matInput formControlName="k1" placeholder="7.80">
-                                    </mat-form-field>
-                                    <mat-form-field appearance="outline" class="dense-field highlight-field">
-                                        <mat-label>K2 (mm)</mat-label>
-                                        <input matInput formControlName="k2" placeholder="7.90">
-                                    </mat-form-field>
+                                <mat-card-content>
+                                    <div class="grid-3">
+                                        <mat-form-field appearance="outline" class="dense-field">
+                                            <mat-label>Sphère</mat-label>
+                                            <input matInput formControlName="sphere" placeholder="+0.00">
+                                        </mat-form-field>
+                                        <mat-form-field appearance="outline" class="dense-field">
+                                            <mat-label>Cylindre</mat-label>
+                                            <input matInput formControlName="cylindre" placeholder="-0.00">
+                                        </mat-form-field>
+                                        <mat-form-field appearance="outline" class="dense-field">
+                                            <mat-label>Axe</mat-label>
+                                            <input matInput formControlName="axe" placeholder="0°">
+                                        </mat-form-field>
+                                    </div>
+                                    <div class="grid-3">
+                                        <mat-form-field appearance="outline" class="dense-field">
+                                            <mat-label>Addition</mat-label>
+                                            <input matInput formControlName="addition" placeholder="+0.00">
+                                        </mat-form-field>
+                                        <mat-form-field appearance="outline" class="dense-field highlight-field">
+                                            <mat-label>K1 (mm)</mat-label>
+                                            <input matInput formControlName="k1" placeholder="7.80">
+                                        </mat-form-field>
+                                        <mat-form-field appearance="outline" class="dense-field highlight-field">
+                                            <mat-label>K2 (mm)</mat-label>
+                                            <input matInput formControlName="k2" placeholder="7.90">
+                                        </mat-form-field>
+                                    </div>
+                                </mat-card-content>
+                            </mat-card>
+
+                            <!-- OG -->
+                            <mat-card class="eye-card og-card" formGroupName="og">
+                                <div class="eye-header">
+                                    <span class="eye-badge">OG</span>
+                                    <h3>Œil Gauche</h3>
                                 </div>
-                            </mat-card-content>
-                        </mat-card>
-                    </div>
-                </div>
+                                <mat-card-content>
+                                    <div class="grid-3">
+                                        <mat-form-field appearance="outline" class="dense-field">
+                                            <mat-label>Sphère</mat-label>
+                                            <input matInput formControlName="sphere" placeholder="+0.00">
+                                        </mat-form-field>
+                                        <mat-form-field appearance="outline" class="dense-field">
+                                            <mat-label>Cylindre</mat-label>
+                                            <input matInput formControlName="cylindre" placeholder="-0.00">
+                                        </mat-form-field>
+                                        <mat-form-field appearance="outline" class="dense-field">
+                                            <mat-label>Axe</mat-label>
+                                            <input matInput formControlName="axe" placeholder="0°">
+                                        </mat-form-field>
+                                    </div>
+                                    <div class="grid-3">
+                                        <mat-form-field appearance="outline" class="dense-field">
+                                            <mat-label>Addition</mat-label>
+                                            <input matInput formControlName="addition" placeholder="+0.00">
+                                        </mat-form-field>
+                                        <mat-form-field appearance="outline" class="dense-field highlight-field">
+                                            <mat-label>K1 (mm)</mat-label>
+                                            <input matInput formControlName="k1" placeholder="7.80">
+                                        </mat-form-field>
+                                        <mat-form-field appearance="outline" class="dense-field highlight-field">
+                                            <mat-label>K2 (mm)</mat-label>
+                                            <input matInput formControlName="k2" placeholder="7.90">
+                                        </mat-form-field>
+                                    </div>
+                                </mat-card-content>
+                            </mat-card>
+                        </div> <!-- End of eyes-container -->
+                    </div> <!-- End of ordonnance -->
+                </div> <!-- End of tab-content -->
             </mat-tab>
 
             <!-- ONGLET 2: SÉLECTION LENTILLES -->
@@ -311,85 +303,214 @@
                 </div>
             </mat-tab>
 
-            <!-- ONGLET 3: ADAPTATION -->
+
+            <!-- ONGLET 3: ADAPTATION MODERNE (NOUVEAU) -->
+            <mat-tab>
+                <ng-template mat-tab-label>
+                    <mat-icon class="tab-icon">auto_awesome</mat-icon>
+                    Adaptation Moderne
+                </ng-template>
+
+
+                <app-adaptation-moderne [formGroup]="$any(ficheForm.get('adaptation'))"
+                    (suggestionGenerated)="onSuggestionGenerated($event)">
+                </app-adaptation-moderne>
+            </mat-tab>
+
+
+            <!-- ONGLET 4: ADAPTATION (ANCIEN) -->
             <mat-tab>
                 <ng-template mat-tab-label>
                     <mat-icon class="tab-icon">fact_check</mat-icon>
                     Adaptation
                 </ng-template>
 
-                <div class="tab-content" formGroupName="adaptation">
-                    <mat-card class="section-card">
+                <div class="tab-content adaptation-compact" formGroupName="adaptation">
+
+                    <!-- Dates Section Only -->
+                    <mat-card class="dates-card">
                         <div class="card-header">
-                            <h3>Suivi d'adaptation</h3>
+                            <h3>Dates de Suivi</h3>
                         </div>
                         <mat-card-content>
-                            <div class="grid-2">
+                            <div class="dates-grid">
                                 <mat-form-field appearance="outline">
-                                    <mat-label>Date de pose</mat-label>
+                                    <mat-label>Date de Pose</mat-label>
                                     <input matInput [matDatepicker]="pickerEssai" formControlName="dateEssai">
                                     <mat-datepicker-toggle matIconSuffix [for]="pickerEssai"></mat-datepicker-toggle>
                                     <mat-datepicker #pickerEssai></mat-datepicker>
                                 </mat-form-field>
                                 <mat-form-field appearance="outline">
-                                    <mat-label>Date de contrôle</mat-label>
-                                    <input matInput [matDatepicker]="pickerControle" formControlName="dateControle">
-                                    <mat-datepicker-toggle matIconSuffix [for]="pickerControle"></mat-datepicker-toggle>
-                                    <mat-datepicker #pickerControle></mat-datepicker>
+                                    <mat-label>Date de Contrôle</mat-label>
+                                    <input matInput [matDatepicker]="pickerControleFinal"
+                                        formControlName="dateControle">
+                                    <mat-datepicker-toggle matIconSuffix
+                                        [for]="pickerControleFinal"></mat-datepicker-toggle>
+                                    <mat-datepicker #pickerControleFinal></mat-datepicker>
                                 </mat-form-field>
-                            </div>
-
-                            <div class="grid-2">
-                                <mat-form-field appearance="outline">
-                                    <mat-label>Acuité Visuelle OD</mat-label>
-                                    <input matInput formControlName="acuiteOD" placeholder="10/10">
-                                </mat-form-field>
-                                <mat-form-field appearance="outline">
-                                    <mat-label>Acuité Visuelle OG</mat-label>
-                                    <input matInput formControlName="acuiteOG" placeholder="10/10">
-                                </mat-form-field>
-                            </div>
-
-                            <div class="grid-3">
-                                <mat-form-field appearance="outline">
-                                    <mat-label>Confort</mat-label>
-                                    <mat-select formControlName="confort">
-                                        <mat-option value="Excellent">Excellent</mat-option>
-                                        <mat-option value="Bon">Bon</mat-option>
-                                        <mat-option value="Moyen">Moyen</mat-option>
-                                        <mat-option value="Mauvais">Mauvais</mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                                <mat-form-field appearance="outline">
-                                    <mat-label>Centrage</mat-label>
-                                    <mat-select formControlName="centrage">
-                                        <mat-option value="Centré">Centré</mat-option>
-                                        <mat-option value="Décentré sup">Décentré Sup.</mat-option>
-                                        <mat-option value="Décentré inf">Décentré Inf.</mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                                <mat-form-field appearance="outline">
-                                    <mat-label>Mobilité</mat-label>
-                                    <mat-select formControlName="mobilite">
-                                        <mat-option value="Normale">Normale</mat-option>
-                                        <mat-option value="Excessive">Excessive</mat-option>
-                                        <mat-option value="Insuffisante">Insuffisante</mat-option>
-                                    </mat-select>
-                                </mat-form-field>
-                            </div>
-
-                            <mat-form-field appearance="outline" class="full-width">
-                                <mat-label>Remarques / Observations</mat-label>
-                                <textarea matInput formControlName="remarques" rows="3"></textarea>
-                            </mat-form-field>
-
-                            <div class="validation-section">
-                                <mat-checkbox formControlName="validation" color="primary" class="large-checkbox">
-                                    Adaptation validée
-                                </mat-checkbox>
                             </div>
                         </mat-card-content>
                     </mat-card>
+
+                    <!-- Clinical Comparison Grid -->
+                    <div class="comparison-grid-card">
+                        <!-- Grid Header -->
+                        <div class="grid-header">
+                            <div class="col-label">Paramètre</div>
+                            <div class="col-eye od-col">
+                                <span class="eye-badge-mini od-bg">OD</span> Œil Droit
+                            </div>
+                            <div class="col-eye og-col">
+                                <span class="eye-badge-mini og-bg">OG</span> Œil Gauche
+                            </div>
+                        </div>
+
+                        <div class="grid-body">
+                            <!-- Row: Fréquence Cillement -->
+                            <div class="grid-row">
+                                <div class="row-label">Fréquence Cillement</div>
+                                <div class="row-control" formGroupName="od">
+                                    <mat-button-toggle-group formControlName="frequenceCillement"
+                                        class="symmetric-toggle">
+                                        <mat-button-toggle value="lent">Lent</mat-button-toggle>
+                                        <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                        <mat-button-toggle value="frequent">Fréquent</mat-button-toggle>
+                                    </mat-button-toggle-group>
+                                </div>
+                                <div class="row-control" formGroupName="og">
+                                    <mat-button-toggle-group formControlName="frequenceCillement"
+                                        class="symmetric-toggle">
+                                        <mat-button-toggle value="lent">Lent</mat-button-toggle>
+                                        <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                        <mat-button-toggle value="frequent">Fréquent</mat-button-toggle>
+                                    </mat-button-toggle-group>
+                                </div>
+                            </div>
+
+                            <!-- Row: Amplitude Cillement -->
+                            <div class="grid-row">
+                                <div class="row-label">Amplitude Cillement</div>
+                                <div class="row-control" formGroupName="od">
+                                    <mat-button-toggle-group formControlName="amplitudeCillement"
+                                        class="symmetric-toggle">
+                                        <mat-button-toggle value="complet">Complet</mat-button-toggle>
+                                        <mat-button-toggle value="incomplet">Incomplet</mat-button-toggle>
+                                    </mat-button-toggle-group>
+                                </div>
+                                <div class="row-control" formGroupName="og">
+                                    <mat-button-toggle-group formControlName="amplitudeCillement"
+                                        class="symmetric-toggle">
+                                        <mat-button-toggle value="complet">Complet</mat-button-toggle>
+                                        <mat-button-toggle value="incomplet">Incomplet</mat-button-toggle>
+                                    </mat-button-toggle-group>
+                                </div>
+                            </div>
+
+                            <!-- Row: Tonus Palpébral -->
+                            <div class="grid-row">
+                                <div class="row-label">Tonus Palpébral</div>
+                                <div class="row-control" formGroupName="od">
+                                    <mat-button-toggle-group formControlName="tonusPalpebral" class="symmetric-toggle">
+                                        <mat-button-toggle value="fort">Fort</mat-button-toggle>
+                                        <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                        <mat-button-toggle value="faible">Faible</mat-button-toggle>
+                                    </mat-button-toggle-group>
+                                </div>
+                                <div class="row-control" formGroupName="og">
+                                    <mat-button-toggle-group formControlName="tonusPalpebral" class="symmetric-toggle">
+                                        <mat-button-toggle value="fort">Fort</mat-button-toggle>
+                                        <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                        <mat-button-toggle value="faible">Faible</mat-button-toggle>
+                                    </mat-button-toggle-group>
+                                </div>
+                            </div>
+
+                            <!-- Row: Réaction Pupillaire -->
+                            <div class="grid-row">
+                                <div class="row-label">Réaction Pupillaire</div>
+                                <div class="row-control" formGroupName="od">
+                                    <mat-button-toggle-group formControlName="reactionPupillaire"
+                                        class="symmetric-toggle">
+                                        <mat-button-toggle value="rapide">Rapide</mat-button-toggle>
+                                        <mat-button-toggle value="normale">Normale</mat-button-toggle>
+                                        <mat-button-toggle value="lente">Lente</mat-button-toggle>
+                                    </mat-button-toggle-group>
+                                </div>
+                                <div class="row-control" formGroupName="og">
+                                    <mat-button-toggle-group formControlName="reactionPupillaire"
+                                        class="symmetric-toggle">
+                                        <mat-button-toggle value="rapide">Rapide</mat-button-toggle>
+                                        <mat-button-toggle value="normale">Normale</mat-button-toggle>
+                                        <mat-button-toggle value="lente">Lente</mat-button-toggle>
+                                    </mat-button-toggle-group>
+                                </div>
+                            </div>
+
+                            <!-- Row: Sécrétion -->
+                            <div class="grid-row">
+                                <div class="row-label">Sécrétion Lacrymale</div>
+                                <div class="row-control" formGroupName="od">
+                                    <mat-form-field appearance="outline" class="measure-input">
+                                        <input matInput type="number" formControlName="secretionLacrimale"
+                                            placeholder="0.00">
+                                        <span matTextSuffix>mm</span>
+                                    </mat-form-field>
+                                </div>
+                                <div class="row-control" formGroupName="og">
+                                    <mat-form-field appearance="outline" class="measure-input">
+                                        <input matInput type="number" formControlName="secretionLacrimale"
+                                            placeholder="0.00">
+                                        <span matTextSuffix>mm</span>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+
+                            <!-- Row: B.U.T -->
+                            <div class="grid-row">
+                                <div class="row-label">B.U.T</div>
+                                <div class="row-control" formGroupName="od">
+                                    <mat-form-field appearance="outline" class="measure-input">
+                                        <input matInput type="number" formControlName="but" placeholder="0">
+                                        <span matTextSuffix>sec</span>
+                                    </mat-form-field>
+                                </div>
+                                <div class="row-control" formGroupName="og">
+                                    <mat-form-field appearance="outline" class="measure-input">
+                                        <input matInput type="number" formControlName="but" placeholder="0">
+                                        <span matTextSuffix>sec</span>
+                                    </mat-form-field>
+                                </div>
+                            </div>
+
+                            <!-- Row: État Paupières -->
+                            <div class="grid-row border-none">
+                                <div class="row-label">État Paupières</div>
+                                <div class="row-control" formGroupName="od">
+                                    <mat-form-field appearance="outline" class="text-input">
+                                        <input matInput formControlName="etatPaupieres" placeholder="Observations...">
+                                    </mat-form-field>
+                                </div>
+                                <div class="row-control" formGroupName="og">
+                                    <mat-form-field appearance="outline" class="text-input">
+                                        <input matInput formControlName="etatPaupieres" placeholder="Observations...">
+                                    </mat-form-field>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Remarques & Validation (Footer) -->
+                    <div class="footer-section">
+                        <mat-form-field appearance="outline" class="remarques-field">
+                            <mat-label>Remarques Globales</mat-label>
+                            <textarea matInput formControlName="remarques" rows="2"></textarea>
+                        </mat-form-field>
+
+                        <div class="validation-box">
+                            <mat-checkbox formControlName="validation" color="primary">Adaptation Validée</mat-checkbox>
+                        </div>
+                    </div>
+
                 </div>
             </mat-tab>
         </mat-tab-group>

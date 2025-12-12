@@ -1,8 +1,9 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Observable } from 'rxjs';
 import { FormBuilder, FormGroup, AbstractControl, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -19,6 +20,7 @@ import { ClientService } from '../../services/client.service';
 import { Client, isClientParticulier, isClientProfessionnel } from '../../models/client.model';
 import { FicheService } from '../../services/fiche.service';
 import { FicheMontureCreate, TypeFiche, StatutFiche, TypeEquipement, SuggestionIA } from '../../models/fiche-client.model';
+import { FactureService, Facture } from '../../services/facture.service';
 import { getLensSuggestion, Correction, FrameData, calculateLensPrice, determineLensType } from '../../utils/lensLogic';
 import { getLensMaterials, getLensIndices } from '../../utils/lensDatabase';
 
@@ -48,7 +50,8 @@ interface PrescriptionFile {
         MatNativeDateModule,
         MatTabsModule,
         MatCheckboxModule,
-        MatDialogModule
+        MatDialogModule,
+        RouterModule
     ],
     templateUrl: './monture-form.component.html',
     styleUrls: ['./monture-form.component.scss'],
@@ -138,6 +141,9 @@ export class MontureFormComponent implements OnInit {
     cameraStream: MediaStream | null = null;
     capturedImage: string | null = null;
 
+    // Facturation
+    clientFactures$: Observable<Facture[]> | null = null;
+
     // Paste text dialog
     // Paste text dialog removed
 
@@ -202,7 +208,8 @@ export class MontureFormComponent implements OnInit {
         private ficheService: FicheService,
         private cdr: ChangeDetectorRef,
         private sanitizer: DomSanitizer,
-        private dialog: MatDialog
+        private dialog: MatDialog,
+        private factureService: FactureService
     ) {
         this.ficheForm = this.initForm();
     }
@@ -1160,7 +1167,179 @@ export class MontureFormComponent implements OnInit {
                 this.drawFrameVisualization();
             }, 100);
         }
+        // Load invoices when switching to Billing tab
+        if (index === 3 && this.client) {
+            this.loadClientFactures();
+        }
         this.cdr.markForCheck();
+    }
+
+    loadClientFactures() {
+        if (this.clientId) {
+            this.clientFactures$ = this.factureService.findAll({ clientId: this.clientId });
+        }
+    }
+
+    generateFacture() {
+        console.log('generateFacture called');
+        if (!this.client || !this.client.id) {
+            console.error('Client or Client ID missing', this.client);
+            return;
+        }
+
+        console.log('Generating facture for client:', this.client.id);
+
+        const lignes: any[] = [];
+
+        // 1. Main Equipment
+        const mainMonture = this.ficheForm.get('monture');
+        const mainVerres = this.ficheForm.get('verres');
+
+        if (mainMonture && mainVerres) {
+            // Monture
+            const prixMonture = parseFloat(mainMonture.get('prixMonture')?.value) || 0;
+            if (prixMonture > 0) {
+                const ref = mainMonture.get('reference')?.value || 'Monture';
+                const marque = mainMonture.get('marque')?.value || '';
+                lignes.push({
+                    description: `Monture ${marque} ${ref}`.trim(),
+                    qte: 1,
+                    prixUnitaireTTC: prixMonture,
+                    remise: 0,
+                    totalTTC: prixMonture
+                });
+            }
+
+            // Verres
+            const differentODOG = mainVerres.get('differentODOG')?.value;
+            const matiere = mainVerres.get('matiere')?.value || 'Verre';
+
+            if (differentODOG) {
+                const prixOD = parseFloat(mainVerres.get('prixOD')?.value) || 0;
+                const prixOG = parseFloat(mainVerres.get('prixOG')?.value) || 0;
+                const matiereOD = mainVerres.get('matiereOD')?.value || matiere;
+                const matiereOG = mainVerres.get('matiereOG')?.value || matiere;
+
+                if (prixOD > 0) {
+                    lignes.push({
+                        description: `Verre OD ${matiereOD}`.trim(),
+                        qte: 1,
+                        prixUnitaireTTC: prixOD,
+                        remise: 0,
+                        totalTTC: prixOD
+                    });
+                }
+                if (prixOG > 0) {
+                    lignes.push({
+                        description: `Verre OG ${matiereOG}`.trim(),
+                        qte: 1,
+                        prixUnitaireTTC: prixOG,
+                        remise: 0,
+                        totalTTC: prixOG
+                    });
+                }
+            } else {
+                // Paire ou calcul par verre simple
+                const prixOD = parseFloat(mainVerres.get('prixOD')?.value) || 0;
+                const prixOG = parseFloat(mainVerres.get('prixOG')?.value) || 0;
+
+                if (prixOD > 0) {
+                    lignes.push({
+                        description: `Verre OD ${matiere}`.trim(),
+                        qte: 1,
+                        prixUnitaireTTC: prixOD,
+                        remise: 0,
+                        totalTTC: prixOD
+                    });
+                }
+                if (prixOG > 0) {
+                    lignes.push({
+                        description: `Verre OG ${matiere}`.trim(),
+                        qte: 1,
+                        prixUnitaireTTC: prixOG,
+                        remise: 0,
+                        totalTTC: prixOG
+                    });
+                }
+            }
+        }
+
+        // 2. Additional Equipments
+        this.equipements.controls.forEach((equip, index) => {
+            const monture = equip.get('monture');
+            const verres = equip.get('verres');
+
+            if (monture) {
+                const prix = parseFloat(monture.get('prixMonture')?.value) || 0;
+                if (prix > 0) {
+                    lignes.push({
+                        description: `Monture Eq${index + 1} ${monture.get('marque')?.value || ''}`.trim(),
+                        qte: 1,
+                        prixUnitaireTTC: prix,
+                        remise: 0,
+                        totalTTC: prix
+                    });
+                }
+            }
+            if (verres) {
+                const prixOD = parseFloat(verres.get('prixOD')?.value) || 0;
+                if (prixOD > 0) {
+                    lignes.push({
+                        description: `Verre OD Eq${index + 1}`,
+                        qte: 1,
+                        prixUnitaireTTC: prixOD,
+                        remise: 0,
+                        totalTTC: prixOD
+                    });
+                }
+                const prixOG = parseFloat(verres.get('prixOG')?.value) || 0;
+                if (prixOG > 0) {
+                    lignes.push({
+                        description: `Verre OG Eq${index + 1}`,
+                        qte: 1,
+                        prixUnitaireTTC: prixOG,
+                        remise: 0,
+                        totalTTC: prixOG
+                    });
+                }
+            }
+        });
+
+        console.log('Lignes generated:', lignes);
+
+        if (lignes.length === 0) {
+            alert('Aucun article à facturer (Prix = 0)');
+            return;
+        }
+
+        const totalTTC = (lines: any[]) => lines.reduce((acc: number, val: any) => acc + val.totalTTC, 0);
+        const total = totalTTC(lignes);
+        const tvaRate = 0.20;
+        const totalHT = total / (1 + tvaRate);
+        const tva = total - totalHT;
+
+        const factureData: Partial<Facture> = {
+            type: 'FACTURE',
+            statut: 'BROUILLON',
+            dateEmission: new Date(),
+            clientId: this.client.id,
+            lignes: lignes,
+            totalTTC: total,
+            totalHT: totalHT,
+            totalTVA: tva
+        };
+
+        this.factureService.create(factureData).subscribe({
+            next: (f) => {
+                console.log('Facture created:', f);
+                this.router.navigate(['/p/clients/factures', f.id]);
+            },
+            error: (err) => {
+                console.error('Error creating facture:', err);
+                const msg = err.error?.message || err.statusText || 'Erreur inconnue';
+                alert(`Erreur lors de la création de la facture: ${msg}\n${JSON.stringify(err.error)}`);
+            }
+        });
     }
 
     nextTab(): void {

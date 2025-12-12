@@ -168,6 +168,13 @@
                     </div>
                 </mat-tab>
 
+                <!-- Onglet Factures -->
+                <mat-tab label="Facturation">
+                    <div class="form-container">
+                        <app-facture-list [clientId]="clientId"></app-facture-list>
+                    </div>
+                </mat-tab>
+
                 <!-- Onglet Identité Client -->
                 <mat-tab label="Identité Client">
                     <div class="form-container" *ngIf="client">

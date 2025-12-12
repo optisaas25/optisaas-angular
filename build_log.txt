@@ -1,19 +1,43 @@
-
+﻿
 > optisaas@0.0.0 build
-> ng build --no-progress
+> ng build
 
-Application bundle generation failed. [12.852 seconds] - 2025-12-08T12:16:27.023Z
+[33mÔØ»[39m Building...
+[32mÔ£ö[39m Building...
+Application bundle generation failed. [12.934 seconds] - 2025-12-11T22:29:29.005Z
 
-[1m[31m[31mX [41;31m[[41;97mERROR[41;31m][0m [1mNG5002: Unexpected closing tag "form". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags[0m [1m[35m[plugin angular-compiler][0m
+node.exe : [1m[31m[31mX 
+[41;31m[[41;97mERROR[41;31m][0m [1mTS2307: Cannot 
+find module '../../../../../environments/environment' or 
+its corresponding type declarations.[0m [1m[35m[plugin 
+angular-compiler][0m
+Au caractère Ligne:1 : 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: 
+([1m[31m[31m    X...r-compiler][0m:String) [], 
+RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
 
-    src/app/features/client-management/fiches/monture-form/monture-form.component.html:950:4:
-[37m      950 │     [32m</form>[37m
-          ╵     [32m~~~~~~~[0m
+    src/app/features/client-management/services/facture.se
+rvice.ts:4:28:
+[37m      4 Ôöé import { environment } from 
+[32m'../../../../../environments/environment'[37m;
+        ÔòÁ                             
+[32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
 
-  Error occurs in the template of component MontureFormComponent.
 
-    src/app/features/client-management/fiches/monture-form/monture-form.component.ts:51:17:
-[37m      51 │     templateUrl: [32m'./monture-form.component.html'[37m,
-         ╵                  [32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not 
+resolve "../../../../../environments/environment"[0m
+
+    src/app/features/client-management/services/facture.se
+rvice.ts:3:28:
+[37m      3 Ôöé import { environment } from 
+[32m'../../../../../environments/environment'[37m;
+        ÔòÁ                             
+[32m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
 
 [39m[22m

@@ -16,6 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { ClientService } from '../services/client.service';
 import { FicheService } from '../services/fiche.service';
 import { Client, TypeClient, ClientParticulier, ClientProfessionnel, ClientAnonyme, StatutClient, isClientParticulier, isClientProfessionnel } from '../models/client.model';
+import { FactureListComponent } from '../factures/facture-list/facture-list.component';
 import { FicheClient, StatutFiche, TypeFiche } from '../models/fiche-client.model';
 
 @Component({
@@ -34,7 +35,8 @@ import { FicheClient, StatutFiche, TypeFiche } from '../models/fiche-client.mode
     MatSelectModule,
     MatCheckboxModule,
     MatRadioModule,
-    FormsModule
+    FormsModule,
+    FactureListComponent
   ],
   templateUrl: './client-detail.component.html',
   styleUrls: ['./client-detail.component.scss']

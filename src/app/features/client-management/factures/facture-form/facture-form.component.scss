@@ -1,0 +1,150 @@
+.facture-form-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h2 {
+        margin: 0;
+        color: #1e293b;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12px;
+    }
+}
+
+.content-card {
+    padding: 24px;
+    background: white;
+    border-radius: 12px;
+}
+
+.form-row {
+    display: grid;
+    gap: 16px;
+
+    &.triple {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+.lines-container {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+
+    .line-header {
+        display: flex;
+        background: #f8fafc;
+        padding: 12px;
+        font-weight: 600;
+        color: #64748b;
+        border-bottom: 1px solid #e2e8f0;
+        gap: 12px;
+    }
+
+    .line-row {
+        display: flex;
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+        align-items: center;
+        gap: 12px;
+
+        &:last-child {
+            border-bottom: none;
+        }
+    }
+
+    .col-desc {
+        flex: 4;
+    }
+
+    .col-qty {
+        flex: 1;
+    }
+
+    .col-price {
+        flex: 1;
+    }
+
+    .col-disc {
+        flex: 1;
+    }
+
+    .col-total {
+        flex: 1;
+        text-align: right;
+        font-weight: 600;
+    }
+
+    .col-action {
+        width: 40px;
+        text-align: center;
+    }
+
+    input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+
+        &:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+    }
+}
+
+.add-line-btn {
+    margin-top: 12px;
+}
+
+.footer-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 32px;
+    gap: 32px;
+
+    .footer-left {
+        flex: 1;
+
+        .montant-lettres {
+            background: #f1f5f9;
+            padding: 16px;
+            border-radius: 8px;
+            color: #334155;
+            font-style: italic;
+        }
+    }
+
+    .footer-right {
+        flex: 0 0 300px;
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #64748b;
+            font-size: 14px;
+            padding: 4px 0;
+
+
+            &.main {
+                font-size: 20px;
+                font-weight: 700;
+                color: #1e293b;
+                border-top: 2px solid #e2e8f0;
+                padding-top: 12px;
+                margin-top: 8px;
+            }
+        }
+    }
+}
