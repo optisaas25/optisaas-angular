@@ -1,0 +1,30 @@
+.facture-list-container {
+    padding: 24px;
+}
+
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    h2 {
+        margin: 0;
+        color: #1e293b;
+        font-size: 24px;
+    }
+}
+
+table {
+    width: 100%;
+
+    th {
+        background-color: #f8fafc;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    td {
+        color: #334155;
+    }
+}

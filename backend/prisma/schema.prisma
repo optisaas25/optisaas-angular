@@ -55,6 +55,7 @@ model Client {
 
   // Relations
   fiches             Fiche[]
+  factures           Facture[]
 }
 
 model Fiche {
@@ -72,4 +73,39 @@ model Fiche {
   // The content of the fiche (flexible structure)
   // Stores: ordonnance, monture, verres, lentilles selection, adaptation...
   content      Json 
+  
+  // Relations
+  facture      Facture?
+}
+
+model Facture {
+  id             String    @id @default(uuid())
+  numero         String    @unique // Sequence: FAC-2024-001, DEV-2024-001, etc.
+  type           String    // FACTURE, DEVIS, AVOIR, BL
+  dateEmission   DateTime  @default(now())
+  dateEcheance   DateTime?
+  statut         String    // BROUILLON, VALIDE, PAYEE, ANNULEE, PARTIEL
+  
+  clientId       String
+  client         Client    @relation(fields: [clientId], references: [id])
+  
+  ficheId        String?   @unique
+  fiche          Fiche?    @relation(fields: [ficheId], references: [id])
+
+  // Montants (Stored as Float)
+  totalHT        Float     @default(0)
+  totalTVA       Float     @default(0)
+  totalTTC       Float     @default(0)
+  resteAPayer    Float     @default(0)
+  
+  // Arrays storing JSON data
+  lignes         Json      // [{ description, qte, prixUnitaireTTC, tva, remise, totalTTC }]
+  paiements      Json?     // [{ date, montant, mode, reference }]
+  
+  // Extras
+  montantLettres String?
+  notes          String?
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }

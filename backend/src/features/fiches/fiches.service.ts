@@ -54,6 +54,7 @@ export class FichesService {
                 type: data.type,
                 montantTotal: data.montantTotal,
                 montantPaye: data.montantPaye,
+                dateLivraisonEstimee: data.dateLivraisonEstimee,
                 content: data.content as any, // Ensure JSON compatibility
             };
 

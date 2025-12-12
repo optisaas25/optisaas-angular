@@ -1,7 +1,8 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { AdaptationModerneComponent } from './components/adaptation-moderne/adaptation-moderne.component';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -13,6 +14,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FicheService } from '../../services/fiche.service';
 import { ClientService } from '../../services/client.service';
 import { FicheLentillesCreate, TypeFiche, StatutFiche } from '../../models/fiche-client.model';
@@ -24,7 +26,9 @@ import { ContactLensType, ContactLensUsage } from '../../../../shared/interfaces
     standalone: true,
     imports: [
         CommonModule,
+        CommonModule,
         ReactiveFormsModule,
+        FormsModule,
         MatTabsModule,
         MatCardModule,
         MatFormFieldModule,
@@ -35,7 +39,10 @@ import { ContactLensType, ContactLensUsage } from '../../../../shared/interfaces
         MatDatepickerModule,
         MatNativeDateModule,
         MatCheckboxModule,
-        MatDividerModule
+        MatDividerModule,
+        MatButtonToggleModule,
+        RouterModule,
+        AdaptationModerneComponent
     ],
     templateUrl: './lentilles-form.component.html',
     styleUrls: ['./lentilles-form.component.scss'],
@@ -62,24 +69,37 @@ export class LentillesFormComponent implements OnInit {
         private clientService: ClientService,
         private cdr: ChangeDetectorRef
     ) {
-        this.ficheForm = this.initForm();
+        console.log('LentillesFormComponent: Constructor called');
+        try {
+            this.ficheForm = this.initForm();
+            console.log('LentillesFormComponent: Form initialized', this.ficheForm);
+        } catch (e) {
+            console.error('LentillesFormComponent: Error initializing form', e);
+            throw e;
+        }
     }
 
     ngOnInit(): void {
-        this.clientId = this.route.snapshot.paramMap.get('clientId');
-        this.ficheId = this.route.snapshot.paramMap.get('id');
+        console.log('LentillesFormComponent: ngOnInit called');
+        try {
+            this.clientId = this.route.snapshot.paramMap.get('clientId');
+            this.ficheId = this.route.snapshot.paramMap.get('id');
+            console.log('LentillesFormComponent: Params', { clientId: this.clientId, ficheId: this.ficheId });
 
-        if (this.clientId) {
-            this.loadClient();
-        }
+            if (this.clientId) {
+                this.loadClient();
+            }
 
-        if (this.ficheId && this.ficheId !== 'new') {
-            this.isEditMode = false;
-            this.ficheForm.disable();
-            this.loadFiche();
-        } else {
-            this.isEditMode = true;
-            this.ficheForm.enable();
+            if (this.ficheId && this.ficheId !== 'new') {
+                this.isEditMode = false;
+                this.ficheForm.disable();
+                this.loadFiche();
+            } else {
+                this.isEditMode = true;
+                this.ficheForm.enable();
+            }
+        } catch (e) {
+            console.error('LentillesFormComponent: Error in ngOnInit', e);
         }
     }
 
@@ -151,9 +171,54 @@ export class LentillesFormComponent implements OnInit {
             adaptation: this.fb.group({
                 dateEssai: [new Date()],
                 dateControle: [''],
+                docteur: [''],                       // Doctor name
+
+                // Automatic Measures
+                hvid: [''],                          // Horizontal Visible Iris Diameter
+                pupilPhot: [''],                     // Photopic pupil
+                pupilMes: [''],                      // Mesopic pupil
+                but: [''],                           // Break-Up Time
+                schirmer: [''],                      // Schirmer test
+                k1: [''],                            // Keratometry 1
+                k2: [''],                            // Keratometry 2
+
+                // Clinical Parameters
+                blinkFreq: ['normal'],               // Blink frequency
+                blinkAmp: ['complet'],               // Blink amplitude
+                tonus: ['normal'],                   // Palpebral tonus
+
+                // Suggestion Applied
+                suggestedType: [''],
+                suggestedDiameter: [''],
+                suggestedBC: [''],
+                suggestedMaterial: [''],
+
+                // OD (Right Eye) Clinical Parameters
+                od: this.fb.group({
+                    frequenceCillement: ['normal'],      // Blink frequency
+                    amplitudeCillement: ['complet'],     // Blink amplitude
+                    tonusPalpebral: ['normal'],          // Palpebral tonus
+                    reactionPupillaire: ['normale'],     // Pupillary reaction
+                    secretionLacrimale: [''],            // Tear secretion (mm)
+                    but: [''],                           // Break-up time (seconds)
+                    etatPaupieres: ['']                  // Eyelid condition
+                }),
+
+                // OG (Left Eye) Clinical Parameters
+                og: this.fb.group({
+                    frequenceCillement: ['normal'],
+                    amplitudeCillement: ['complet'],
+                    tonusPalpebral: ['normal'],
+                    reactionPupillaire: ['normale'],
+                    secretionLacrimale: [''],
+                    but: [''],
+                    etatPaupieres: ['']
+                }),
+
+                // Legacy fields for compatibility
                 acuiteOD: [''],
                 acuiteOG: [''],
-                confort: [''], // Note ou observation
+                confort: [''],
                 centrage: [''],
                 mobilite: [''],
                 validation: [false],
@@ -228,7 +293,15 @@ export class LentillesFormComponent implements OnInit {
     }
 
     onSubmit(): void {
-        if (this.ficheForm.invalid || !this.clientId) return;
+        if (this.ficheForm.invalid) {
+            console.warn('Form invalid:', this.ficheForm.errors);
+            alert('Veuillez remplir tous les champs obligatoires (marqués en rouge).');
+            return;
+        }
+        if (!this.clientId) {
+            console.error('Missing clientId');
+            return;
+        }
 
         this.loading = true;
         const formValue = this.ficheForm.value;
@@ -252,8 +325,7 @@ export class LentillesFormComponent implements OnInit {
                 od: formValue.lentilles.od,
                 og: formValue.lentilles.diffLentilles ? formValue.lentilles.og : formValue.lentilles.od
             },
-            adaptation: formValue.adaptation,
-            dateLivraisonEstimee: formValue.dateLivraisonEstimee
+            adaptation: formValue.adaptation
         };
 
         this.ficheService.createFicheLentilles(ficheData).subscribe({
@@ -287,5 +359,13 @@ export class LentillesFormComponent implements OnInit {
         } else {
             this.router.navigate(['/p/clients']);
         }
+    }
+
+    /**
+     * Handle suggestion generated from modern adaptation component
+     */
+    onSuggestionGenerated(suggestion: any): void {
+        console.log('Suggestion generated:', suggestion);
+        // Suggestion is automatically applied to form by the child component
     }
 }

@@ -1,0 +1,203 @@
+<div class="adaptation-moderne-compact" [formGroup]="formGroup">
+
+    <!-- Header: Dates & Doctor -->
+    <div class="header-row">
+        <mat-form-field appearance="outline" class="compact-field">
+            <mat-label>Date de Pose</mat-label>
+            <input matInput [matDatepicker]="pickerPose" formControlName="dateEssai">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerPose"></mat-datepicker-toggle>
+            <mat-datepicker #pickerPose></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="compact-field">
+            <mat-label>Date de Contrôle</mat-label>
+            <input matInput [matDatepicker]="pickerControle" formControlName="dateControle">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerControle"></mat-datepicker-toggle>
+            <mat-datepicker #pickerControle></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="compact-field">
+            <mat-label>Docteur</mat-label>
+            <input matInput formControlName="docteur" placeholder="Nom du praticien">
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" (click)="captureMeasures()" [disabled]="isCapturing"
+            class="capture-btn">
+            <mat-icon>{{isCapturing ? 'hourglass_empty' : 'camera_alt'}}</mat-icon>
+            {{isCapturing ? 'Capture...' : 'Capturer'}}
+        </button>
+    </div>
+
+    <!-- Validation Errors -->
+    <div *ngIf="validationErrors.length > 0" class="error-banner">
+        <mat-icon>warning</mat-icon>
+        <span>{{validationErrors.join(', ')}}</span>
+    </div>
+
+    <!-- Main 3-Column Grid -->
+    <div class="three-column-grid">
+
+        <!-- Column 1: Mesures Automatiques -->
+        <mat-card class="column-card">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>straighten</mat-icon>
+                    Mesures Automatiques
+                </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="measures-compact">
+                    <mat-form-field appearance="outline" class="measure-field">
+                        <mat-label>HVID</mat-label>
+                        <input matInput type="number" formControlName="hvid" step="0.1">
+                        <span matTextSuffix>mm</span>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="measure-field">
+                        <mat-label>Pupille (phot)</mat-label>
+                        <input matInput type="number" formControlName="pupilPhot" step="0.1">
+                        <span matTextSuffix>mm</span>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="measure-field">
+                        <mat-label>Pupille (més)</mat-label>
+                        <input matInput type="number" formControlName="pupilMes" step="0.1">
+                        <span matTextSuffix>mm</span>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="measure-field">
+                        <mat-label>B.U.T</mat-label>
+                        <input matInput type="number" formControlName="but">
+                        <span matTextSuffix>sec</span>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="measure-field">
+                        <mat-label>Schirmer</mat-label>
+                        <input matInput type="number" formControlName="schirmer">
+                        <span matTextSuffix>mm</span>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="measure-field">
+                        <mat-label>K1</mat-label>
+                        <input matInput type="number" formControlName="k1" step="0.1">
+                        <span matTextSuffix>mm</span>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="measure-field">
+                        <mat-label>K2</mat-label>
+                        <input matInput type="number" formControlName="k2" step="0.1">
+                        <span matTextSuffix>mm</span>
+                    </mat-form-field>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Column 2: Paramètres Cliniques -->
+        <mat-card class="column-card">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>medical_services</mat-icon>
+                    Paramètres Cliniques
+                </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="clinical-compact">
+                    <mat-form-field appearance="outline" class="clinical-field">
+                        <mat-label>Fréquence clignement</mat-label>
+                        <mat-select formControlName="blinkFreq">
+                            <mat-option value="lent">Lent</mat-option>
+                            <mat-option value="normal">Normal</mat-option>
+                            <mat-option value="frequent">Fréquent</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="clinical-field">
+                        <mat-label>Amplitude clignement</mat-label>
+                        <mat-select formControlName="blinkAmp">
+                            <mat-option value="complet">Complet</mat-option>
+                            <mat-option value="incomplet">Incomplet</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <mat-form-field appearance="outline" class="clinical-field">
+                        <mat-label>Tonus palpébral</mat-label>
+                        <mat-select formControlName="tonus">
+                            <mat-option value="faible">Faible</mat-option>
+                            <mat-option value="normal">Normal</mat-option>
+                            <mat-option value="fort">Fort</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <button mat-raised-button color="accent" (click)="generateSuggestion()" class="generate-btn">
+                        <mat-icon>auto_awesome</mat-icon>
+                        Générer Suggestion
+                    </button>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Column 3: Suggestion OptiSass -->
+        <mat-card class="column-card suggestion-card" *ngIf="suggestion"
+            [class.high-confidence]="suggestion.confidence >= 80">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>lightbulb</mat-icon>
+                    Suggestion OptiSass
+                    <span class="confidence-badge" [ngClass]="getConfidenceColor(suggestion.confidence)">
+                        {{suggestion.confidence}}%
+                    </span>
+                </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="suggestion-details">
+                    <div class="detail-item">
+                        <strong>Type:</strong> {{suggestion.type}}
+                    </div>
+                    <div class="detail-item" *ngIf="suggestion.diameter">
+                        <strong>Diamètre:</strong> {{suggestion.diameter}} mm
+                    </div>
+                    <div class="detail-item" *ngIf="suggestion.baseCurve">
+                        <strong>BC:</strong> {{suggestion.baseCurve}} mm
+                    </div>
+                    <div class="detail-item">
+                        <strong>Matériau:</strong> {{suggestion.material}}
+                    </div>
+                </div>
+
+                <div class="recommendations" *ngIf="suggestion.notes.length > 0">
+                    <strong>📋 Recommandations:</strong>
+                    <ul>
+                        <li *ngFor="let note of suggestion.notes">{{note}}</li>
+                    </ul>
+                </div>
+
+                <div class="warnings" *ngIf="suggestion.warnings.length > 0">
+                    <strong>⚠️ Avertissements:</strong>
+                    <ul>
+                        <li *ngFor="let warning of suggestion.warnings">{{warning}}</li>
+                    </ul>
+                </div>
+
+                <button mat-raised-button color="primary" (click)="applySuggestion()" class="apply-btn">
+                    <mat-icon>check_circle</mat-icon>
+                    Appliquer
+                </button>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Placeholder when no suggestion -->
+        <mat-card class="column-card placeholder-card" *ngIf="!suggestion">
+            <mat-card-content class="placeholder-content">
+                <mat-icon>info</mat-icon>
+                <p>Remplissez les mesures et cliquez sur "Générer Suggestion" pour obtenir des recommandations</p>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <!-- Remarques (Full Width) -->
+    <mat-form-field appearance="outline" class="remarks-field">
+        <mat-label>Remarques et observations</mat-label>
+        <textarea matInput formControlName="remarques" rows="2"></textarea>
+    </mat-form-field>
+
+</div>

@@ -10,6 +10,18 @@ export const routes: Routes = [
         loadComponent: () => import('./client-form/client-form.component').then(m => m.ClientFormComponent),
     },
     {
+        path: 'factures',
+        loadComponent: () => import('./factures/facture-list/facture-list.component').then(m => m.FactureListComponent),
+    },
+    {
+        path: 'factures/new',
+        loadComponent: () => import('./factures/facture-form/facture-form.component').then(m => m.FactureFormComponent),
+    },
+    {
+        path: 'factures/:id',
+        loadComponent: () => import('./factures/facture-form/facture-form.component').then(m => m.FactureFormComponent),
+    },
+    {
         path: ':id',
         loadComponent: () => import('./client-detail/client-detail.component').then(m => m.ClientDetailComponent),
     },
