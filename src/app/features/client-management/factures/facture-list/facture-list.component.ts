@@ -79,4 +79,12 @@ export class FactureListComponent implements OnInit {
             default: return 'default';
         }
     }
+
+    canEdit(facture: any): boolean {
+        return facture.statut === 'BROUILLON';
+    }
+
+    canDelete(facture: any): boolean {
+        return facture.statut === 'BROUILLON';
+    }
 }
