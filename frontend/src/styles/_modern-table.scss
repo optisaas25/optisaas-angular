@@ -1,0 +1,168 @@
+// Modern Table Styles - Reusable across all tables
+// Apply this to any table component for consistent styling
+
+.modern-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+
+        // Header
+        thead {
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+
+            th {
+                padding: 16px 20px;
+                text-align: left;
+                font-size: 13px;
+                font-weight: 600;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: none;
+
+                &:first-child {
+                    padding-left: 24px;
+                }
+
+                &:last-child {
+                    padding-right: 24px;
+                    text-align: right;
+                }
+            }
+        }
+
+        // Body
+        tbody {
+            tr {
+                border-bottom: 1px solid #f1f5f9;
+                transition: background-color 0.2s;
+
+                &:hover {
+                    background-color: #f8fafc;
+                }
+
+                &:last-child {
+                    border-bottom: none;
+                }
+
+                td {
+                    padding: 18px 20px;
+                    font-size: 14px;
+                    color: #334155;
+                    vertical-align: middle;
+
+                    &:first-child {
+                        padding-left: 24px;
+                        font-weight: 500;
+                    }
+
+                    &:last-child {
+                        padding-right: 24px;
+                        text-align: right;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Badge Styles
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    // Type badges
+    &.badge-facture {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    &.badge-devis {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    &.badge-avoir {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    &.badge-bl {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    // Status badges
+    &.badge-brouillon {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    &.badge-valide {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    &.badge-payee {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    &.badge-partiel {
+        background: #fed7aa;
+        color: #92400e;
+    }
+
+    &.badge-annulee {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+}
+
+// Action Menu
+.action-menu-trigger {
+    color: #94a3b8;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #475569;
+    }
+}
+
+// Empty State
+.empty-state {
+    padding: 60px 24px;
+    text-align: center;
+    color: #94a3b8;
+
+    mat-icon {
+        font-size: 64px;
+        width: 64px;
+        height: 64px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+    }
+
+    h3 {
+        margin: 0 0 8px;
+        color: #64748b;
+        font-size: 18px;
+    }
+
+    p {
+        margin: 0;
+        font-size: 14px;
+    }
+}
