@@ -8,6 +8,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { HttpClient } from '@angular/common/http';
+import { FactureService } from '../../services/facture.service';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
     selector: 'app-facture-list',
@@ -20,7 +22,8 @@ import { HttpClient } from '@angular/common/http';
         MatIconModule,
         MatChipsModule,
         MatMenuModule,
-        MatDividerModule
+        MatDividerModule,
+        MatSnackBarModule
     ],
     templateUrl: './facture-list.component.html',
     styleUrls: ['./facture-list.component.scss']
@@ -30,28 +33,42 @@ export class FactureListComponent implements OnInit {
     displayedColumns: string[] = ['numero', 'type', 'dateEmission', 'client', 'statut', 'totalTTC', 'actions'];
     dataSource: any[] = []; // Replace with Invoice interface
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private factureService: FactureService,
+        private snackBar: MatSnackBar
+    ) { }
 
     ngOnInit(): void {
         this.loadFactures();
     }
 
     loadFactures() {
-        // TODO: Implement service call
-        // this.factureService.findAll().subscribe(...)
+        if (this.clientId) {
+            this.factureService.findAll({ clientId: this.clientId }).subscribe({
+                next: (data: any[]) => this.dataSource = data,
+                error: (err: any) => console.error('Error loading factures', err)
+            });
+        } else {
+            this.factureService.findAll().subscribe({
+                next: (data: any[]) => this.dataSource = data,
+                error: (err: any) => console.error('Error loading factures', err)
+            });
+        }
+    }
 
-        // Mock data for now
-        this.dataSource = [
-            {
-                id: '1',
-                numero: 'FAC-2024-001',
-                type: 'FACTURE',
-                dateEmission: new Date(),
-                client: { nom: 'Dupont', prenom: 'Jean' },
-                statut: 'PAYEE',
-                totalTTC: 1200.00
-            }
-        ];
+    deleteFacture(facture: any) {
+        if (confirm(`Êtes-vous sûr de vouloir supprimer la facture ${facture.numero} ?`)) {
+            this.factureService.delete(facture.id).subscribe({
+                next: () => {
+                    this.snackBar.open('Facture supprimée avec succès', 'Fermer', { duration: 3000 });
+                    this.loadFactures();
+                },
+                error: (err: any) => {
+                    console.error('Error deleting facture', err);
+                    this.snackBar.open('Erreur lors de la suppression', 'Fermer', { duration: 3000 });
+                }
+            });
+        }
     }
 
     getStatusColor(statut: string): string {
