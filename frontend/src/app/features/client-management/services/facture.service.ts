@@ -59,10 +59,11 @@ export class FactureService {
     }
 
     update(id: string, facture: Partial<Facture>): Observable<Facture> {
-        return this.http.patch<Facture>(`${this.apiUrl}/${id}`, facture);
+        return this.http.put<Facture>(`${this.apiUrl}/${id}`, facture);
     }
 
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 }
+
