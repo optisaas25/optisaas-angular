@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -39,7 +39,10 @@ export class AdaptationModerneComponent implements OnInit {
     isCapturing = false;
     validationErrors: string[] = [];
 
-    constructor(private optilensService: OptilensService) { }
+    constructor(
+        private optilensService: OptilensService,
+        private cdr: ChangeDetectorRef
+    ) { }
 
     ngOnInit() {
         // Auto-générer suggestion si des mesures existent déjà
@@ -103,6 +106,7 @@ export class AdaptationModerneComponent implements OnInit {
 
         // Valider les mesures
         const validation = this.optilensService.validateMeasures(measures);
+
         if (!validation.valid) {
             this.validationErrors = validation.missing.map((m: string) => `Mesure manquante: ${m}`);
             return;
@@ -110,6 +114,10 @@ export class AdaptationModerneComponent implements OnInit {
 
         // Générer la suggestion
         this.suggestion = this.optilensService.generateSuggestion(measures, clinical);
+
+        // Forcer la détection de changement Angular
+        this.cdr.detectChanges();
+
         this.suggestionGenerated.emit(this.suggestion);
     }
 
