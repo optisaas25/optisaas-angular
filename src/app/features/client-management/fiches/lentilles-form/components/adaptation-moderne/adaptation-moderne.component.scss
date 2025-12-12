@@ -56,6 +56,58 @@
         }
     }
 
+    // Info Banner
+    .info-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+        background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
+        border-left: 4px solid #3b82f6;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+        >mat-icon:first-child {
+            color: #3b82f6;
+            font-size: 28px;
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .info-content {
+            flex: 1;
+
+            strong {
+                display: block;
+                color: #1e40af;
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+
+            p {
+                margin: 6px 0;
+                color: #1e3a8a;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            .info-note {
+                margin-top: 12px;
+                padding: 8px 12px;
+                background: white;
+                border-radius: 6px;
+                font-size: 13px;
+                color: #0369a1;
+            }
+        }
+
+        button {
+            flex-shrink: 0;
+            color: #3b82f6;
+        }
+    }
+
     // Error Banner
     .error-banner {
         display: flex;
