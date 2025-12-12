@@ -175,6 +175,13 @@
                     </div>
                 </mat-tab>
 
+                <!-- Onglet Paiements -->
+                <mat-tab label="Paiements">
+                    <div class="form-container">
+                        <app-payment-list [clientId]="clientId"></app-payment-list>
+                    </div>
+                </mat-tab>
+
                 <!-- Onglet Identité Client -->
                 <mat-tab label="Identité Client">
                     <div class="form-container" *ngIf="client">

@@ -18,6 +18,7 @@ import { FicheService } from '../services/fiche.service';
 import { Client, TypeClient, ClientParticulier, ClientProfessionnel, ClientAnonyme, StatutClient, isClientParticulier, isClientProfessionnel } from '../models/client.model';
 import { FactureListComponent } from '../factures/facture-list/facture-list.component';
 import { FicheClient, StatutFiche, TypeFiche } from '../models/fiche-client.model';
+import { PaymentListComponent } from '../payments/payment-list/payment-list.component';
 
 @Component({
   selector: 'app-client-detail',
@@ -36,7 +37,9 @@ import { FicheClient, StatutFiche, TypeFiche } from '../models/fiche-client.mode
     MatCheckboxModule,
     MatRadioModule,
     FormsModule,
-    FactureListComponent
+    FormsModule,
+    FactureListComponent,
+    PaymentListComponent
   ],
   templateUrl: './client-detail.component.html',
   styleUrls: ['./client-detail.component.scss']
