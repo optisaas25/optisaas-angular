@@ -46,7 +46,8 @@
                                 <mat-icon>visibility</mat-icon>
                                 <span>Voir</span>
                             </button>
-                            <button mat-menu-item [routerLink]="['/p/clients/factures', facture.id]">
+                            <button mat-menu-item [routerLink]="['/p/clients/factures', facture.id]"
+                                *ngIf="canEdit(facture)">
                                 <mat-icon>edit</mat-icon>
                                 <span>Modifier</span>
                             </button>
@@ -54,8 +55,9 @@
                                 <mat-icon>print</mat-icon>
                                 <span>Imprimer</span>
                             </button>
-                            <mat-divider></mat-divider>
-                            <button mat-menu-item class="delete-action" (click)="deleteFacture(facture)">
+                            <mat-divider *ngIf="canDelete(facture)"></mat-divider>
+                            <button mat-menu-item class="delete-action" (click)="deleteFacture(facture)"
+                                *ngIf="canDelete(facture)">
                                 <mat-icon>delete</mat-icon>
                                 <span>Supprimer</span>
                             </button>
