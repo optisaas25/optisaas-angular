@@ -1,4 +1,4 @@
-@import '../../../../../styles/modern-table';
+@use '../../../../../styles/modern-table' as *;
 
 .facture-list-container {
     padding: 24px;
