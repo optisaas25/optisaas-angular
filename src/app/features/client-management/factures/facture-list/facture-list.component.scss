@@ -1,5 +1,9 @@
+@import '../../../../../styles/modern-table';
+
 .facture-list-container {
     padding: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .header-actions {
@@ -11,20 +15,12 @@
     h2 {
         margin: 0;
         color: #1e293b;
-        font-size: 24px;
-    }
-}
-
-table {
-    width: 100%;
-
-    th {
-        background-color: #f8fafc;
-        color: #64748b;
-        font-weight: 600;
+        font-size: 28px;
+        font-weight: 700;
     }
 
-    td {
-        color: #334155;
+    button {
+        height: 44px;
+        font-size: 15px;
     }
 }
