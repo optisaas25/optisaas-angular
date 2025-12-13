@@ -193,8 +193,6 @@ export class FacturesService {
                 }
             }
 
-
-
             return this.prisma.facture.update({
                 data,
                 where,
