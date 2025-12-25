@@ -1,0 +1,142 @@
+<div class="payment-dialog">
+    <h2 mat-dialog-title>
+        <mat-icon>payment</mat-icon>
+        Enregistrer un Paiement
+    </h2>
+
+    <mat-dialog-content>
+        <form [formGroup]="form">
+            <div class="form-grid">
+                <!-- Date -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Date du paiement</mat-label>
+                    <input matInput [matDatepicker]="picker" formControlName="date">
+                    <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                    <mat-datepicker #picker></mat-datepicker>
+                </mat-form-field>
+
+                <!-- Montant -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Montant</mat-label>
+                    <input matInput type="number" formControlName="montant" step="0.01" min="0.01" [max]="maxAmount">
+                    <span matTextSuffix>DH</span>
+                </mat-form-field>
+
+                <!-- Mode de paiement -->
+                <mat-form-field appearance="outline">
+                    <mat-label>Mode de paiement</mat-label>
+                    <mat-select formControlName="mode">
+                        <mat-option *ngFor="let mode of paymentModes" [value]="mode.value">
+                            {{ mode.label }}
+                        </mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <!-- Référence (Hide for ESPECES) -->
+                <mat-form-field appearance="outline" *ngIf="form.get('mode')?.value !== 'ESPECES'">
+                    <mat-label>Référence</mat-label>
+                    <input matInput formControlName="reference" placeholder="Num chèque/LCN ...">
+                </mat-form-field>
+
+                <!-- Nouvelles options pour Cheque/LCN/Virement -->
+                <ng-container *ngIf="['CHEQUE', 'LCN', 'VIREMENT'].includes(form.get('mode')?.value)">
+                    <!-- Banque Autocomplete -->
+                    <mat-form-field appearance="outline">
+                        <mat-label>Banque</mat-label>
+                        <input type="text" matInput formControlName="banque" [matAutocomplete]="autoBanque">
+                        <mat-autocomplete #autoBanque="matAutocomplete">
+                            <mat-option *ngFor="let b of banks" [value]="b">
+                                {{ b }}
+                            </mat-option>
+                        </mat-autocomplete>
+                    </mat-form-field>
+
+                    <!-- Date Versement -->
+                    <mat-form-field appearance="outline" class="compact-date-field">
+                        <mat-label>Date de Versement</mat-label>
+                        <input matInput [matDatepicker]="pickerVers" formControlName="dateVersement"
+                            placeholder="JJ/MM/AAAA">
+                        <mat-datepicker-toggle matIconSuffix [for]="pickerVers"></mat-datepicker-toggle>
+                        <mat-datepicker #pickerVers class="custom-calendar"></mat-datepicker>
+                    </mat-form-field>
+
+                    <!-- Identité Tireur -->
+                    <div class="full-width identity-section">
+                        <mat-form-field appearance="outline">
+                            <mat-label>Nom / Émetteur (Tiers si différent du client)</mat-label>
+                            <input matInput formControlName="tiersNom" placeholder="Nom sur le chèque">
+                        </mat-form-field>
+
+                        <!-- Show CIN (Always visible now per user request, validation depends on name match) -->
+                        <mat-form-field appearance="outline">
+                            <mat-label>C.I.N / Pièce d'identité</mat-label>
+                            <input matInput formControlName="tiersCin" placeholder="Numéro pièce d'identité">
+                            <mat-error *ngIf="form.get('tiersCin')?.hasError('required')">
+                                Obligatoire pour tiers hors famille
+                            </mat-error>
+                        </mat-form-field>
+                    </div>
+
+                    <!-- Pièce Jointe -->
+                    <div class="full-width attachment-section">
+                        <label class="attachment-label">Pièce Jointe (Scan/Photo)</label>
+
+                        <!-- File Input (Hidden) -->
+                        <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*,application/pdf"
+                            style="display: none">
+
+                        <!-- Main Actions -->
+                        <div class="actions-row" *ngIf="!attachmentPreview">
+                            <button type="button" mat-stroked-button (click)="fileInput.click()">
+                                <mat-icon>attach_file</mat-icon> Importer Fichier
+                            </button>
+                            <button type="button" mat-flat-button color="accent" (click)="openCamera()">
+                                <mat-icon>camera_alt</mat-icon> Camera
+                            </button>
+                        </div>
+
+                        <!-- Files List (Styled like Fiche Monture) -->
+                        <div class="files-list" *ngIf="attachmentPreview">
+                            <div class="file-item">
+                                <div class="file-info">
+                                    <mat-icon class="file-icon text-gray-500">description</mat-icon>
+                                    <a href="javascript:void(0)" (click)="viewFile()" class="file-link">
+                                        {{ fileName || 'Document.pdf' }}
+                                    </a>
+                                    <span class="file-size" *ngIf="fileSize">({{ formatFileSize(fileSize) }})</span>
+                                </div>
+                                <div class="file-actions">
+                                    <button type="button" mat-icon-button (click)="viewFile()" title="Visualiser">
+                                        <mat-icon>visibility</mat-icon>
+                                    </button>
+                                    <button type="button" mat-icon-button color="warn" (click)="deleteFile()"
+                                        title="Supprimer">
+                                        <mat-icon>delete</mat-icon>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div *ngIf="isProcessingOcr" class="ocr-loading">
+                            <small>Analyse du document en cours (OCR)...</small>
+                        </div>
+                    </div>
+                </ng-container>
+
+                <!-- Notes (Legacy) -->
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Notes (Interne)</mat-label>
+                    <textarea matInput formControlName="notes" rows="2"></textarea>
+                </mat-form-field>
+            </div>
+        </form>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-button (click)="onCancel()">Annuler</button>
+        <button mat-raised-button color="primary" (click)="onSave()" [disabled]="form.invalid">
+            <mat-icon>check</mat-icon>
+            Enregistrer
+        </button>
+    </mat-dialog-actions>
+</div>

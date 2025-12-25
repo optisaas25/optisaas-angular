@@ -1,0 +1,227 @@
+<div class="h-full flex flex-col">
+    <div mat-dialog-title class="flex justify-between items-center mb-0 px-6 pt-6">
+        <h2 class="text-xl font-bold m-0">Sélectionner un produit du stock</h2>
+        <button mat-icon-button (click)="dialogRef.close()">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+
+    <mat-dialog-content class="mat-typography flex-1 flex flex-col px-6">
+
+        <!-- Filters Row -->
+        <div class="flex gap-4 mb-4">
+            <!-- Warehouse Filter -->
+            <mat-form-field appearance="outline" class="w-1/3">
+                <mat-label>Filtrer par Entrepôt</mat-label>
+                <mat-select [(ngModel)]="selectedWarehouseId" (selectionChange)="onWarehouseChange()">
+                    <mat-option [value]="undefined">Tous les entrepôts</mat-option>
+                    <mat-option *ngFor="let wh of warehouses" [value]="wh.id">
+                        {{ wh.nom }} - {{ wh.centre?.nom || 'Sans centre' }} ({{ wh.type }})
+                    </mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <!-- Search Input -->
+            <mat-form-field appearance="outline" class="flex-1">
+                <mat-label>Rechercher (Code, Marque, Désignation...)</mat-label>
+                <input matInput [(ngModel)]="searchQuery" (ngModelChange)="filterProducts()"
+                    placeholder="Ex: Ray-Ban, 12345...">
+                <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+        </div>
+
+        <!-- Forced Blue Banner for Cross-Warehouse Results -->
+        <div *ngIf="(selectedWarehouseId && getSenderCenterName()) || (!selectedWarehouseId && filteredProducts.length > 0 && isRemote(filteredProducts[0]))"
+            style="background-color: #e3f2fd; color: #0d47a1; padding: 12px; margin-bottom: 16px; border-radius: 8px; border: 1px solid #bbdefb; display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <mat-icon style="margin-right: 8px; color: #1976d2;">info</mat-icon>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: bold;">
+                    {{ getSenderCenterName() ? 'Stock de l\'expéditeur : ' + getSenderCenterName() : 'Rupture de stock
+                    locale' }}
+                </span>
+                <span style="font-size: 0.9em;">
+                    {{ getSenderCenterName() ? 'Affichage des produits du centre distant sélectionné.' : 'Affichage des
+                    produits disponibles dans les autres centres.' }}
+                    Le système créera automatiquement les fiches locales si elles n'existent pas encore.
+                </span>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-auto bg-white rounded-lg border border-gray-200 relative">
+            <div *ngIf="loading" class="absolute inset-0 bg-white/80 z-10 flex justify-center items-center">
+                <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+            </div>
+
+            <table mat-table [dataSource]="filteredProducts" *ngIf="!loading && filteredProducts.length > 0">
+
+                <!-- Checkbox Column -->
+                <ng-container matColumnDef="select">
+                    <th mat-header-cell *matHeaderCellDef>
+                        <mat-checkbox (change)="$event ? masterToggle() : null"
+                            [checked]="selection.hasValue() && isAllSelected()"
+                            [indeterminate]="selection.hasValue() && !isAllSelected()" [aria-label]="checkboxLabel()">
+                        </mat-checkbox>
+                    </th>
+                    <td mat-cell *matCellDef="let row">
+                        <mat-checkbox (click)="$event.stopPropagation()"
+                            (change)="$event ? selection.toggle(row) : null" [checked]="selection.isSelected(row)"
+                            [aria-label]="checkboxLabel(row)">
+                        </mat-checkbox>
+                    </td>
+                </ng-container>
+
+                <!-- Photo Column -->
+                <ng-container matColumnDef="photo">
+                    <th mat-header-cell *matHeaderCellDef> Photo </th>
+                    <td mat-cell *matCellDef="let element">
+                        <img [src]="element.photo || 'assets/images/placeholder-product.png'" class="product-thumb"
+                            onerror="this.src='assets/images/placeholder-product.png'">
+                    </td>
+                </ng-container>
+
+                <!-- Designation Column -->
+                <ng-container matColumnDef="designation">
+                    <th mat-header-cell *matHeaderCellDef> Désignation </th>
+                    <td mat-cell *matCellDef="let element">
+                        <div class="flex flex-col">
+                            <span class="font-bold">{{ element.designation }}</span>
+                            <span class="text-xs text-gray-500">{{ element.typeArticle | titlecase }}</span>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <!-- Reference Column -->
+                <ng-container matColumnDef="reference">
+                    <th mat-header-cell *matHeaderCellDef> Référence </th>
+                    <td mat-cell *matCellDef="let element"> {{ element.codeInterne }} </td>
+                </ng-container>
+
+                <!-- Marque Column -->
+                <ng-container matColumnDef="marque">
+                    <th mat-header-cell *matHeaderCellDef> Marque </th>
+                    <td mat-cell *matCellDef="let element"> {{ element.marque || '-' }} </td>
+                </ng-container>
+
+                <!-- Location Column -->
+                <ng-container matColumnDef="location">
+                    <th mat-header-cell *matHeaderCellDef> Localisation </th>
+                    <td mat-cell *matCellDef="let element">
+                        <div class="location-badge"
+                            [class.bg-yellow-100]="selectedWarehouseId && element.entrepotId !== selectedWarehouseId">
+                            <mat-icon inline class="text-xs mr-1">store</mat-icon>
+                            {{ element.entrepot?.nom }} ({{ element.entrepot?.centre?.nom || 'Inconnu' }})
+                        </div>
+                    </td>
+                </ng-container>
+
+                <!-- Quantity Column -->
+                <ng-container matColumnDef="quantity">
+                    <th mat-header-cell *matHeaderCellDef> Quantité </th>
+                    <td mat-cell *matCellDef="let element">
+                        <span [class.text-red-600]="element.quantiteActuelle <= 0" class="font-bold">
+                            {{ element.quantiteActuelle }}
+                        </span>
+                    </td>
+                </ng-container>
+
+                <!-- Status Column -->
+                <ng-container matColumnDef="statut">
+                    <th mat-header-cell *matHeaderCellDef> Statut </th>
+                    <td mat-cell *matCellDef="let element">
+                        <div class="flex flex-col gap-1 items-start">
+                            <ng-container *ngIf="element.quantiteActuelle <= 0; else regularStatus">
+                                <span class="status-badge rupture">RUPTURE</span>
+                            </ng-container>
+                            <ng-template #regularStatus>
+                                <span class="status-badge" [ngClass]="element.statut?.toLowerCase()">
+                                    {{ element.statut }}
+                                </span>
+                            </ng-template>
+
+                            <!-- Transfer Badge -->
+                            <span *ngIf="element.specificData?.pendingIncoming && !isRemote(element)"
+                                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[9px] font-bold uppercase border border-blue-100">
+                                <mat-icon style="font-size: 10px; height: 10px; width: 10px;">login</mat-icon>
+                                {{ element.specificData.pendingIncoming.status === 'SHIPPED' ? 'Arrivage' : 'Réservé' }}
+                            </span>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                    <th mat-header-cell *matHeaderCellDef> Actions </th>
+                    <td mat-cell *matCellDef="let element">
+                        <button mat-icon-button [matMenuTriggerFor]="menu">
+                            <mat-icon>more_vert</mat-icon>
+                        </button>
+                        <mat-menu #menu="matMenu">
+                            <!-- Select: Show if (Local Product) AND Quantity > 0 -->
+                            <button mat-menu-item color="primary"
+                                *ngIf="!isRemote(element) && element.quantiteActuelle > 0"
+                                (click)="selectProduct(element)">
+                                <mat-icon color="primary">check_circle</mat-icon>
+                                <span>Sélectionner</span>
+                            </button>
+
+                            <!-- Valider Commande: Show if (Local Product) AND Incoming Transfer exists -->
+                            <button mat-menu-item color="primary"
+                                *ngIf="!isRemote(element) && element.quantiteActuelle <= 0 && element.specificData?.pendingIncoming"
+                                (click)="selectIncomingProduct(element)">
+                                <mat-icon color="primary">shopping_cart_checkout</mat-icon>
+                                <span>Valider la Vente</span>
+                            </button>
+
+                            <!-- Commander & Vendre: Show if (Local Product) AND RUPTURE (stock = 0, no pending) -->
+                            <button mat-menu-item color="warn"
+                                *ngIf="!isRemote(element) && element.quantiteActuelle === 0 && !element.specificData?.pendingIncoming && element.statut === 'RUPTURE'"
+                                (click)="orderAndSell(element)">
+                                <mat-icon color="warn">add_shopping_cart</mat-icon>
+                                <span>Commander & Vendre</span>
+                            </button>
+
+                            <!-- Transfer: Show ONLY if (Remote Product) AND Quantity > 0 AND stock-management context -->
+                            <button mat-menu-item color="accent"
+                                *ngIf="context === 'stock-management' && isRemote(element) && element.quantiteActuelle > 0"
+                                (click)="requestTransfer(element)">
+                                <mat-icon color="accent">local_shipping</mat-icon>
+                                <span>Demander Transfert</span>
+                            </button>
+
+                            <!-- Commander (Sales Context): Show if (Remote Product) AND Quantity > 0 -->
+                            <button mat-menu-item color="accent"
+                                *ngIf="context !== 'stock-management' && isRemote(element) && element.quantiteActuelle > 0"
+                                (click)="requestTransfer(element)">
+                                <mat-icon color="accent">add_shopping_cart</mat-icon>
+                                <span>Commander (Transfert)</span>
+                            </button>
+
+                            <!-- Valider Commande (Shortcut for Remote Row): Show if (Remote Product) AND Transfer already initiated to us -->
+                            <button mat-menu-item color="primary" *ngIf="hasActiveTransferToUs(element)"
+                                (click)="selectIncomingProduct(findLocalCounterpart(element))">
+                                <mat-icon color="primary">shopping_cart_checkout</mat-icon>
+                                <span>Valider la Vente (Transfert en cours)</span>
+                            </button>
+                        </mat-menu>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+
+            <div *ngIf="!loading && filteredProducts.length === 0" class="no-data">
+                <mat-icon>search_off</mat-icon>
+                <p>Aucun produit trouvé</p>
+            </div>
+        </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end" class="gap-2">
+        <button mat-button (click)="dialogRef.close()">Fermer</button>
+        <button *ngIf="context === 'stock-management'" mat-raised-button color="primary"
+            [disabled]="selection.selected.length === 0" (click)="requestBulkTransfer()">
+            <mat-icon>swap_horiz</mat-icon>
+            Transférer la sélection ({{ selection.selected.length }})
+        </button>
+    </mat-dialog-actions>
+</div>
