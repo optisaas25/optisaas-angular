@@ -152,8 +152,8 @@
         <!-- Tab 1: Invoices with payments -->
         <mat-tab>
             <ng-template mat-tab-label>
-                <mat-icon class="mr-2">payments</mat-icon>
-                Vente en instance ({{ invoicesWithPayment.length }})
+                <mat-icon class="mr-2">assignment</mat-icon>
+                Bons de Commande ({{ invoicesWithPayment.length }})
             </ng-template>
 
             <div class="tab-content">
@@ -218,8 +218,8 @@
                                                 </button>
                                                 <mat-divider></mat-divider>
                                                 <button mat-menu-item (click)="validateInvoice(invoice)">
-                                                    <mat-icon style="color: #10b981 !important;">check_circle</mat-icon>
-                                                    <span>Valider (Passer Commande)</span>
+                                                    <mat-icon style="color: #10b981 !important;">receipt</mat-icon>
+                                                    <span>Générer Facture (Finaliser)</span>
                                                 </button>
                                                 <button mat-menu-item (click)="createAvoir(invoice)">
                                                     <mat-icon
@@ -334,10 +334,15 @@
                                                     <span>Afficher Fiche</span>
                                                 </button>
                                                 <mat-divider></mat-divider>
+                                                <button mat-menu-item (click)="convertToOrder(invoice)"
+                                                    *ngIf="invoice.totalTTC > 0">
+                                                    <mat-icon style="color: #fbbf24 !important;">inventory_2</mat-icon>
+                                                    <span>Passer en Commande (Affecter Stock)</span>
+                                                </button>
                                                 <button mat-menu-item (click)="validateInvoice(invoice)"
                                                     *ngIf="invoice.totalTTC > 0">
-                                                    <mat-icon style="color: #10b981 !important;">check_circle</mat-icon>
-                                                    <span>Valider (Passer Commande)</span>
+                                                    <mat-icon style="color: #10b981 !important;">receipt</mat-icon>
+                                                    <span>Générer Facture Directe</span>
                                                 </button>
                                                 <button mat-menu-item (click)="declareAsGift(invoice)"
                                                     *ngIf="invoice.totalTTC > 0">
@@ -610,7 +615,7 @@
                         <thead>
                             <tr>
                                 <th>Vendeur</th>
-                                <th>Vente en instance</th>
+                                <th>Bons de Commande</th>
                                 <th>Devis</th>
                                 <th>Factures Validées</th>
                                 <th>Avoirs</th>
@@ -628,7 +633,7 @@
                                 </td>
                                 <td class="text-center">
                                     <span class="badge badge-warning" *ngIf="stat.countWithPayment > 0">
-                                        {{ stat.countWithPayment }} ventes
+                                        {{ stat.countWithPayment }} commandes
                                     </span>
                                     <span class="text-gray-400" *ngIf="stat.countWithPayment === 0">-</span>
                                 </td>

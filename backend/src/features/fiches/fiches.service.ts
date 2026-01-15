@@ -25,7 +25,7 @@ export class FichesService {
                 console.log('✅ Found clientId in flat structure:', clientId);
             }
             // Then check for nested client.connect.id structure
-            else if (typeof data.client === 'object' && data.client && 'connect' in data.client && (data.client as any).connect) {
+            else if (data.client && typeof data.client === 'object' && 'connect' in data.client && (data.client as any).connect) {
                 clientId = (data.client as any).connect.id;
                 console.log('✅ Found clientId in nested structure:', clientId);
             }

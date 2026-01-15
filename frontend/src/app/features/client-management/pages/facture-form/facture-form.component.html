@@ -4,8 +4,7 @@
         <!-- Header -->
         <div class="header">
             <div class="title-section">
-                <h2 *ngIf="!id || id === 'new'">Nouveau Document</h2>
-                <h2 *ngIf="id && id !== 'new'">{{form.get('type')?.value}} {{form.get('numero')?.value}}</h2>
+                <h2>{{ displayTitle }}</h2>
             </div>
             <div class="actions">
                 <button type="button" mat-stroked-button color="warn" routerLink="/p/clients"
@@ -15,6 +14,20 @@
                 <button type="button" mat-raised-button color="accent" (click)="openExchangeDialog()"
                     *ngIf="isViewMode && canExchange" class="btn-exchange no-print">
                     <mat-icon>swap_horiz</mat-icon> Retour / Échange
+                </button>
+
+                <!-- Create Invoice from Bon de Commande -->
+                <button type="button" mat-raised-button color="primary" (click)="convertToInvoice()"
+                    *ngIf="isViewMode && id && id !== 'new' && isBonDeCommande && form.get('type')?.value !== 'FACTURE'"
+                    class="btn-create-invoice no-print">
+                    <mat-icon>receipt_long</mat-icon> Créer Facture
+                </button>
+
+                <!-- NEW: Ajouter un Paiement -->
+                <button type="button" mat-raised-button color="accent" (click)="openPaymentDialog()"
+                    *ngIf="isViewMode && id && id !== 'new' && form.get('type')?.value !== 'AVOIR' && (form.get('type')?.value !== 'DEVIS' || isBonDeCommande)"
+                    class="btn-add-payment no-print">
+                    <mat-icon>payment</mat-icon> Nouveau Paiement
                 </button>
 
                 <!-- Print Action -->
@@ -50,7 +63,9 @@
             <div class="document-summary">
                 <div class="doc-title">
                     <h1 *ngIf="form.get('type')?.value === 'FACTURE'">FACTURE</h1>
-                    <h1 *ngIf="form.get('type')?.value === 'DEVIS'">DEVIS</h1>
+                    <h1 *ngIf="form.get('type')?.value === 'DEVIS'">
+                        {{ form.get('statut')?.value === 'VENTE_EN_INSTANCE' ? 'BON DE COMMANDE' : 'DEVIS' }}
+                    </h1>
                     <h1 *ngIf="form.get('type')?.value === 'AVOIR'">AVOIR</h1>
                     <h1 *ngIf="form.get('type')?.value === 'BL'">BON DE LIVRAISON</h1>
                 </div>
@@ -79,8 +94,8 @@
         </div>
 
         <mat-card class="content-card">
-            <div class="form-row triple">
-                <!-- Type -->
+            <!-- Type (Hidden) -->
+            <div style="display: none;">
                 <mat-form-field appearance="outline">
                     <mat-label>Type de Document</mat-label>
                     <mat-select formControlName="type">
@@ -90,49 +105,41 @@
                         <mat-option value="BL">Bon de Livraison</mat-option>
                     </mat-select>
                 </mat-form-field>
+            </div>
 
-                <!-- Statut -->
-                <mat-form-field appearance="outline" *ngIf="!isViewMode">
-                    <mat-label>Statut</mat-label>
-                    <mat-select formControlName="statut">
-                        <mat-option value="BROUILLON">Brouillon</mat-option>
-                        <mat-option value="VALIDE">Validé</mat-option>
-                        <mat-option value="PAYEE">Payée</mat-option>
-                        <mat-option value="ANNULEE">Annulée</mat-option>
-                    </mat-select>
-                </mat-form-field>
-
-                <div class="status-display" *ngIf="isViewMode">
-                    <span class="badgex badge-{{form.get('statut')?.value | lowercase}}">
-                        {{ form.get('statut')?.value }}
-                    </span>
+            <div class="header-grid-new">
+                <!-- Numero (Always visible, readonly) -->
+                <div class="field-col">
+                    <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Numéro de série</mat-label>
+                        <input matInput formControlName="numero" readonly class="font-bold text-blue-800"
+                            [placeholder]="(!id || id === 'new') ? 'NUMÉRO SERA GÉNÉRÉ' : 'SÉRIE INCONNUE'">
+                        <mat-icon matSuffix>pin</mat-icon>
+                    </mat-form-field>
                 </div>
 
                 <!-- Date -->
-                <mat-form-field appearance="outline">
-                    <mat-label>Date d'émission</mat-label>
-                    <input matInput [matDatepicker]="picker" formControlName="dateEmission">
-                    <mat-datepicker-toggle matIconSuffix [for]="picker" [disabled]="isViewMode"></mat-datepicker-toggle>
-                    <mat-datepicker #picker></mat-datepicker>
-                </mat-form-field>
+                <div class="field-col">
+                    <mat-form-field appearance="outline" class="w-full">
+                        <mat-label>Date d'émission</mat-label>
+                        <input matInput [matDatepicker]="picker" formControlName="dateEmission">
+                        <mat-datepicker-toggle matIconSuffix [for]="picker"
+                            [disabled]="isViewMode"></mat-datepicker-toggle>
+                        <mat-datepicker #picker></mat-datepicker>
+                    </mat-form-field>
+                </div>
 
-                <!-- Vendeur (Automated Display) -->
-                <div
-                    class="p-3 mt-4 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div
-                            class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-200">
-                            <mat-icon>person</mat-icon>
-                        </div>
-                        <div>
-                            <div class="text-[10px] font-black uppercase tracking-widest text-blue-400">Vendeur /
-                                Opticien</div>
-                            <div class="text-sm font-black text-blue-900 leading-tight">
-                                {{ (currentUser$ | async)?.fullName || 'Chargement...' }}
-                            </div>
-                        </div>
+                <!-- Statut (Centered) -->
+                <div class="field-col centered-cell">
+                    <div class="status-display-centered">
+                        <span class="badgex badge-{{form.get('statut')?.value | lowercase}}">
+                            {{ form.get('statut')?.value === 'VENTE_EN_INSTANCE' ? 'BON DE COMMANDE' :
+                            form.get('statut')?.value }}
+                        </span>
                     </div>
                 </div>
+
+                <!-- Vendeur details moved to parent tab bar -->
             </div>
 
             <mat-divider style="margin: 20px 0"></mat-divider>
@@ -190,9 +197,10 @@
                     </div>
 
                     <div class="montant-lettres" *ngIf="montantLettres">
-                        <strong>Arrêter {{ form.get('type')?.value === 'DEVIS' ? 'le présent devis' :
-                            (form.get('type')?.value === 'FACTURE' ? 'la présente facture' : 'le présent document') }} à
-                            la somme de :</strong><br>
+                        <strong>Arrêter {{ (form.get('type')?.value === 'DEVIS' && form.get('statut')?.value ===
+                            'VENTE_EN_INSTANCE') ? 'le présent bon de commande' : (form.get('type')?.value === 'DEVIS' ?
+                            'le présent devis' : (form.get('type')?.value === 'FACTURE' ? 'la présente facture' : 'le
+                            présent document')) }} à la somme de :</strong><br>
                         {{ montantLettres }}
                     </div>
                 </div>
@@ -227,7 +235,6 @@
                                 <input matInput type="number" formControlName="remiseGlobalValue"
                                     (change)="calculateTotals()" min="0">
                             </mat-form-field>
-
                         </div>
                         <div class="discount-calculation"
                             *ngIf="form.get('proprietes.remiseGlobalValue')?.value > 0 && form.get('proprietes.remiseGlobalType')?.value === 'PERCENT'">
@@ -270,9 +277,17 @@
                     </div>
                 </div>
             </div>
-
-
         </mat-card>
+
+        <!-- [RESTORED] Payments Section -->
+        <div class="payments-section mt-4 no-print"
+            *ngIf="id && id !== 'new' && client && (form.get('type')?.value !== 'DEVIS' || isBonDeCommande)">
+            <mat-card>
+                <app-payment-list [clientId]="client.id" [ficheId]="ficheIdInput || undefined"
+                    (paymentAdded)="loadFacture(id!)">
+                </app-payment-list>
+            </mat-card>
+        </div>
 
         <!-- PRINT SIGNATURES -->
         <div class="print-signatures">

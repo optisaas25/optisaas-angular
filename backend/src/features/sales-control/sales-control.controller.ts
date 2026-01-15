@@ -40,9 +40,14 @@ export class SalesControlController {
         return this.salesControlService.validateInvoice(id);
     }
 
-    @Post('declare-gift/:id')
-    async declareAsGift(@Param('id') id: string) {
-        return this.salesControlService.declareAsGift(id);
+    @Post('convert-to-order/:id')
+    async convertToOrder(@Param('id') id: string) {
+        return this.salesControlService.convertToOrder(id);
+    }
+
+    @Post('archive/:id')
+    async archiveInvoice(@Param('id') id: string) {
+        return this.salesControlService.archiveInvoice(id);
     }
 
     // Delete is handled by existing factures controller

@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -16,11 +16,13 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { FactureService } from '../../services/facture.service';
+import { SalesControlService } from '../../../reports/services/sales-control.service';
 import { PaiementService } from '../../services/paiement.service';
 import { PaymentDialogComponent, Payment } from '../../dialogs/payment-dialog/payment-dialog.component';
 import { LoyaltyService } from '../../services/loyalty.service';
 import { ClientManagementService } from '../../services/client.service';
 import { numberToFrench } from '../../../../utils/number-to-text';
+import { PaymentListComponent } from '../../components/payment-list/payment-list.component';
 import { Store } from '@ngrx/store';
 import { UserCurrentCentreSelector, UserSelector } from '../../../../core/store/auth/auth.selectors';
 import { take } from 'rxjs';
@@ -42,7 +44,8 @@ import { Employee } from '../../../../shared/interfaces/employee.interface';
         MatIconModule,
         MatCardModule,
         MatDividerModule,
-        RouterModule
+        RouterModule,
+        PaymentListComponent
     ],
     templateUrl: './facture-form.component.html',
     styleUrls: ['./facture-form.component.scss']
@@ -51,6 +54,7 @@ export class FactureFormComponent implements OnInit {
     @Input() factureId: string | null = null;
     @Input() clientIdInput: string | null = null;
     @Input() ficheIdInput: string | null = null;
+    @Input() initialData: any = null;
     @Input() initialLines: any[] = [];
     @Input() embedded = false;
     @Input() nomenclature: string | null = null;
@@ -80,6 +84,8 @@ export class FactureFormComponent implements OnInit {
     pointsFideliteClient = 0;
 
     currentUser$: Observable<any> = this.store.select(UserSelector);
+    currentFacture: any = null;
+    loggedInUser: any = null;
 
     constructor(
         private fb: FormBuilder,
@@ -91,7 +97,9 @@ export class FactureFormComponent implements OnInit {
         private clientService: ClientManagementService,
         private snackBar: MatSnackBar,
         private dialog: MatDialog,
-        private store: Store
+        private store: Store,
+        private salesControlService: SalesControlService,
+        public cdr: ChangeDetectorRef
     ) {
         this.form = this.fb.group({
             numero: [''], // Auto-generated
@@ -112,6 +120,8 @@ export class FactureFormComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        this.store.select(UserSelector).pipe(take(1)).subscribe(user => this.loggedInUser = user);
+
         if (this.nomenclature && this.embedded) {
             this.form.patchValue({ proprietes: { nomenclature: this.nomenclature } });
         }
@@ -163,6 +173,19 @@ export class FactureFormComponent implements OnInit {
             this.calculateTotals();
         }
     }
+
+    // [NEW] Allow parent to force sync lines and totals before save
+    syncLines(lines: any[]) {
+        if (!lines || lines.length === 0) return;
+        this.lignes.clear();
+        lines.forEach(l => {
+            const group = this.createLigne();
+            group.patchValue(l);
+            this.lignes.push(group);
+        });
+        this.calculateTotals();
+        this.cdr.detectChanges();
+    }
     // ... (rest of methods) - RESTORED
     updateViewMode() {
         // Check if we're in explicit view mode from route
@@ -198,12 +221,24 @@ export class FactureFormComponent implements OnInit {
         if (this.id && this.id !== 'new') {
             this.loadFacture(this.id);
         } else {
+            // Process initialLines if provided (from parent component)
             if (this.initialLines && this.initialLines.length > 0) {
                 this.lignes.clear();
-                this.initialLines.forEach(l => {
-                    const group = this.createLigne();
-                    group.patchValue(l);
-                    this.lignes.push(group);
+                this.initialLines.forEach((l: any) => {
+                    const lineGroup = this.createLigne();
+                    // Map both old (designation/quantite) and new (description/qte) property names
+                    const mappedLine = {
+                        description: l.description || l.designation || '',
+                        qte: l.qte || l.quantite || 1,
+                        prixUnitaireTTC: l.prixUnitaireTTC || 0,
+                        remise: l.remise || 0,
+                        totalTTC: l.totalTTC || 0,
+                        productId: l.productId || null,
+                        entrepotId: l.entrepotId || null,
+                        entrepotType: l.entrepotType || null
+                    };
+                    lineGroup.patchValue(mappedLine);
+                    this.lignes.push(lineGroup);
                 });
                 this.calculateTotals();
             } else {
@@ -212,6 +247,7 @@ export class FactureFormComponent implements OnInit {
             // Disable form for embedded new invoices too
             this.updateViewMode();
         }
+
     }
 
     handleRouteInit() {
@@ -377,7 +413,7 @@ export class FactureFormComponent implements OnInit {
         this.saveAsObservable().subscribe();
     }
 
-    saveAsObservable(showNotification = true, extraProperties: any = null): Observable<any> {
+    saveAsObservable(showNotification = true, extraProperties: any = null, forcedStatut: string | null = null): Observable<any> {
         if (this.form.invalid) return new Observable(obs => obs.next(null));
 
         // Ensure nomenclature from input is in the form before saving
@@ -415,8 +451,12 @@ export class FactureFormComponent implements OnInit {
 
         console.log('📝 FactureFormComponent.saveAsObservable - Merged Properties:', mergedProprietes);
 
+        // [FIX] Force CD before preparing data object to ensure any recent patches are reflected
+        this.cdr.detectChanges();
+
         const factureData: any = {
             ...restFormData,
+            statut: forcedStatut || restFormData.statut, // [FIX] Force status if provided by parent
             centreId: this.centreId, // CRITICAL: Propagation for stock decrement fallback
             proprietes: mergedProprietes,
             ficheId: this.ficheIdInput, // Include link to Fiche
@@ -445,12 +485,15 @@ export class FactureFormComponent implements OnInit {
                 // IMPORTANT: Update form with returned data (Official Number, New Status, etc.)
                 // This handles the Draft -> Valid ID swap seamlessly
                 if (facture.numero !== this.form.get('numero')?.value) {
+                    console.log('📝 [FactureForm] Patching generated number:', facture.numero);
                     this.form.patchValue({
                         numero: facture.numero,
                         statut: facture.statut,
-                        // Update other fields if backend normalized them
-                    }, { emitEvent: false });
+                    }, { emitEvent: true });
                 }
+                // Also update local currentFacture for displayTitle reactivity
+                this.currentFacture = { ...facture };
+                this.cdr.detectChanges(); // [FIX] Force UI update (Titles, Numbers)
 
                 if (showNotification) {
                     this.snackBar.open('Document enregistré avec succès', 'Fermer', { duration: 3000 });
@@ -616,6 +659,80 @@ export class FactureFormComponent implements OnInit {
             'AUTRE': 'Autre'
         };
         return modes[mode] || mode;
+    }
+
+    getVendeurName(): string {
+        if (this.currentFacture?.vendeur) {
+            return `${this.currentFacture.vendeur.prenom} ${this.currentFacture.vendeur.nom}`;
+        }
+
+        const user = this.loggedInUser;
+        if (user) {
+            if (user.employee) return `${user.employee.prenom} ${user.employee.nom}`;
+            if (user.fullName) return user.fullName;
+            if (user.email) return user.email;
+        }
+
+        return 'Utilisateur';
+    }
+
+    get isBonDeCommande(): boolean {
+        const type = this.form.get('type')?.value;
+        const statut = this.form.get('statut')?.value;
+        const numero = this.form.get('numero')?.value;
+
+        // It's a BC if type is DEVIS and it has a BC number or specific order status
+        // Also if it's a DEVIS that has payments (PARTIEL/PAYEE), it's effectively an order
+        return type === 'DEVIS' && (
+            statut === 'VENTE_EN_INSTANCE' ||
+            (numero && (numero.startsWith('BC-') || numero.includes('BC'))) ||
+            statut === 'PARTIEL' ||
+            statut === 'PAYEE'
+        );
+    }
+
+    get displayTitle(): string {
+        const type = this.form.get('type')?.value || 'FACTURE';
+        const numero = this.form.get('numero')?.value;
+        const statut = this.form.get('statut')?.value;
+
+        // Detect labels based on prefix or status
+        const isBC = this.isBonDeCommande;
+        const isDevis = (type === 'DEVIS' && !isBC) || (numero && numero.startsWith('DEV-'));
+
+        // [FIX] Priority: Use generated serial number if available
+        if (numero && (numero.length > 3)) {
+            if (isBC) return `Bon de Commande ${numero}`;
+            if (isDevis) return `Devis ${numero}`;
+            return `Facture ${numero}`;
+        }
+
+        if (!this.id || this.id === 'new') {
+            if (isBC) return 'Nouveau Bon de Commande';
+            return type === 'DEVIS' ? 'Nouveau Devis' : 'Nouvelle Facture';
+        }
+
+        if (isBC) return `Bon de Commande ${numero || ''}`;
+        if (isDevis) return `Devis ${numero || ''}`;
+        return `Facture ${numero || ''}`;
+    }
+
+    convertToInvoice() {
+        if (!this.id || this.id === 'new') return;
+
+        if (!confirm("Voulez-vous transformer ce Bon de Commande en Facture officielle ?")) return;
+
+        this.salesControlService.validateInvoice(this.id).subscribe({
+            next: (updated: any) => {
+                this.snackBar.open(`Facture générée : ${updated.numero}`, 'Fermer', { duration: 5000 });
+                this.loadFacture(this.id!); // Refresh UI
+            },
+            error: (err: any) => {
+                console.error('Error generating invoice:', err);
+                const msg = err.error?.message || 'Erreur lors de la génération de la facture';
+                this.snackBar.open(msg, 'Fermer', { duration: 5000 });
+            }
+        });
     }
 
     get canExchange(): boolean {

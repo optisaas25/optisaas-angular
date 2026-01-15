@@ -54,15 +54,18 @@ export class FacturesService implements OnModuleInit {
             throw new BadRequestException('La facture doit contenir au moins une ligne');
         }
 
-        // 3. Generate number based on status
+        // 3. Generate number based on type and status
         const type = data.type; // FACTURE, DEVIS, AVOIR, BL
         let numero = '';
 
-        if (data.statut === 'BROUILLON' || data.statut === 'DEVIS_EN_COURS') {
-            // Temporary number for drafts/in-progress devis
-            numero = `Devis - ${new Date().getTime()} `;
+        console.log('🔢 [BACKEND CREATE] Request Body:', { type: data.type, statut: data.statut, clientId: data.clientId });
+
+        if (data.statut === 'BROUILLON') {
+            numero = await this.generateNextNumber(type, data.statut);
+            console.log(`✅ [BACKEND CREATE] Draft assigned: ${numero}`);
         } else {
-            numero = await this.generateNextNumber(type);
+            numero = await this.generateNextNumber(type, data.statut);
+            console.log(`✅ [BACKEND CREATE] Official assigned: ${numero}`);
         }
 
         console.log('💾 Creating facture with proprietes:', data.proprietes);
@@ -82,14 +85,18 @@ export class FacturesService implements OnModuleInit {
 
         let facture;
         try {
+            // [FIX] Ensure the generated numero wins. Remove it from cleanData if present.
+            const { numero: _, ...dataForPrisma } = cleanData;
+
             facture = await this.prisma.facture.create({
                 data: {
-                    ...cleanData,
+                    ...dataForPrisma,
                     numero,
-                    statut: data.statut || 'BROUILLON',
+                    statut: data.statut || (data.ficheId ? 'VENTE_EN_INSTANCE' : 'BROUILLON'),
                     resteAPayer: data.totalTTC || 0,
                     vendeurId: vendeurId || null
-                }
+                },
+                include: { client: true, paiements: true, vendeur: true, fiche: true }
             });
         } catch (error) {
             if (error.code === 'P2002' && error.meta?.target?.includes('ficheId')) {
@@ -103,14 +110,25 @@ export class FacturesService implements OnModuleInit {
                 if (existing) {
                     console.log(`🔄 [CONFLICT Handled] Converting existing invoice ${existing.id} (${existing.statut}) to target status: ${data.statut}`);
 
-                    // [FIX] Exclude 'numero' from the update payload. 
-                    // We must NOT try to change the number of an existing invoice during this recovery.
-                    const { numero, ...updateData } = data;
+                    // [FIX] Smart Numero Handling during Conflict Recovery
+                    // If existing invoice has a valid official number, PRESERVE IT.
+                    // If existing invoice has NO number (or just prefix), allow the new generated one.
+                    const existingHasNumber = existing.numero && existing.numero.length > 5 && /\d/.test(existing.numero);
+
+                    let updatePayload: any = { ...data };
+                    if (existingHasNumber) {
+                        // Exclude 'numero' from payload to protect existing number
+                        const { numero, ...rest } = data;
+                        updatePayload = rest;
+                    } else {
+                        // Use the number we generated at the start of create() if existing has none
+                        if (!updatePayload.numero) updatePayload.numero = numero;
+                    }
 
                     return this.update({
                         where: { id: existing.id },
                         data: {
-                            ...updateData,
+                            ...updatePayload,
                             proprietes: {
                                 ...(existing.proprietes as any || {}),
                                 ...(data.proprietes || {})
@@ -146,16 +164,30 @@ export class FacturesService implements OnModuleInit {
         return facture;
     }
 
-    private async generateNextNumber(type: string, tx?: any): Promise<string> {
+    private getPrefix(type: string, statut?: string): string {
+        console.log(`🔍 [GET PREFIX] Type: ${type}, Statut: ${statut}`);
+        if (type === 'FACTURE') return 'FAC';
+        if (type === 'AVOIR') return 'AVO';
+        if (type === 'DEVIS') {
+            if (statut === 'VENTE_EN_INSTANCE') return 'BC';
+            return 'DEV';
+        }
+        if (type === 'BL') return 'BL';
+        return 'DOC';
+    }
+
+    private async generateNextNumber(type: string, statut?: string, tx?: any): Promise<string> {
         const year = new Date().getFullYear();
-        const prefix = this.getPrefix(type);
+        const prefix = this.getPrefix(type, statut);
         const prisma = tx || this.prisma;
+
+        console.log(`📊 [GENERATE] For Type: ${type}, Statut: ${statut}, Prefix: ${prefix}, Year: ${year}`);
 
         // Find last document starting with this prefix for current year
         const lastDoc = await prisma.facture.findFirst({
             where: {
                 numero: {
-                    startsWith: `${prefix} -${year} `
+                    startsWith: `${prefix}-${year}`
                 }
             },
             orderBy: {
@@ -165,13 +197,27 @@ export class FacturesService implements OnModuleInit {
 
         let sequence = 1;
         if (lastDoc) {
-            const parts = lastDoc.numero.split('-');
-            if (parts.length === 3) {
-                sequence = parseInt(parts[2]) + 1;
+            console.log(`🔍 [GENERATE] Found last doc: ${lastDoc.numero}`);
+            // [FIX] Robust extraction of the numeric part at the end
+            const match = lastDoc.numero.match(/-(\d+)$/);
+            if (match) {
+                sequence = parseInt(match[1]) + 1;
+            } else {
+                // Fallback for non-standard formats
+                const parts = lastDoc.numero.split('-');
+                if (parts.length >= 2) {
+                    const lastPart = parts[parts.length - 1];
+                    const num = parseInt(lastPart);
+                    if (!isNaN(num)) sequence = num + 1;
+                }
             }
+        } else {
+            console.log(`✨ [GENERATE] No previous document found for ${prefix}-${year}. Starting at 001.`);
         }
 
-        return `${prefix} -${year} -${sequence.toString().padStart(3, '0')} `;
+        const finalNumber = `${prefix}-${year}-${sequence.toString().padStart(3, '0')}`;
+        console.log(`🔢 [GENERATE] Resulting Number: ${finalNumber}`);
+        return finalNumber;
     }
 
     // Helper: Decrement Stock for Valid Invoice (Principal Warehouses)
@@ -386,7 +432,8 @@ export class FacturesService implements OnModuleInit {
             include: {
                 client: true,
                 fiche: true,
-                paiements: true
+                paiements: true,
+                vendeur: true
             }
         });
     }
@@ -519,7 +566,7 @@ export class FacturesService implements OnModuleInit {
                 console.log(`🚀[FISCAL FLOW] STARTING conversion for ${currentFacture.numero}`);
 
                 return this.prisma.$transaction(async (tx) => {
-                    const newNumero = await this.generateNextNumber('FACTURE', tx); // Generate new number early
+                    const newNumero = await this.generateNextNumber('FACTURE', undefined, tx); // Generate new number early
                     const isOfficial = currentFacture.numero.trim().startsWith('FAC');
 
                     if (isOfficial) {
@@ -529,7 +576,7 @@ export class FacturesService implements OnModuleInit {
                         const avoirData: Prisma.FactureUncheckedCreateInput = {
                             type: 'AVOIR',
                             statut: 'VALIDE',
-                            numero: await this.generateNextNumber('AVOIR', tx),
+                            numero: await this.generateNextNumber('AVOIR', undefined, tx),
                             dateEmission: new Date(),
                             clientId: currentFacture.clientId,
                             centreId: currentFacture.centreId,
@@ -577,7 +624,7 @@ export class FacturesService implements OnModuleInit {
                     // For now, I'll allow `this.generateNextNumber` (non-tx) but it might miss the AVOIR increment if run strictly parallel?
                     // But here we generate FACTURE number. Avoir is AVOIR type. Distinct sequences. Safe.
 
-                    const officialNumber = await this.generateNextNumber('FACTURE', tx); // Validating a DEVIS creates a FACTURE
+                    const officialNumber = await this.generateNextNumber('FACTURE', undefined, tx); // Validating a DEVIS creates a FACTURE
                     const { client, paiements, fiche, ...existingFlat } = currentFacture as any;
                     const { client: dClient, paiements: dPai, fiche: dFiche, ...incomingData } = data as any;
 
@@ -698,10 +745,10 @@ export class FacturesService implements OnModuleInit {
                     const finalInvoice = await tx.facture.update({
                         where: { id: newInvoice.id },
                         data: {
-                            ficheId: currentFacture.ficheId, // Re-link Fiche
                             statut: finalStatut,
                             resteAPayer: reste
-                        }
+                        },
+                        include: { client: true, paiements: true }
                     });
 
                     // 7. STOCK DECREMENT LOGIC
@@ -744,10 +791,64 @@ export class FacturesService implements OnModuleInit {
         }
 
         // Guard: Verify products if status changes to VALIDE outside fiscal flow
-        let currentRecord: any = null;
-        if (cleanData.statut === 'VALIDE' || cleanData.proprietes) {
-            currentRecord = await this.prisma.facture.findUnique({ where });
+        let currentRecord: any = await this.prisma.facture.findUnique({ where });
+        if (!currentRecord) throw new NotFoundException('Facture non trouvée');
 
+        // [NEW] Automatic Renumbering & Official Serial Transition
+        console.log('🔄 [BACKEND UPDATE] Processing invoice update:', {
+            id: (where as any).id,
+            incomingStatut: cleanData.statut,
+            incomingNumero: cleanData.numero,
+            currentStatut: currentRecord.statut,
+            currentNumero: currentRecord.numero
+        });
+
+        // Protected Numero: Don't allow empty string from frontend to overwrite existing number
+        if (cleanData.numero === '' || cleanData.numero === null) {
+            delete cleanData.numero;
+        }
+
+        // All statuses that should trigger sequential numbering (Basically everything except pure transient drafts)
+        const isOfficiallyTracked = (st: string) => ['BROUILLON', 'DEVIS_EN_COURS', 'DEVIS_SANS_PAIEMENT', 'VENTE_EN_INSTANCE', 'VALIDE', 'PAYEE', 'PARTIEL', 'ARCHIVE'].includes(st);
+        const isSequentialNumber = (num: string) => /^[A-Z]{2,3}-[0-9]{4}-[0-9]{3,}$/.test(num || '');
+
+        // [FIX] Prevent Status Downgrade: If current is official (BC or higher), don't allow reverting to BROUILLON/DEVIS_EN_COURS
+        const isTrulyOfficial = (st: string) => ['VENTE_EN_INSTANCE', 'VALIDE', 'PAYEE', 'PARTIEL'].includes(st);
+        if ((cleanData.statut === 'BROUILLON' || cleanData.statut === 'DEVIS_EN_COURS') && isTrulyOfficial(currentRecord.statut)) {
+            console.warn(`🛡️ [UPDATE] Blocking downgrade from ${currentRecord.statut} to ${cleanData.statut}. Preserving ${currentRecord.statut}.`);
+            delete cleanData.statut;
+        }
+
+        const targetStatut = cleanData.statut || currentRecord.statut;
+        const targetType = cleanData.type || currentRecord.type;
+        const currentPrefix = (currentRecord.numero || '').split('-')[0].trim();
+        const expectedPrefix = this.getPrefix(targetType, targetStatut);
+
+        // Renumbering logic:
+        // 1. Status transition (e.g. DEVIS -> BC)
+        // 2. Not a sequential number yet (matches regexp ^[A-Z]{2,3}-[0-9]{4}-[0-9]{3,}$)
+        // 3. Prefix change (e.g. BC -> FAC, or DEV -> BC)
+        const isActuallyTracked = isOfficiallyTracked(targetStatut);
+        const needsInitialSequence = isActuallyTracked && !isSequentialNumber(currentRecord.numero);
+        const prefixMismatch = isActuallyTracked && expectedPrefix !== 'DOC' && expectedPrefix !== currentPrefix;
+
+        if (needsInitialSequence || prefixMismatch) {
+            console.log(`♻️ [UPDATE] Renumbering triggered:`, { needsInitialSequence, prefixMismatch, expectedPrefix, currentPrefix, targetStatut });
+            const newNumber = await this.generateNextNumber(targetType, targetStatut);
+            cleanData.numero = newNumber;
+            console.log(`✅ [UPDATE] Assigned new serial: ${newNumber}`);
+        } else if (isActuallyTracked && (!currentRecord.numero || currentRecord.numero === '')) {
+            // Extra safety: If document is tracked but somehow has NO number, force one
+            const forcedNumber = await this.generateNextNumber(targetType, targetStatut);
+            cleanData.numero = forcedNumber;
+            console.log(`🛡️ [UPDATE] Forced assignment of serial: ${forcedNumber}`);
+        } else if (currentRecord.numero && (!cleanData.numero || cleanData.numero === '')) {
+            // Protect existing number from being cleared by accidental empty string from frontend
+            cleanData.numero = currentRecord.numero;
+            console.log(`🛡️ [UPDATE] Protected existing numero: ${currentRecord.numero}`);
+        }
+
+        if (cleanData.statut === 'VALIDE' || cleanData.proprietes) {
             // Merge properties if both exist
             if (currentRecord && cleanData.proprietes) {
                 const existingProps = currentRecord.proprietes as any || {};
@@ -775,6 +876,7 @@ export class FacturesService implements OnModuleInit {
         const updatedFacture = await this.prisma.facture.update({
             data: cleanData,
             where,
+            include: { client: true, paiements: true, vendeur: true, fiche: true }
         });
 
         // [NEW] Logic: Stock Decrement on Validation, Instance, or Archive
@@ -914,16 +1016,6 @@ export class FacturesService implements OnModuleInit {
         }
     }
 
-    private getPrefix(type: string): string {
-        switch (type) {
-            case 'FACTURE': return 'FAC';
-            case 'DEVIS': return 'DEV';
-            case 'AVOIR': return 'AVR';
-            case 'BL': return 'BL';
-            default: return 'DOC';
-        }
-    }
-
     async createExchange(invoiceId: string, itemsToReturn: { lineIndex: number, quantiteRetour: number, reason: string, targetWarehouseId?: string }[], centreId: string) {
         if (!centreId) {
             throw new BadRequestException('ID du centre (Tenant) manquant pour cette opération');
@@ -941,9 +1033,9 @@ export class FacturesService implements OnModuleInit {
         const originalLines = (typeof original.lignes === 'string' ? JSON.parse(original.lignes) : original.lignes) as any[];
 
         return this.prisma.$transaction(async (tx) => {
-            const newNumero = await this.generateNextNumber('FACTURE', tx);
+            const newNumero = await this.generateNextNumber('FACTURE', undefined, tx);
             // A. Create Full Avoir
-            const avoirNumero = await this.generateNextNumber('AVOIR', tx);
+            const avoirNumero = await this.generateNextNumber('AVOIR', undefined, tx);
             const avoir = await tx.facture.create({
                 data: {
                     numero: avoirNumero,
@@ -1216,7 +1308,7 @@ export class FacturesService implements OnModuleInit {
     }
 
     async migrateBroNumbersToDevis() {
-        console.log('🔄 Migrating BRO- numbers to Devis-...');
+        console.log('🔄 Migrating BRO- numbers to DEV-...');
         const drafts = await this.prisma.facture.findMany({
             where: {
                 numero: { startsWith: 'BRO-' }
@@ -1225,7 +1317,8 @@ export class FacturesService implements OnModuleInit {
 
         let count = 0;
         for (const draft of drafts) {
-            const newNumero = draft.numero.replace('BRO-', 'Devis-');
+            // [FIX] Use DEV- instead of Devis- for consistency with sequential numbering
+            const newNumero = draft.numero.replace('BRO-', 'DEV-');
             await this.prisma.facture.update({
                 where: { id: draft.id },
                 data: { numero: newNumero }
@@ -1234,7 +1327,7 @@ export class FacturesService implements OnModuleInit {
         }
 
         if (count > 0) {
-            console.log(`✅ Renamed ${count} drafts from BRO - to Devis -.`);
+            console.log(`✅ Renamed ${count} drafts from BRO- to DEV-.`);
         } else {
             console.log('✨ No BRO- drafts to rename.');
         }

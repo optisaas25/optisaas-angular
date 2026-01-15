@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FacturesService } from '../factures/factures.service';
+import { FactureType } from '../factures/dto/create-facture.dto';
 
 @Injectable()
 export class SalesControlService {
@@ -234,13 +235,28 @@ export class SalesControlService {
     }
 
 
-    // Validate a BROUILLON invoice
+    // Validate a document (Transition to Official Facture)
     async validateInvoice(id: string) {
-        // Use the existing update method which handles AVOIR creation
+        // Use the existing update method which handles AVOIR creation and Numbering transition
         return this.facturesService.update({
             where: { id },
             data: {
+                type: FactureType.FACTURE,
                 statut: 'VALIDE',
+                proprietes: {
+                    forceStockDecrement: true
+                }
+            }
+        });
+    }
+
+    // Convert a Devis to a Bon de Commande (Transition to BC)
+    async convertToOrder(id: string) {
+        return this.facturesService.update({
+            where: { id },
+            data: {
+                type: FactureType.DEVIS,
+                statut: 'VENTE_EN_INSTANCE',
                 proprietes: {
                     forceStockDecrement: true
                 }
@@ -274,6 +290,16 @@ export class SalesControlService {
                     typeVente: 'DON',
                     raison: 'Déclaré comme don/offert'
                 }
+            }
+        });
+    }
+
+    // Archive a Devis (Consolidate)
+    async archiveInvoice(id: string) {
+        return this.prisma.facture.update({
+            where: { id },
+            data: {
+                statut: 'ARCHIVE'
             }
         });
     }

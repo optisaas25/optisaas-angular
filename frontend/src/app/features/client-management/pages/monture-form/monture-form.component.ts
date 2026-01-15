@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef, TemplateRef } from '@angular/core';
+import { CommonModule, Location } from '@angular/common';
 import { Observable, of, BehaviorSubject, firstValueFrom, throwError } from 'rxjs';
 import { FormBuilder, FormGroup, AbstractControl, ReactiveFormsModule, Validators, FormArray, FormControl } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
@@ -12,6 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { StockAvailabilityDialogComponent } from '../../../../shared/components/stock-availability-dialog/stock-availability-dialog.component';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -34,7 +35,7 @@ import { InvoiceFormDialogComponent } from '../../../finance/components/invoice-
 import { Product, ProductStatus } from '../../../../shared/interfaces/product.interface';
 import { forkJoin, timer, Subject } from 'rxjs';
 import { Store } from '@ngrx/store';
-import { UserCurrentCentreSelector } from '../../../../core/store/auth/auth.selectors';
+import { UserCurrentCentreSelector, UserSelector } from '../../../../core/store/auth/auth.selectors';
 
 
 interface PrescriptionFile {
@@ -82,6 +83,7 @@ interface PrescriptionFile {
 })
 export class MontureFormComponent implements OnInit, OnDestroy {
     @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+    @ViewChild('saveDialog') saveDialogTemplate!: TemplateRef<any>;
     @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
     @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
     @ViewChild('frameCanvasElement') frameCanvas!: ElementRef<HTMLCanvasElement>;
@@ -122,6 +124,12 @@ export class MontureFormComponent implements OnInit, OnDestroy {
 
         if (index <= 1) return true;
 
+        // NEW: Check if post-sale tabs should even be shown (for Devis)
+        if (!this.shouldShowPostSaleTabs && (index === 2 || index === 4 || index === 5)) {
+            if (shouldLog) console.log(`[DEBUG] Tab ${index} blocked: This is a simple Devis`);
+            return false;
+        }
+
         // Requirements for moving past tab 1 (Montures et Verres)
         // 1. Must be saved in database
         if (!this.ficheId || this.ficheId === 'new') {
@@ -129,10 +137,11 @@ export class MontureFormComponent implements OnInit, OnDestroy {
             return false;
         }
 
-        // 2. Must have valid delivery date
+        // 2. Must have valid delivery date (OR already have a linked invoice/BC)
         const dateVal = this.ficheForm.get('dateLivraisonEstimee')?.value;
-        if (!dateVal) {
-            if (shouldLog) console.log(`[DEBUG] Tab ${index} blocked: No delivery date`);
+        const hasLinkedInvoice = !!this.linkedFactureSubject.value;
+        if (!dateVal && !hasLinkedInvoice) {
+            if (shouldLog) console.log(`[DEBUG] Tab ${index} blocked: No delivery date and no linked invoice`);
             return false;
         }
 
@@ -217,15 +226,36 @@ export class MontureFormComponent implements OnInit, OnDestroy {
         const status = this.linkedFactureSubject.value?.statut;
         return status === 'VENTE_EN_INSTANCE' || status === 'BROUILLON';
     }
+
+    get isBonDeCommande(): boolean {
+        const fact = this.linkedFactureSubject.value;
+        if (!fact) return false;
+
+        const type = fact.type;
+        const statut = fact.statut;
+        const numero = fact.numero;
+
+        // It's a BC if type is DEVIS and it has a BC number or specific order status
+        return type === 'DEVIS' && (
+            statut === 'VENTE_EN_INSTANCE' ||
+            (numero && (numero.startsWith('BC-') || numero.includes('BC'))) ||
+            statut === 'PARTIEL' ||
+            statut === 'PAYEE'
+        );
+    }
     receptionComplete = false;
     isReserved = false;
     isTransit = false;
     currentFiche: any = null; // Store loaded fiche for template/checks
     initialLines: any[] = [];
     initialProductStatus: string | null = null; // Track initial status: 'RUPTURE' or 'DISPONIBLE'
+    loggedInUser: any = null;
 
     nomenclatureString: string | null = null;
     showFacture = false;
+
+    // Flag to prevent repetitive validation prompts
+    private hasUserDismissedValidation = false;
 
     // Local storage for frame height in case form control fails
     private lastMeasFrameHeight: number | null = null;
@@ -300,9 +330,14 @@ export class MontureFormComponent implements OnInit, OnDestroy {
         private factureService: FactureService,
         private productService: ProductService,
         private snackBar: MatSnackBar,
-        private store: Store
+        private store: Store,
+        private location: Location
     ) {
         this.ficheForm = this.initForm();
+        this.store.select(UserSelector).pipe(takeUntil(this.destroy$)).subscribe(user => {
+            this.loggedInUser = user;
+            this.cdr.markForCheck();
+        });
     }
 
     ngOnInit(): void {
@@ -557,17 +592,25 @@ export class MontureFormComponent implements OnInit, OnDestroy {
 
 
     loadLinkedFacture(): void {
-        if (!this.clientId || !this.ficheId) return;
+        if (!this.clientId || !this.ficheId || this.ficheId === 'new') return;
 
-        // Find invoice linked to this fiche
-        this.factureService.findAll({ clientId: this.clientId }).subscribe(factures => {
-            const found = factures.find(f => f.ficheId === this.ficheId);
-            if (found) {
-                console.log('🔗 Linked Facture found:', found.numero, '| Status:', found.statut);
-                this.linkedFactureSubject.next(found);
-            } else {
-                this.linkedFactureSubject.next(null);
-            }
+        console.log('🔍 [MontureForm] Searching for linked document for fiche:', this.ficheId);
+        // [OPTIMIZATION] Search directly by FicheId (Unique) instead of filtering client invoices
+        this.factureService.findAll({ ficheId: this.ficheId }).subscribe({
+            next: (factures) => {
+                const found = factures[0]; // Backend findAll with ficheId returns take: 1
+                if (found) {
+                    console.log('🔗 [MontureForm] Linked document found:', found.numero, '| Status:', found.statut);
+                    this.linkedFactureSubject.next(found);
+                } else if (!this.linkedFactureSubject.value?.numero) {
+                    // [FIX] Only emit NULL if we don't already have a valid document with a number
+                    // This prevents "flicker" during save race conditions where the query might return empty
+                    // while the backend is still committing but the frontend already has the 'tap' result.
+                    console.log('⚪ [MontureForm] No linked document found for this fiche. (Resetting state)');
+                    this.linkedFactureSubject.next(null);
+                }
+            },
+            error: (err) => console.error('❌ [MontureForm] Error loading linked invoice:', err)
         });
 
         // Make reception check reactive to invoice status changes
@@ -587,8 +630,8 @@ export class MontureFormComponent implements OnInit, OnDestroy {
         console.log('✅ [EVENT] Invoice saved in MontureFormComponent:', facture.numero || facture);
         console.log('📊 [EVENT] Invoice status:', facture.statut, '| Type:', facture.type);
 
-        // Update the subject to reflect the new state (e.g. Valid status, New Number)
-        this.linkedFactureSubject.next(facture);
+        // [FIX] Use deep copy to ensure Angular sees the change even if the object reference is similar
+        this.linkedFactureSubject.next({ ...facture });
         this.loadClientFactures();
 
         // FIX: Reload fiche to trigger checkReceptionForInstance and update UI
@@ -598,6 +641,7 @@ export class MontureFormComponent implements OnInit, OnDestroy {
         }
 
         this.cdr.markForCheck();
+        this.cdr.detectChanges(); // [FIX] Force immediate UI updates for tabs and visibility
     }
 
     updateNomenclature(): void {
@@ -1441,13 +1485,7 @@ export class MontureFormComponent implements OnInit, OnDestroy {
         }
     }
 
-    goBack(): void {
-        if (this.clientId) {
-            this.router.navigate(['/p/clients', this.clientId]);
-        } else {
-            this.router.navigate(['/p/clients']);
-        }
-    }
+
 
     // File Handling
     openFileUpload(): void {
@@ -1751,6 +1789,21 @@ export class MontureFormComponent implements OnInit, OnDestroy {
         });
     }
 
+    getVendeurName(): string {
+        if (this.currentFiche?.vendeur) {
+            return `${this.currentFiche.vendeur.prenom} ${this.currentFiche.vendeur.nom}`;
+        }
+
+        const user = this.loggedInUser;
+        if (user) {
+            if (user.employee) return `${user.employee.prenom} ${user.employee.nom}`;
+            if (user.fullName) return user.fullName;
+            if (user.email) return user.email;
+        }
+
+        return 'Utilisateur';
+    }
+
     private patchForm(fiche: any): void {
         // Patch Form Values
         console.log('📦 [PATCH] Patching Montage Data:', fiche.montage);
@@ -1921,7 +1974,7 @@ export class MontureFormComponent implements OnInit, OnDestroy {
             if (prixMonture > 0) {
                 const ref = mainMonture.reference || 'Monture';
                 const marque = mainMonture.marque || '';
-                const detectedType = mainMonture.entrepotType || (this.allProducts?.find(p => p.id === mainMonture.productId)?.entrepot?.type) || null;
+                const detectedType = mainMonture.entrepotType || (this.allProducts?.find(p => p && p.id === mainMonture.productId)?.entrepot?.type) || null;
 
                 lignes.push({
                     description: `Monture ${marque} ${ref}`.trim(),
@@ -2035,7 +2088,7 @@ export class MontureFormComponent implements OnInit, OnDestroy {
                 if (monture) {
                     const montureAdded = equip.monture;
                     if (montureAdded && montureAdded.prixMonture > 0) {
-                        const detectedAddedType = montureAdded.entrepotType || (this.allProducts?.find(p => p.id === montureAdded.productId)?.entrepot?.type) || null;
+                        const detectedAddedType = montureAdded.entrepotType || (this.allProducts?.find(p => p && p.id === montureAdded.productId)?.entrepot?.type) || null;
                         lignes.push({
                             description: `Monture ${montureAdded.marque || ''} ${montureAdded.reference || ''}`.trim(),
                             qte: 1,
@@ -2165,8 +2218,30 @@ export class MontureFormComponent implements OnInit, OnDestroy {
         });
     }
 
+    get shouldShowPostSaleTabs(): boolean {
+        const fact = this.linkedFactureSubject.value;
+        if (!fact) return false;
+        return fact.type !== 'DEVIS' || this.isBonDeCommande;
+    }
+
+    get isLastVisibleTab(): boolean {
+        return this.shouldShowPostSaleTabs ? this.activeTab === 5 : this.activeTab === 3;
+    }
+
     nextTab(): void {
-        const targetTab = this.activeTab + 1;
+        if (this.isLastVisibleTab) {
+            this.goBack();
+            return;
+        }
+
+        let targetTab = this.activeTab + 1;
+
+        // Skip post-sale tabs (2: Paiements, 4: Fiche Montage, 5: Suivi Commande) if they shouldn't be shown
+        if (!this.shouldShowPostSaleTabs) {
+            while (targetTab === 2 || targetTab === 4 || targetTab === 5) {
+                targetTab++;
+            }
+        }
 
         // Validation for date if on tab 1 or moving to tab 2+
         if (!this.isTabAccessible(targetTab)) {
@@ -2184,12 +2259,6 @@ export class MontureFormComponent implements OnInit, OnDestroy {
             return;
         }
 
-        // If on the last tab (Suivi Commande), close
-        if (this.activeTab === 5) {
-            this.goBack();
-            return;
-        }
-
         // Logic for specific tab transitions
         if (targetTab === 4) { // Moving to Fiche Montage
             setTimeout(() => this.updateFrameCanvasVisualization(), 100);
@@ -2201,24 +2270,30 @@ export class MontureFormComponent implements OnInit, OnDestroy {
             if (this.factureComponent && (!this.factureComponent.id || this.factureComponent.id === 'new')) {
                 if (this.factureComponent.form.value.lignes.length > 0) {
                     this.factureComponent.saveAsObservable().subscribe(() => {
-                        this.activeTab = targetTab;
+                        this.setActiveTab(targetTab);
                     });
                     return;
                 }
             }
         }
 
-        if (this.activeTab < 5) {
-            this.activeTab++;
-            // Trigger specific logic for target tab
-            this.setActiveTab(this.activeTab);
-        }
+        this.setActiveTab(targetTab);
     }
 
     prevTab(): void {
         if (this.activeTab > 0) {
-            this.activeTab--;
-            this.setActiveTab(this.activeTab);
+            let targetTab = this.activeTab - 1;
+
+            // Skip post-sale tabs (2: Paiements, 4: Fiche Montage, 5: Suivi Commande) if they shouldn't be shown
+            if (!this.shouldShowPostSaleTabs) {
+                while (targetTab === 2 || targetTab === 4 || targetTab === 5) {
+                    targetTab--;
+                }
+            }
+
+            if (targetTab >= 0) {
+                this.setActiveTab(targetTab);
+            }
         }
     }
 
@@ -2393,21 +2468,17 @@ export class MontureFormComponent implements OnInit, OnDestroy {
                 clientId: this.clientId,
                 loading: this.loading
             });
+            this.ficheForm.markAllAsTouched();
             return;
         }
         this.loading = true;
         const formValue = this.ficheForm.getRawValue();
 
-        // Capture if we are in creation mode before any updates
-        const wasNew = !this.ficheId || this.ficheId === 'new';
-
-        // Fix: Parse as floats to avoid string concatenation
         const pMonture = parseFloat(formValue.monture.prixMonture) || 0;
         const pOD = parseFloat(formValue.verres.prixOD) || 0;
         const pOG = parseFloat(formValue.verres.prixOG) || 0;
         const montantTotal = pMonture + pOD + pOG;
 
-        // Convert prescription files to serializable format (remove File objects)
         const serializableFiles = this.prescriptionFiles.map(file => ({
             name: file.name,
             type: file.type,
@@ -2416,7 +2487,6 @@ export class MontureFormComponent implements OnInit, OnDestroy {
             uploadDate: file.uploadDate
         }));
 
-        // Build complete fiche data with ALL fields
         const ficheData: FicheMontureCreate = {
             clientId: this.clientId,
             type: TypeFiche.MONTURE,
@@ -2424,69 +2494,29 @@ export class MontureFormComponent implements OnInit, OnDestroy {
             dateLivraisonEstimee: formValue.dateLivraisonEstimee,
             ordonnance: {
                 ...formValue.ordonnance,
-                prescriptionFiles: serializableFiles  // ✅ Serializable prescription attachments
+                prescriptionFiles: serializableFiles
             },
             monture: formValue.monture,
             verres: formValue.verres,
             montage: formValue.montage,
-            suggestions: this.suggestions,  // ✅ Add AI suggestions
-            equipements: formValue.equipements || [],  // ✅ Add additional equipment
+            suggestions: this.suggestions,
+            equipements: formValue.equipements || [],
             montantTotal,
             montantPaye: 0
         };
-
-        console.log('📤 Submitting fiche data:', ficheData);
 
         const operation = (this.isEditMode && this.ficheId && this.ficheId !== 'new')
             ? this.ficheService.updateFiche(this.ficheId, ficheData)
             : this.ficheService.createFicheMonture(ficheData);
 
-        // [NEW] Logic: Sales Validation & Stock Alerts
-        // Check products warehouses
         const invoiceLines = this.getInvoiceLines();
         const productsWithStock = invoiceLines.filter(l => l.productId && l.entrepotType);
+        const needsDecision = productsWithStock.length > 0;
 
-        console.log('🏁 Checking Sales Rules:', {
-            totalLines: invoiceLines.length,
-            productsWithStock: productsWithStock.length,
-            details: productsWithStock.map(p => ({ id: p.productId, type: p.entrepotType }))
-        });
-
-        const hasPrincipalStock = productsWithStock.some(p => p.entrepotType === 'PRINCIPAL');
-        const hasSecondaryStock = productsWithStock.some(p => p.entrepotType === 'SECONDAIRE');
-
-        // ASYNC Payment Check: Fetch from service directly for total reliability
-        let hasPayment = false;
-        if (this.ficheId && this.ficheId !== 'new' && this.clientId) {
-            try {
-                const allF = await firstValueFrom(this.factureService.findAll({ clientId: this.clientId }));
-                const currentF = allF.find(f => f.ficheId === this.ficheId);
-                if (currentF) {
-                    const paid = (currentF.paiements as any[])?.reduce((acc, p) => acc + (p.montant || 0), 0) || 0;
-                    hasPayment = paid > 0 || currentF.statut === 'PARTIEL' || currentF.statut === 'PAYEE';
-                    console.log('✅ [DIAGNOSTIC] Async Payment Check Success:', { paid, status: currentF.statut, hasPayment });
-                }
-            } catch (e) {
-                console.error('❌ [DIAGNOSTIC] Async Payment Check Failed:', e);
-            }
-        }
-
-        const needsDecision = productsWithStock.length > 0 && hasPayment;
-
-        // [NEW] Logic: Check if ANY product is pending transfer
         const hasPendingTransfer = formValue.monture?.isPendingTransfer ||
             formValue.verres?.isPendingTransfer ||
             (formValue.equipements || []).some((e: any) => e.monture?.isPendingTransfer || e.verres?.isPendingTransfer);
 
-        console.log('⚖️ [DIAGNOSTIC] Decision Required?', needsDecision, 'Has Pending Transfer?', hasPendingTransfer);
-
-        let userForcedStatut: string | null = null;
-        let userForcedType: string | null = null;
-        let userForcedStockDecrement = false;
-
-        // [CRITICAL FIX] Protect existing official invoices from status changes
-        // If an official invoice exists, DO NOT force status/type changes
-        // This prevents unwanted fiscal flow triggers during medical record edits
         const existingInvoice = this.linkedFactureSubject.value;
         const hasExistingOfficialInvoice = existingInvoice &&
             (existingInvoice.type === 'FACTURE' ||
@@ -2495,308 +2525,73 @@ export class MontureFormComponent implements OnInit, OnDestroy {
                 existingInvoice.statut === 'PARTIEL');
 
         if (hasExistingOfficialInvoice) {
-            console.log('🛡️ [INVOICE PROTECTION] Existing official invoice detected. Skipping status override to prevent unwanted fiscal operations.');
-            console.log('   Current invoice:', {
-                numero: existingInvoice.numero,
-                type: existingInvoice.type,
-                statut: existingInvoice.statut
-            });
-            // Do NOT force any status changes - preserve existing invoice as-is
+            console.log('🛡️ Existing official invoice. Skipping status logic.');
+            this.loading = false;
+            this.finalizeSave(operation, null, null, false);
+
         } else if (hasPendingTransfer) {
-            // [NEW] Reinforced Financial Status Logic (Devis vs Vente en Instance)
-            // If there is a payment, it's an Instance. If not, it's a Devis.
-            // [RESTORED & FIXED] Logic to ensure DEVIS/INSTANCE is created so payments can attach.
-            // Guard added: ONLY force status if we are in a "weak" state (null, BROUILLON).
-            // Do NOT overwrite 'VENTE_EN_INSTANCE' or 'VALIDE' if already set.
-            const currentStatus = this.linkedFactureSubject.value?.statut;
-            const isWeakStatus = !currentStatus || currentStatus === 'BROUILLON';
+            console.log('⚠️ Pending transfer detected. Forcing Instance.');
+            this.loading = false;
+            this.finalizeSave(operation, 'DEVIS', 'VENTE_EN_INSTANCE', false);
 
-            if (isWeakStatus) {
-                if (hasPayment) {
-                    userForcedType = 'DEVIS';
-                    userForcedStatut = 'VENTE_EN_INSTANCE';
-                    this.snackBar.open('Transfert en cours + Acompte : Création Vente en Instance.', 'OK', { duration: 4000 });
-                } else {
-                    userForcedType = 'DEVIS';
-                    userForcedStatut = 'BROUILLON';
-                    // this.snackBar.open('Transfert en cours : Création Devis (Pas d’acompte).', 'OK', { duration: 3000 });
-                }
-            } else {
-                console.log('🛡️ [SYNC] Preserving existing status:', currentStatus);
-            }
-
-            userForcedStockDecrement = false;
-
-            if (this.factureComponent) {
-                this.factureComponent.form.patchValue({ type: userForcedType, statut: userForcedStatut });
-            }
         } else if (needsDecision) {
-            const warehouses = [...new Set(productsWithStock.map(p => p.entrepotNom || p.entrepotType))].join(' / ');
-            const message = `Vente effectuée depuis l'entrepôt : ${warehouses}.\n\nSouhaitez-vous VALIDER la vente ou la LAISSER EN INSTANCE ?`;
+            // Open Dialog
+            const dialogRef = this.dialog.open(this.saveDialogTemplate, {
+                width: '650px',
+                panelClass: 'save-choice-dialog',
+                disableClose: true
+            });
 
-            const choice = confirm(`${message}\n\nOK = Valider\nAnnuler = En Instance`);
-
-            if (choice) {
-                userForcedType = 'FACTURE';
-                userForcedStatut = 'VALIDE';
-                userForcedStockDecrement = true; // Force stock decrement for direct validation
-                if (this.factureComponent) {
-                    this.factureComponent.form.patchValue({ type: 'FACTURE', statut: 'VALIDE' });
+            dialogRef.afterClosed().subscribe(result => {
+                console.log('🤖 [MontureForm] Save Decision Dialog Result:', result);
+                if (!result) {
+                    this.loading = false;
+                    return;
                 }
-            } else {
-                // Instance (No Stock Decrement yet)
-                userForcedType = 'DEVIS';
-                userForcedStatut = 'VENTE_EN_INSTANCE';
-                userForcedStockDecrement = false; // Changed from true
-                if (this.factureComponent) {
-                    this.factureComponent.form.patchValue({ type: 'DEVIS', statut: 'VENTE_EN_INSTANCE' });
+
+                let type = 'DEVIS';
+                let statut = 'DEVIS_EN_COURS';
+                let decrement = false;
+
+                if (result === 'FACTURE') {
+                    type = 'FACTURE';
+                    statut = 'BROUILLON';
+                    decrement = true;
+                } else if (result === 'COMMANDE') {
+                    type = 'DEVIS';
+                    statut = 'VENTE_EN_INSTANCE';
+                    decrement = true;
                 }
-            }
-        }
 
-        operation.pipe(
-            switchMap(fiche => {
-                this.ficheId = fiche.id;
-                this.isEditMode = false;
+                console.log('📝 [MontureForm] Decision Mapping:', { type, statut, decrement });
 
-                // Check if we should create an invoice
-                const generatedLines = this.getInvoiceLines();
-                const shouldCreateInvoice = generatedLines.length > 0;
-
-                if (shouldCreateInvoice) {
-                    // Scenario 1: FactureComponent is active (User visited tab) -> Use it (preserves manual edits)
-                    if (this.factureComponent) {
-                        // Update input manually to ensure it has the new ficheId
-                        this.factureComponent.ficheIdInput = fiche.id;
-
-                        // FIX: Force sync lines and nomenclature from Monture form to Facture component
-                        // (Because FactureComponent might have stale data if user didn't visit tab after changes)
-                        const freshLines = this.getInvoiceLines();
-                        const freshNomenclature = this.nomenclatureString;
-
-                        // Update Nomenclature
-                        if (freshNomenclature) {
-                            this.factureComponent.form.patchValue({ proprietes: { nomenclature: freshNomenclature } });
-                        }
-
-                        // Update Lines if we have fresh ones
-                        if (freshLines && freshLines.length > 0) {
-                            const fa = this.factureComponent.lignes;
-                            fa.clear();
-                            freshLines.forEach(l => {
-                                const group = this.factureComponent.createLigne();
-                                group.patchValue(l);
-                                fa.push(group);
-                            });
-                            this.factureComponent.calculateTotals();
-                        }
-
-                        // Prepare extra properties for forceStockDecrement
-                        const extraProps: any = {};
-                        if (userForcedStockDecrement) {
-                            extraProps.forceStockDecrement = true;
-                        }
-
-                        // Apply user forced status if provided (e.g. VALIDE or ARCHIVE)
-                        if (userForcedStatut) {
-                            this.factureComponent.form.patchValue({ statut: userForcedStatut }, { emitEvent: false });
-                        }
-                        if (userForcedType) {
-                            this.factureComponent.form.patchValue({ type: userForcedType }, { emitEvent: false });
-                        }
-
-                        // [CRITICAL FIX] Dirty check: Only save invoice if lines changed OR it's new
-                        // This prevents unnecessary backend calls and fiscal flow triggers
-                        const currentLines = this.getInvoiceLines();
-                        const linesChanged = JSON.stringify(currentLines) !== JSON.stringify(this.initialLines);
-                        const isNewInvoice = !this.factureComponent.id || this.factureComponent.id === 'new';
-
-                        if (!linesChanged && !isNewInvoice && !userForcedStatut && !userForcedType) {
-                            console.log('📋 [INVOICE SKIP] No changes to invoice lines or status. Skipping save to prevent unwanted fiscal operations.');
-                            console.log('   Initial lines:', this.initialLines.length, 'Current lines:', currentLines.length);
-                            return of(fiche); // Skip invoice save, just return fiche
-                        }
-
-                        console.log('💾 [INVOICE SAVE] Lines changed or new invoice. Proceeding with save.', {
-                            linesChanged,
-                            isNewInvoice,
-                            forcedStatus: userForcedStatut,
-                            forcedType: userForcedType
+                // [NEW] Perform Stock Availability Check before final save
+                if (decrement) {
+                    this.checkStockAvailability(invoiceLines, (type === 'FACTURE' ? 'Facture' : 'BC'))
+                        .then((canProceed: boolean) => {
+                            if (canProceed) {
+                                this.finalizeSave(operation, type, statut, decrement);
+                            } else {
+                                this.loading = false;
+                                this.cdr.detectChanges();
+                            }
+                        })
+                        .catch(err => {
+                            console.error('❌ [StockCheck] Error during availability check:', err);
+                            // Fallback: allow save anyway but log error
+                            this.finalizeSave(operation, type, statut, decrement);
                         });
-
-                        // Pass extraProps to saveAsObservable
-                        return this.factureComponent.saveAsObservable(true, extraProps).pipe(
-                            map(() => fiche),
-                            catchError(err => {
-                                if (err.status === 409) {
-                                    console.log('⚠️ [MontureForm] Race condition (Scen 1): Invoice already exists. Ignoring.');
-                                    return of(fiche);
-                                }
-                                throw err;
-                            })
-                        );
-                    }
-                    // Scenario 2: FactureComponent not active (Tab never visited) -> Check if invoice exists, create if not
-                    else {
-                        // First, check if an invoice already exists for this fiche
-                        // Use the linkedFacture$ observable if available, otherwise query by client
-                        // FIX: Explicitly check service for existing invoice using FicheID to allow global lookup/avoid pagination issues
-                        const checkExisting$ = this.factureService.findAll({
-                            clientId: this.clientId,
-                            ficheId: fiche.id
-                        }).pipe(
-                            map(factures => factures.find(f => f.ficheId === fiche.id) || null)
-                        );
-
-                        return checkExisting$.pipe(
-                            switchMap(existingFacture => {
-                                if (existingFacture) {
-                                    // Invoice exists but component is not active.
-                                    // We MUST update it with the new lines/properties to keep it in sync.
-                                    console.log('🔄 Updating existing invoice (via Service) as component is not active');
-
-                                    const total = generatedLines.reduce((acc, val) => acc + val.totalTTC, 0);
-                                    // Calculate HT/TVA approx or relies on backend? Better to send all.
-                                    // Similar logic to create but for update
-                                    const tvaRate = 0.20;
-                                    const totalHT = total / (1 + tvaRate);
-                                    const tva = total - totalHT;
-
-                                    const updateData: any = {
-                                        lignes: generatedLines,
-                                        totalTTC: total,
-                                        totalHT: totalHT,
-                                        totalTVA: tva,
-                                        proprietes: {
-                                            ...(existingFacture.proprietes as any || {}),
-                                            nomenclature: this.nomenclatureString || '',
-                                            forceStockDecrement: userForcedStockDecrement || (existingFacture.proprietes as any)?.forceStockDecrement
-                                        },
-                                        resteAPayer: total // Usually resets amount to pay if content changes? Valid for BROUILLON.
-                                    };
-
-                                    if (userForcedType) updateData.type = userForcedType;
-                                    if (userForcedStatut) updateData.statut = userForcedStatut;
-
-                                    return this.factureService.update(existingFacture.id, updateData).pipe(
-                                        tap(updatedFacture => {
-                                            console.log('🔄 [SYNC] Invoice updated in onSubmit. Syncing subject:', updatedFacture.numero);
-                                            this.linkedFactureSubject.next(updatedFacture);
-                                        }),
-                                        map(() => fiche),
-                                        catchError(err => {
-                                            console.error('Error auto-updating invoice:', err);
-                                            const message = err.error?.message || 'Erreur lors de la mise à jour de la facture';
-                                            this.snackBar.open(`⚠️ ${message}`, 'Fermer', { duration: 7000 });
-                                            // [FIX] Throw error to stop the chain
-                                            return throwError(() => err);
-                                        })
-                                    );
-                                }
-
-                                // No invoice exists, create one
-                                // Generate nomenclature first
-                                console.log('📋 Generating nomenclature for new invoice:', this.nomenclatureString);
-
-                                const total = generatedLines.reduce((acc, val) => acc + val.totalTTC, 0);
-                                const tvaRate = 0.20;
-                                const totalHT = total / (1 + tvaRate);
-                                const tva = total - totalHT;
-
-                                const factureData: any = {
-                                    type: 'DEVIS',
-                                    statut: 'DEVIS_EN_COURS',
-                                    dateEmission: new Date(),
-                                    clientId: this.clientId,
-                                    ficheId: fiche.id,
-                                    lignes: generatedLines,
-                                    totalTTC: total,
-                                    totalHT: totalHT,
-                                    totalTVA: tva,
-                                    proprietes: {
-                                        nomenclature: this.nomenclatureString || '',
-                                        forceStockDecrement: userForcedStockDecrement
-                                    },
-                                    resteAPayer: total
-                                };
-
-                                return this.factureService.create(factureData).pipe(
-                                    tap(newFacture => {
-                                        console.log('✨ [SYNC] Invoice created in onSubmit. Syncing subject:', newFacture.numero);
-                                        this.linkedFactureSubject.next(newFacture);
-                                    }),
-                                    map(() => fiche),
-                                    catchError(err => {
-                                        // If error is unique constraint on ficheId, it means it was created in parallel.
-                                        // We can ignore this error safely as the goal (invoice exists) is met.
-                                        if (err?.status === 409 || err?.error?.message?.includes('ficheId') || err?.error?.code === 'P2002') {
-                                            console.log('⚠️ Race condition prevented: Invoice already created during process.');
-                                            return of(fiche);
-                                        }
-                                        console.error('Error auto-creating invoice:', err);
-                                        const message = err.error?.message || 'Erreur lors de la création de la facture';
-                                        this.snackBar.open(`⚠️ ${message}`, 'Fermer', { duration: 7000 });
-                                        return throwError(() => err);
-                                    })
-                                );
-                            }),
-                            catchError(err => {
-                                console.error('Error checking for existing invoice:', err);
-                                return of(fiche);
-                            })
-                        );
-                    }
                 } else {
-                    // No invoice to save
-                    return of(fiche);
+                    this.finalizeSave(operation, type, statut, decrement);
                 }
-            })
-        ).subscribe({
-            next: (fiche) => {
-                this.loading = false;
-                console.log('Fiche saved:', fiche);
+            });
 
-                // Return to view mode after successful save
-                this.isEditMode = false;
-                this.ficheForm.disable();
-                this.ficheId = fiche.id;
-                this.currentFiche = fiche;
-                this.patchForm(fiche);
-
-                this.snackBar.open('Fiche enregistrée avec succès', 'OK', { duration: 3000 });
-
-                if (wasNew) {
-                    this.router.navigate(['/p/clients', this.clientId, 'fiche-monture', fiche.id], {
-                        replaceUrl: true,
-                        // Avoid full component re-init if possible by explicitly handling the ID update
-                    });
-                }
-
-                // If on early tabs, auto-advance to Payments
-                if (this.activeTab < 2) {
-                    this.setActiveTab(2);
-                }
-            },
-            error: (err) => {
-                this.loading = false;
-                console.error('Error saving fiche:', err);
-                const msg = err.error?.message || err.statusText || 'Erreur inconnue';
-                alert(`Erreur lors de l'enregistrement: ${msg}`);
-
-                // Handle incomplete profile error
-                if (err.status === 400 && err.error?.missingFields) {
-                    const message = `Profil client incomplet.\n\nChamps manquants:\n${err.error.missingFields.join('\n')}\n\nVoulez-vous compléter le profil maintenant?`;
-
-                    if (confirm(message)) {
-                        this.router.navigate(['/p/clients', this.clientId, 'edit']);
-                    }
-                } else {
-                    alert('Erreur lors de la sauvegarde de la fiche: ' + (err.message || 'Erreur inconnue'));
-                }
-
-                this.cdr.markForCheck();
-            }
-        });
+        } else {
+            // Default Save for Fiche - Use VENTE_EN_INSTANCE (Bon de Commande) to ensure BC- serial number
+            console.log('📝 [MontureForm] No stock items/payments. Defaulting to Bon de Commande workflow.');
+            this.loading = false;
+            this.finalizeSave(operation, 'DEVIS', 'VENTE_EN_INSTANCE', false);
+        }
     }
 
 
@@ -2881,6 +2676,11 @@ export class MontureFormComponent implements OnInit, OnDestroy {
     async onPaymentAdded() {
         console.log('💰 [EVENT] Payment Added - Checking for archiving decision...');
 
+        if (this.hasUserDismissedValidation) {
+            console.log('🔇 User previously dismissed validation prompt. Skipping check.');
+            return;
+        }
+
         // [NEW] Logic: Check if ANY product is pending transfer. If so, don't prompt for validation yet.
         const formValue = this.ficheForm.getRawValue();
         const hasPendingTransfer = formValue.monture?.isPendingTransfer ||
@@ -2914,38 +2714,35 @@ export class MontureFormComponent implements OnInit, OnDestroy {
             console.error('Error checking invoice status:', e);
         }
 
-        const warehouses = [...new Set(productsWithStock.map(p => p.entrepotNom || p.entrepotType))].join(' / ');
-        const message = `Vente effectuée depuis l'entrepôt : ${warehouses}.\n\nSouhaitez-vous VALIDER la vente ou la LAISSER EN INSTANCE ?`;
+        // [MODIFIED] No more validation prompt on payment. Automatically set to INSTANCE.
+        console.log('💰 Payment added. Automatically setting/keeping status as VENTE_EN_INSTANCE.');
 
-        const choice = confirm(`${message}\n\nOK = Valider\nAnnuler = En Instance`);
+        try {
+            // We don't block UI with loading=true strictly, or maybe we do to prevent navigation
+            // this.loading = true; 
 
-        if (choice) {
-            try {
-                this.loading = true;
-                const factures = await firstValueFrom(this.factureService.findAll({ clientId: this.clientId || '' }));
-                const currentFacture = factures.find(f => f.ficheId === this.ficheId);
-                if (currentFacture) {
-                    await this.performSaleValidation(currentFacture);
-                } else {
-                    this.loading = false;
+            const factures = await firstValueFrom(this.factureService.findAll({ clientId: this.clientId || '' }));
+            const currentFacture = factures.find(f => f.ficheId === this.ficheId);
+
+            if (currentFacture) {
+                // Check if already validated to be safe
+                if (currentFacture.statut === 'VALIDE' || currentFacture.type === 'FACTURE') {
+                    console.log('✅ Invoice already validated. No status change needed.');
+                    return;
                 }
-            } catch (e) {
-                this.loading = false;
+
+                // Force status to VENTE_EN_INSTANCE (Bon de Commande) without prompt
+                // This ensures that adding a payment confirms the order but doesn't validate stock/fiscal yet.
+                await this.setInstanceFicheFacture(currentFacture);
+
+                // Set flag to prevent goBack prompt
+                this.hasUserDismissedValidation = true;
             }
-        } else {
-            // ... (rest of instance logic)
-            try {
-                this.loading = true;
-                const factures = await firstValueFrom(this.factureService.findAll({ clientId: this.clientId || '' }));
-                const currentFacture = factures.find(f => f.ficheId === this.ficheId);
-                if (currentFacture) {
-                    this.setInstanceFicheFacture(currentFacture);
-                } else {
-                    this.loading = false;
-                }
-            } catch (e) {
-                this.loading = false;
-            }
+        } catch (e) {
+            console.error('Error updating status after payment:', e);
+            this.snackBar.open('Erreur lors de la mise à jour du statut', 'Fermer', { duration: 3000 });
+        } finally {
+            this.loading = false;
         }
     }
 
@@ -3039,6 +2836,11 @@ export class MontureFormComponent implements OnInit, OnDestroy {
             }
         };
 
+        // Protect numero from being overwritten if it already exists
+        if (currentFacture.numero) {
+            updateData.numero = currentFacture.numero;
+        }
+
         console.log('📤 [VALIDATION] Sending update with forceStockDecrement:', updateData.proprietes.forceStockDecrement);
         console.log('📤 [VALIDATION] Update data:', JSON.stringify(updateData, null, 2));
 
@@ -3087,6 +2889,11 @@ export class MontureFormComponent implements OnInit, OnDestroy {
                 instancedAt: new Date()
             }
         };
+
+        // Protect numero from being overwritten if it already exists
+        if (facture.numero) {
+            updateData.numero = facture.numero;
+        }
 
         this.factureService.update(facture.id, updateData).subscribe({
             next: (res) => {
@@ -3525,6 +3332,424 @@ export class MontureFormComponent implements OnInit, OnDestroy {
      */
     generateMontageSheet(): void {
         this.printFicheMontage();
+    }
+
+    // [NEW] Exit Logic with Sales Validation
+    goBack(): void {
+        const fact = this.linkedFactureSubject.value;
+        const currentStatus = fact?.statut;
+        const currentType = fact?.type;
+
+        // [FIX] Use validatedAt instead of stockDecremented to allow prompting for BC/Drafts
+        // that already moved stock but aren't "Validated" in the user workflow.
+        const isValidated = !!(fact?.proprietes as any)?.validatedAt;
+
+        // Validation trigger statuses:
+        // - DEVIS_EN_COURS (Simple Devis)
+        // - VENTE_EN_INSTANCE (Bon de Commande)
+        // - BROUILLON (Facture Brouillon)
+        const needsValidationPrompt = (
+            currentStatus === 'DEVIS_EN_COURS' ||
+            currentStatus === 'VENTE_EN_INSTANCE' ||
+            currentStatus === 'BROUILLON'
+        );
+
+        if (needsValidationPrompt && this.ficheId && this.ficheId !== 'new' && !isValidated) {
+            const lines = this.getInvoiceLines();
+            const productsWithStock = lines.filter(l => l.productId && l.entrepotType);
+
+            if (productsWithStock.length > 0) {
+                let message = "";
+
+                if (currentType === 'FACTURE') {
+                    message = "Cette facture est encore en 'BROUILLON'.\n\n" +
+                        "Souhaitez-vous la VALIDER (et déstocker) avant de quitter ?\n\n";
+                } else if (currentStatus === 'VENTE_EN_INSTANCE') {
+                    message = "Ce document est un 'BON DE COMMANDE' (En instance).\n\n" +
+                        "Souhaitez-vous VALIDER la vente (et déstocker) avant de quitter ?\n\n";
+                } else {
+                    // DEVIS_EN_COURS
+                    message = "Ce document est un simple 'DEVIS'.\n\n" +
+                        "Souhaitez-vous le VALIDER en BON DE COMMANDE (et déstocker) avant de quitter ?\n\n";
+                }
+
+                // [NEW] Mention warehouse origin
+                const warehouseNames = Array.from(new Set(productsWithStock.map(p => p.entrepotNom || 'Inconnu'))).join(', ');
+                message += `📍 Produits issus de l'entrepôt : ${warehouseNames}\n\n`;
+
+                message += "OK = Valider et Quitter\nAnnuler = Quitter sans valider";
+
+                const confirmValidation = confirm(message);
+
+                if (confirmValidation) {
+                    this.validateSaleAndExit();
+                    return;
+                }
+            }
+        }
+
+        // [FIX] Always use location.back().
+        // Previous logic using toggleEditMode() caused 'Empty Fiche' state/freeze.
+        // User expects 'Retour' to navigate back to the client folder.
+        this.location.back();
+    }
+
+    validateSaleAndExit(): void {
+        const invoice = this.linkedFactureSubject.value;
+        if (!invoice) {
+            this.location.back();
+            return;
+        }
+
+        this.loading = true;
+
+        // Prepare validation update - preserve existing type and status
+        const lines = this.getInvoiceLines();
+        const total = lines.reduce((acc, l) => acc + l.totalTTC, 0);
+        const tvaRate = 0.20;
+        const totalHT = total / (1 + tvaRate);
+        const tva = total - totalHT;
+
+        const updateData: any = {
+            // DO NOT change type or statut - preserve Bon de Commande if it's already BC
+            lignes: lines,
+            totalTTC: total,
+            totalHT: totalHT,
+            totalTVA: tva,
+            proprietes: {
+                ...(invoice.proprietes || {}),
+                nomenclature: this.nomenclatureString || '',
+                validatedAt: new Date(),
+                // Ensure stock is marked as decremented
+                stockDecremented: true
+            }
+        };
+
+        // [FIX] Actually upgrade status on validation from exit
+        if (invoice.statut === 'DEVIS_EN_COURS') {
+            updateData.type = 'DEVIS';
+            updateData.statut = 'VENTE_EN_INSTANCE'; // Upgrade Devis to BC
+        } else if (invoice.statut === 'BROUILLON' && invoice.type === 'FACTURE') {
+            updateData.statut = 'VALIDE'; // Upgrade Draft to Validated
+        }
+        // Note: VENTE_EN_INSTANCE stays VENTE_EN_INSTANCE but gets validatedAt property.
+
+        // Protect numero from being overwritten if it already exists
+        if (invoice.numero) {
+            updateData.numero = invoice.numero;
+        }
+
+        this.factureService.update(invoice.id, updateData).subscribe({
+            next: (res) => {
+                this.loading = false;
+                this.snackBar.open('Vente validée.', 'Fermer', { duration: 3000 });
+
+                // [FIX] Reliably exit to client folder
+                if (this.clientId) {
+                    this.router.navigate(['/p/clients', this.clientId]);
+                } else {
+                    this.location.back();
+                }
+            },
+            error: (err) => {
+                this.loading = false;
+                console.error('Error validating sale on exit:', err);
+                alert('Erreur validation: ' + (err.message || 'Inconnue'));
+
+                if (this.clientId) {
+                    this.router.navigate(['/p/clients', this.clientId]);
+                } else {
+                    this.location.back();
+                }
+            }
+        });
+    }
+    get uniqueWarehousesString(): string {
+        const lines = this.getInvoiceLines();
+        const stockLines = lines.filter(l => l.productId && l.entrepotType);
+        return [...new Set(stockLines.map(p => p.entrepotNom || p.entrepotType))].join(' / ');
+    }
+
+    get canDirectlyBill(): boolean {
+        const inv = this.linkedFactureSubject.value;
+
+        // Case 1: No linked document -> Allow starting fresh as Facture
+        if (!inv) return true;
+
+        // Case 2: Already a Facture -> Allowed (updates)
+        if (inv.type === 'FACTURE') return true;
+
+        // Case 3: Bon de Commande (Instance) -> Allowed to convert to Facture
+        if (inv.statut === 'VENTE_EN_INSTANCE') return true;
+
+        // Case 4: Simple Devis or anything else -> Blocked
+        return false;
+    }
+
+    /**
+     * [NEW] Checks availability for all products in the invoice lines
+     * across current center and other centers.
+     */
+    async checkStockAvailability(lines: any[], type: 'BC' | 'Facture'): Promise<boolean> {
+        try {
+            const productsToCheck = lines.filter(l => l.productId && l.entrepotType);
+            if (productsToCheck.length === 0) return true;
+
+            const currentCentre = await firstValueFrom(this.store.select(UserCurrentCentreSelector).pipe(take(1)));
+            const centreId = currentCentre?.id;
+
+            if (!centreId) return true;
+
+            const availabilityIssues: any[] = [];
+
+            for (const item of productsToCheck) {
+                try {
+                    const localProduct = await firstValueFrom(this.productService.findOne(item.productId).pipe(take(1)));
+                    const required = item.qte || 1;
+
+                    if (localProduct && localProduct.quantiteActuelle < required) {
+                        const globalMatches = await firstValueFrom(this.productService.findAll({
+                            global: true,
+                            reference: localProduct.codeInterne || undefined,
+                            codeBarres: localProduct.codeBarres || undefined
+                        }).pipe(take(1)));
+
+                        const otherCentres = (globalMatches || [])
+                            .filter((p: any) => p.entrepot?.centreId !== centreId && p.quantiteActuelle > 0)
+                            .map((p: any) => ({
+                                centreName: p.entrepot?.centre?.nom || 'Inconnu',
+                                entrepotNom: p.entrepot?.nom || 'Inconnu',
+                                quantite: p.quantiteActuelle
+                            }));
+
+                        availabilityIssues.push({
+                            description: item.description,
+                            reference: localProduct.codeInterne || localProduct.codeBarres || 'N/A',
+                            localStock: localProduct.quantiteActuelle,
+                            required: required,
+                            globalAvailability: otherCentres
+                        });
+                    }
+                } catch (innerErr) {
+                    console.warn(`⚠️ [StockCheck] Failed to check product ${item.productId}:`, innerErr);
+                    // Continue with other products
+                }
+            }
+
+            if (availabilityIssues.length > 0) {
+                const dialogRef = this.dialog.open(StockAvailabilityDialogComponent, {
+                    width: '700px',
+                    data: {
+                        items: availabilityIssues,
+                        documentType: type
+                    }
+                });
+
+                const result = await firstValueFrom(dialogRef.afterClosed());
+                return !!result;
+            }
+
+            return true;
+        } catch (err) {
+            console.error('❌ [StockCheck] Critical failure in availability check logic:', err);
+            return true; // Don't block the sale if the check itself fails
+        }
+    }
+
+    finalizeSave(
+        operation: Observable<any>,
+        userForcedType: string | null,
+        userForcedStatut: string | null,
+        userForcedStockDecrement: boolean
+    ): void {
+        console.log('💾 [MontureForm] finalizeSave start:', { userForcedType, userForcedStatut, userForcedStockDecrement });
+        const wasNew = !this.ficheId || this.ficheId === 'new';
+        this.loading = true;
+
+        operation.pipe(
+            // Ensure loading is reset regardless of outcome
+            finalize(() => {
+                this.loading = false;
+                this.cdr.detectChanges();
+            }),
+            switchMap(fiche => {
+                if (!fiche) {
+                    throw new Error('La sauvegarde de la fiche a retourné aucune donnée (null). Vérifiez le service.');
+                }
+                this.ficheId = fiche.id;
+
+                const generatedLines = this.getInvoiceLines();
+                const shouldCreateInvoice = generatedLines.length > 0;
+
+                if (shouldCreateInvoice) {
+                    if (this.factureComponent) {
+                        this.factureComponent.ficheIdInput = fiche.id;
+
+                        // [FIX] Strict Workflow Guard
+                        if (userForcedType === 'FACTURE' && !this.canDirectlyBill) {
+                            userForcedType = 'DEVIS';
+                            userForcedStatut = 'VENTE_EN_INSTANCE';
+                        }
+
+                        // [FIX] Force VENTE_EN_INSTANCE (Bon de Commande) for all saved orders to ensure numbering
+                        const finalStatut = userForcedStatut || 'VENTE_EN_INSTANCE';
+                        const finalType = userForcedType || 'DEVIS';
+
+                        this.factureComponent.form.patchValue({
+                            type: finalType,
+                            statut: finalStatut
+                        }, { emitEvent: false });
+
+                        const extraProps: any = {};
+                        if (userForcedStockDecrement) extraProps.forceStockDecrement = true;
+
+                        // [FIX] Force child component to sync lines and totals before save
+                        if (this.factureComponent) {
+                            this.factureComponent.syncLines(generatedLines);
+                        }
+
+                        return this.factureComponent.saveAsObservable(true, extraProps, finalStatut).pipe(
+                            tap(updated => {
+                                if (!updated) {
+                                    console.warn('⚠️ [finalizeSave] Component save returned null (Form might be invalid).');
+                                    return;
+                                }
+                                console.log('✅ [finalizeSave] Component saved, updating subject:', updated.numero);
+                                this.linkedFactureSubject.next({ ...updated }); // Deep copy for reactivity
+
+                                // [FIX] Force update child component state using direct assignment
+                                if (this.factureComponent) {
+                                    this.factureComponent.factureId = updated.id;
+                                    this.factureComponent.id = updated.id;
+
+                                    if (updated.numero) {
+                                        this.factureComponent.form.get('numero')?.setValue(updated.numero, { emitEvent: true });
+                                        this.factureComponent.form.get('statut')?.setValue(updated.statut, { emitEvent: true });
+                                        this.factureComponent.cdr.detectChanges();
+                                    }
+                                }
+
+                                this.cdr.detectChanges();
+                            }),
+                            map(() => fiche)
+                        );
+                    } else {
+                        return this.factureService.findAll({ clientId: this.clientId!, ficheId: fiche.id }).pipe(
+                            map(fs => fs.find(f => f.ficheId === fiche.id)),
+                            switchMap(existing => {
+                                const total = generatedLines.reduce((acc, val) => acc + val.totalTTC, 0);
+                                const tvaRate = 0.20;
+                                const totalHT = total / (1 + tvaRate);
+                                const tva = total - totalHT;
+
+                                const commonData = {
+                                    lignes: generatedLines,
+                                    totalTTC: total,
+                                    totalHT,
+                                    totalTVA: tva,
+                                    proprietes: {
+                                        nomenclature: this.nomenclatureString || '',
+                                        forceStockDecrement: userForcedStockDecrement
+                                    }
+                                };
+
+                                if (existing) {
+                                    const updateData: any = { ...commonData };
+                                    if (userForcedType) updateData.type = userForcedType;
+                                    if (userForcedStatut) updateData.statut = userForcedStatut;
+                                    updateData.proprietes = { ...existing.proprietes as object, ...commonData.proprietes };
+                                    if ((existing.proprietes as any)?.forceStockDecrement) {
+                                        (updateData.proprietes as any).forceStockDecrement = true;
+                                    }
+                                    // Protect numero from being overwritten if it already exists
+                                    if (existing.numero) {
+                                        updateData.numero = existing.numero;
+                                    }
+
+                                    return this.factureService.update(existing.id, updateData).pipe(
+                                        tap(updated => {
+                                            if (!updated) {
+                                                console.error('❌ [finalizeSave] Update returned null/undefined!');
+                                                // Don't throw here to avoid breaking flow, but log error
+                                                return;
+                                            }
+                                            this.linkedFactureSubject.next({ ...updated });
+                                            this.cdr.detectChanges();
+                                        }),
+                                        map(() => fiche)
+                                    );
+                                } else {
+                                    console.log('📝 [finalizeSave] Creating new invoice via service');
+                                    const createData: any = {
+                                        ...commonData,
+                                        type: userForcedType || 'DEVIS',
+                                        statut: userForcedStatut || 'VENTE_EN_INSTANCE', // Default to VENTE_EN_INSTANCE
+                                        clientId: this.clientId,
+                                        ficheId: fiche.id,
+                                        dateEmission: new Date(),
+                                        resteAPayer: total
+                                    };
+                                    console.log('📤 [finalizeSave] Create invoice data:', createData);
+                                    return this.factureService.create(createData).pipe(
+                                        tap(created => {
+                                            if (!created) {
+                                                console.error('❌ [finalizeSave] Create returned null/undefined!');
+                                                return;
+                                            }
+                                            console.log('✅ [finalizeSave] Invoice created:', created.numero);
+                                            // [FIX] Use deep copy as well
+                                            this.linkedFactureSubject.next({ ...created });
+                                            this.cdr.detectChanges();
+                                        }),
+                                        map(() => fiche)
+                                    );
+                                }
+                            })
+                        );
+                    }
+                }
+                return of(fiche);
+            })
+        ).subscribe({
+            next: (fiche) => {
+                console.log('✅ [finalizeSave] SUCCESS! Fiche saved:', fiche.id);
+                this.loading = false;
+                this.snackBar.open('Enregistrement réussi.', 'OK', { duration: 3000 });
+                this.isEditMode = false;
+                this.ficheForm.disable();
+                this.ficheId = fiche.id;
+                this.currentFiche = fiche;
+                this.patchForm(fiche);
+
+                this.snackBar.open('Fiche et Document enregistrés avec succès', 'Fermer', { duration: 3000 });
+
+                // [FIX] Update URL without full reload (unless strictly needed)
+                if (wasNew) {
+                    // Update URL silently to avoid component destruction race
+                    this.location.go(`/p/clients/${this.clientId}/fiche-monture/${fiche.id}`);
+                }
+
+                // [FIX] Final reliability check: ensure the linked facture is loaded and synced
+                setTimeout(() => {
+                    this.loadLinkedFacture();
+                }, 1500);
+
+                if ((this as any).loadClientFactures) (this as any).loadClientFactures();
+                this.cdr.markForCheck();
+                setTimeout(() => this.cdr.detectChanges(), 100);
+            },
+            error: (err) => {
+                this.loading = false;
+                console.error('❌ [finalizeSave] ERROR:', err);
+                const msg = err.error?.message || err.message || 'Erreur inconnue';
+
+                if (msg.includes("Cannot read properties of null") || msg.includes("reading 'id'")) {
+                    alert(`Erreur Technique: ${msg}.\n\nCela peut arriver si un formulaire est invalide ou si le serveur a un problème. Veuillez vérifier que tous les champs obligatoires (Vendeur, etc.) sont remplis.`);
+                } else {
+                    alert('Erreur: ' + msg);
+                }
+            }
+        });
     }
 }
 

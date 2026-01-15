@@ -428,6 +428,24 @@ export class SalesControlReportComponent implements OnInit {
         });
     }
 
+    convertToOrder(invoice: BrouillonInvoice): void {
+        this.loading = true;
+        this.salesControlService.convertToOrder(invoice.id).subscribe({
+            next: (res) => {
+                this.snackBar.open(`Passé en Bon de Commande : ${res.numero}`, 'Fermer', {
+                    duration: 5000,
+                    panelClass: ['snackbar-success']
+                });
+                this.loadData();
+            },
+            error: (err) => {
+                console.error('Error converting to order:', err);
+                this.snackBar.open('Erreur lors de la conversion', 'Fermer', { duration: 3000 });
+                this.loading = false;
+            }
+        });
+    }
+
     declareAsGift(invoice: BrouillonInvoice): void {
         if (!confirm("Etes-vous sûr de déclarer cette facture comme CADEAU ?")) return;
 

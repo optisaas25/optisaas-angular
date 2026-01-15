@@ -64,6 +64,95 @@
             color: #c2410c;
             border: 1px solid #fed7aa;
         }
+
+        &.badge-vente_en_instance {
+            background-color: #ede9fe;
+            color: #5b21b6;
+            border: 1px solid #ddd6fe;
+        }
+    }
+}
+
+.header-grid-new {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+    gap: 24px;
+    margin-top: 12px;
+
+    .field-col {
+        flex: 1;
+        display: flex;
+        align-items: center;
+    }
+
+    .centered-cell {
+        justify-content: center;
+    }
+
+    .right-cell {
+        justify-content: flex-end;
+    }
+
+    mat-form-field {
+        width: 100%;
+        margin-bottom: -16px;
+    }
+}
+
+.status-display-centered {
+    @extend .status-display;
+    justify-content: center;
+}
+
+.vendeur-compact-new {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #eff6ff;
+    padding: 8px 16px;
+    border-radius: 40px;
+    border: 1px solid #dbeafe;
+    min-width: 220px;
+
+    .vendeur-icon {
+        width: 36px;
+        height: 36px;
+        background: #2563eb;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+
+        mat-icon {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+        }
+    }
+
+    .vendeur-details {
+        display: flex;
+        flex-direction: column;
+
+        .v-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: 0.5px;
+            line-height: 1;
+        }
+
+        .v-name {
+            font-size: 14px;
+            font-weight: 800;
+            color: #1e3a8a;
+            line-height: 1.2;
+        }
     }
 }
 

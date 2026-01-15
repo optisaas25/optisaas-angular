@@ -94,6 +94,10 @@ export class SalesControlService {
         return this.http.post(`${this.apiUrl}/archive/${id}`, {});
     }
 
+    convertToOrder(id: string): Observable<any> {
+        return this.http.post(`${this.apiUrl}/convert-to-order/${id}`, {});
+    }
+
 
     getDashboardData(userId?: string): Observable<any> {
         const params = userId ? { userId } : {};
