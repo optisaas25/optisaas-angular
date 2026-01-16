@@ -31,6 +31,7 @@ import {
 
 import { InstanceSalesMonitorService } from '../../features/client-management/services/instance-sales-monitor.service';
 import { CommonModule } from '@angular/common';
+import { FinanceMonitorService } from '../../features/finance/services/finance-monitor.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -55,6 +56,7 @@ export class SidebarComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly store = inject(Store);
   private readonly monitor = inject(InstanceSalesMonitorService);
+  private readonly financeMonitor = inject(FinanceMonitorService);
 
   readonly isMobile = input.required<boolean>();
   readonly isCollapsed = input.required<boolean>();
@@ -72,6 +74,9 @@ export class SidebarComponent implements OnInit {
   readonly readyCount$ = this.monitor.getReadyToValidateCount();
   readonly shipmentCount$ = this.monitor.getPendingShipmentCount();
   readonly receptionCount$ = this.monitor.getWaitingReceptionCount();
+
+  readonly fundingCount$ = this.financeMonitor.getPendingFundingCount();
+  readonly portfolioCount$ = this.financeMonitor.getPortfolioAlertCount();
 
   /** Menu principal filtré (link, sub avec children valides) */
   readonly visibleMenuItems = computed(
@@ -127,6 +132,7 @@ export class SidebarComponent implements OnInit {
   ngOnInit(): void {
     // Start monitoring instance sales
     this.monitor.startPolling();
+    this.financeMonitor.startPolling();
 
     const opened = this.menuItems()
       .filter((i) => i.type === 'sub')

@@ -10,6 +10,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTabsModule } from '@angular/material/tabs';
 import { HttpClient } from '@angular/common/http';
 import { FactureService } from '../../services/facture.service';
+import { FicheService } from '../../services/fiche.service';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { InvoiceSelectionDialogComponent } from '../../dialogs/invoice-selection-dialog/invoice-selection-dialog.component';
@@ -41,6 +42,7 @@ export class FactureListComponent implements OnInit {
 
     constructor(
         private factureService: FactureService,
+        private ficheService: FicheService,
         private snackBar: MatSnackBar,
         private dialog: MatDialog,
         private router: Router,
@@ -220,9 +222,41 @@ export class FactureListComponent implements OnInit {
             (facture.statut === 'VALIDE' || facture.statut === 'PAYEE' || facture.statut === 'PARTIEL');
     }
 
+    viewFacture(facture: any) {
+        if (facture.ficheId) {
+            this.ficheService.getFicheById(facture.ficheId).subscribe(fiche => {
+                if (fiche) {
+                    const routePath = `fiche-${fiche.type.toLowerCase()}`;
+                    this.router.navigate(['/p/clients', this.clientId, routePath, fiche.id]);
+                } else {
+                    this.router.navigate(['/p/clients/factures', facture.id], { queryParams: { mode: 'view' } });
+                }
+            });
+        } else {
+            this.router.navigate(['/p/clients/factures', facture.id], { queryParams: { mode: 'view' } });
+        }
+    }
+
+    editFacture(facture: any) {
+        if (facture.ficheId) {
+            this.ficheService.getFicheById(facture.ficheId).subscribe(fiche => {
+                if (fiche) {
+                    const routePath = `fiche-${fiche.type.toLowerCase()}`;
+                    this.router.navigate(['/p/clients', this.clientId, routePath, fiche.id]);
+                } else {
+                    this.router.navigate(['/p/clients/factures', facture.id]);
+                }
+            });
+        } else {
+            this.router.navigate(['/p/clients/factures', facture.id]);
+        }
+    }
+
+    createStandardizedDevis() {
+        this.router.navigate(['/p/clients', this.clientId, 'fiche-produit', 'new']);
+    }
+
     printFacture(facture: any) {
-        this.router.navigate(['/p/clients/factures', facture.id], { queryParams: { mode: 'view' } });
-        // The user will then be able to click 'Imprimer' on the form view
-        // OR we could try to auto-trigger print, but navigation is safer to ensure data is loaded.
+        this.viewFacture(facture);
     }
 }

@@ -5,7 +5,16 @@
             <h1>Tableau de Bord Exécutif</h1>
             <p class="subtitle">Aperçu global des performances de votre centre</p>
         </div>
-        <div class="actions-section">
+        <div class="actions-section" style="display: flex; gap: 8px;">
+            <button mat-stroked-button color="warn"
+                class="!h-[44px] !rounded-xl !border-red-200 !bg-red-50 !text-red-700" (click)="showAlerts()"
+                *ngIf="(alertCount$ | async) as count">
+                <mat-icon>notification_important</mat-icon>
+                Alertes
+                <span class="ml-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ count
+                    }}</span>
+            </button>
+
             <button mat-flat-button color="primary" (click)="loadAllData()" [disabled]="loading">
                 <mat-icon>refresh</mat-icon>
                 Actualiser

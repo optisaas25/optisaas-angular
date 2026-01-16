@@ -6,8 +6,8 @@ export class FundingRequestsController {
     constructor(private readonly fundingRequestsService: FundingRequestsService) { }
 
     @Get()
-    findAll(@Query('centreId') centreId?: string) {
-        return this.fundingRequestsService.findAll(centreId);
+    findAll(@Query('centreId') centreId?: string, @Query('statut') statut?: string) {
+        return this.fundingRequestsService.findAll(centreId, statut);
     }
 
     @Post(':id/approve')

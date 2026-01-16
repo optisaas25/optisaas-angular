@@ -146,9 +146,10 @@ export class FinanceService {
     }
 
     // --- Funding Requests ---
-    getFundingRequests(centreId?: string): Observable<FundingRequest[]> {
+    getFundingRequests(centreId?: string, statut?: string): Observable<FundingRequest[]> {
         let params = new HttpParams();
         if (centreId) params = params.set('centreId', centreId);
+        if (statut) params = params.set('statut', statut);
         return this.http.get<FundingRequest[]>(`${this.apiUrl}/funding-requests`, { params });
     }
 
@@ -158,5 +159,18 @@ export class FinanceService {
 
     rejectFundingRequest(id: string, validatorId: string, remarque?: string): Observable<any> {
         return this.http.post(`${this.apiUrl}/funding-requests/${id}/reject`, { validatorId, remarque });
+    }
+
+    // --- Alerts ---
+    getPortfolioAlerts(centreId?: string): Observable<{ incoming: number, outgoing: number, total: number }> {
+        let params = new HttpParams();
+        if (centreId) params = params.set('centreId', centreId);
+        return this.http.get<{ incoming: number, outgoing: number, total: number }>(`${this.apiUrl}/treasury/alerts`, { params });
+    }
+
+    getPortfolioAlertDetails(centreId?: string): Observable<{ incoming: any[], outgoing: any[] }> {
+        let params = new HttpParams();
+        if (centreId) params = params.set('centreId', centreId);
+        return this.http.get<{ incoming: any[], outgoing: any[] }>(`${this.apiUrl}/treasury/alerts/details`, { params });
     }
 }

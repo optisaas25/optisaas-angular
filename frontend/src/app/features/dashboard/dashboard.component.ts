@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, OnDestroy, ChangeDetectorRef, NgZone, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,6 +15,10 @@ import { StatsService, StatsSummary } from '../reports/services/stats.service';
 import { FinanceService } from '../finance/services/finance.service';
 import { Store } from '@ngrx/store';
 import { UserCurrentCentreSelector } from '../../core/store/auth/auth.selectors';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { FinanceMonitorService } from '../finance/services/finance-monitor.service';
+import { PortfolioAlertsDialogComponent } from '../finance/pages/portfolio-management/components/portfolio-alerts-dialog/portfolio-alerts-dialog.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 Chart.register(...registerables);
 
@@ -30,7 +34,8 @@ Chart.register(...registerables);
         MatProgressBarModule,
         MatSelectModule,
         MatFormFieldModule,
-        FormsModule
+        FormsModule,
+        MatDialogModule
     ],
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.scss']
@@ -48,12 +53,18 @@ export class MainDashboardComponent implements OnInit, AfterViewInit, OnDestroy 
     private charts: Chart[] = [];
     currentCentre = this.store.selectSignal(UserCurrentCentreSelector);
 
+    // Alert Logic
+    private monitor = inject(FinanceMonitorService);
+    alertCount$ = this.monitor.getPortfolioAlertCount();
+
     constructor(
         private statsService: StatsService,
         private financeService: FinanceService,
         private store: Store,
         private cdr: ChangeDetectorRef,
-        private zone: NgZone
+        private zone: NgZone,
+        private dialog: MatDialog,
+        private snackBar: MatSnackBar
     ) { }
 
     ngOnInit(): void {
@@ -93,6 +104,20 @@ export class MainDashboardComponent implements OnInit, AfterViewInit, OnDestroy 
                 this.loading = false;
                 this.cdr.detectChanges();
             }
+        });
+    }
+
+    showAlerts() {
+        this.financeService.getPortfolioAlertDetails().subscribe({
+            next: (data) => {
+                const dialogRef = this.dialog.open(PortfolioAlertsDialogComponent, {
+                    data: data,
+                    width: '1000px',
+                    maxWidth: '95vw',
+                    panelClass: 'rounded-dialog'
+                });
+            },
+            error: () => this.snackBar.open('Impossible de charger les détails des alertes', 'Fermer')
         });
     }
 

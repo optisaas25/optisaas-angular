@@ -49,6 +49,7 @@ export class FacturesController {
         if (ficheId) {
             return this.facturesService.findAll({
                 where: { ficheId },
+                orderBy: { createdAt: 'desc' },
                 take: 1
             });
         }

@@ -1,0 +1,233 @@
+<div class="header">
+    <div class="flex items-center gap-3">
+        <div class="icon-wrapper">
+            <mat-icon class="text-red-600">notification_important</mat-icon>
+        </div>
+        <div>
+            <h2 mat-dialog-title class="m-0 text-xl font-bold text-slate-900">Alertes Portefeuille</h2>
+            <p class="text-sm text-slate-500 m-0">Encaissements (< 24h) et Décaissements (< 48h)</p>
+        </div>
+    </div>
+    <button mat-icon-button mat-dialog-close>
+        <mat-icon>close</mat-icon>
+    </button>
+</div>
+
+<div mat-dialog-content class="!p-0">
+    <mat-tab-group animationDuration="0ms">
+        <mat-tab>
+            <ng-template mat-tab-label>
+                <div class="flex items-center gap-2">
+                    <mat-icon class="text-blue-600">south_west</mat-icon>
+                    <span class="font-medium text-slate-700">À Encaisser</span>
+                    <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full"
+                        *ngIf="data.incoming.length > 0">
+                        {{ data.incoming.length }}
+                    </span>
+                </div>
+            </ng-template>
+
+            <div class="table-container">
+                <table mat-table [dataSource]="data.incoming" class="w-full">
+                    <ng-container matColumnDef="date">
+                        <th mat-header-cell *matHeaderCellDef>Date Prévue</th>
+                        <td mat-cell *matCellDef="let item" class="font-medium text-slate-700">
+                            {{ item.date | date:'dd/MM/yyyy' }}
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="tiers">
+                        <th mat-header-cell *matHeaderCellDef>Client</th>
+                        <td mat-cell *matCellDef="let item">
+                            <div class="flex flex-col">
+                                <span class="font-medium text-slate-900">{{ item.tiers }}</span>
+                                <span class="text-xs text-slate-400">{{ item.banque || '-' }}</span>
+                            </div>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="montant">
+                        <th mat-header-cell *matHeaderCellDef>Montant</th>
+                        <td mat-cell *matCellDef="let item" class="font-black text-slate-900">
+                            {{ item.montant | number:'1.2-2' }} DH
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let item" class="text-right">
+                            <button mat-stroked-button color="primary" class="!rounded-full"
+                                (click)="validate(item, 'ENCAISSE')">
+                                <mat-icon>check</mat-icon>
+                                Encaisser
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['date', 'tiers', 'montant', 'actions']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['date', 'tiers', 'montant', 'actions'];"
+                        class="hover:bg-slate-50"></tr>
+                </table>
+
+                <div *ngIf="data.incoming.length === 0" class="empty-state">
+                    <mat-icon>check_circle</mat-icon>
+                    <p>Aucune alerte d'encaissement.</p>
+                </div>
+            </div>
+        </mat-tab>
+
+        <mat-tab>
+            <ng-template mat-tab-label>
+                <div class="flex items-center gap-2">
+                    <mat-icon class="text-orange-600">north_east</mat-icon>
+                    <span class="font-medium text-slate-700">À Décaisser</span>
+                    <span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full"
+                        *ngIf="data.outgoing.length > 0">
+                        {{ data.outgoing.length }}
+                    </span>
+                </div>
+            </ng-template>
+
+            <div class="table-container">
+                <table mat-table [dataSource]="data.outgoing" class="w-full">
+                    <ng-container matColumnDef="date">
+                        <th mat-header-cell *matHeaderCellDef>Échéance</th>
+                        <td mat-cell *matCellDef="let item" class="font-medium text-red-600">
+                            {{ item.date | date:'dd/MM/yyyy' }}
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="tiers">
+                        <th mat-header-cell *matHeaderCellDef>Fournisseur</th>
+                        <td mat-cell *matCellDef="let item">
+                            <div class="flex flex-col">
+                                <span class="font-medium text-slate-900">{{ item.tiers }}</span>
+                                <span class="text-xs text-slate-400">{{ item.sourceType }} - {{ item.banque || '-'
+                                    }}</span>
+                            </div>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="montant">
+                        <th mat-header-cell *matHeaderCellDef>Montant</th>
+                        <td mat-cell *matCellDef="let item" class="font-black text-slate-900">
+                            {{ item.montant | number:'1.2-2' }} DH
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let item" class="text-right">
+                            <button mat-stroked-button color="warn" class="!rounded-full"
+                                (click)="validate(item, 'PAYE')">
+                                <mat-icon>check</mat-icon>
+                                Payer
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['date', 'tiers', 'montant', 'actions']"></tr>
+                    <tr mat-row *matRowDef="let row; columns: ['date', 'tiers', 'montant', 'actions'];"
+                        class="hover:bg-slate-50"></tr>
+                </table>
+
+                <div *ngIf="data.outgoing.length === 0" class="empty-state">
+                    <mat-icon>check_circle</mat-icon>
+                    <p>Aucune alerte de décaissement.</p>
+                </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+</div>
+
+<style>
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        padding: 24px 32px 16px 32px;
+        margin-bottom: 0;
+        background: #fff;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .icon-wrapper {
+        background: #fee2e2;
+        padding: 10px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+    }
+
+    .icon-wrapper mat-icon {
+        font-size: 28px;
+        height: 28px;
+        width: 28px;
+    }
+
+    /* Make content fill the space */
+    :host ::ng-deep .mat-mdc-dialog-content {
+        padding: 0 !important;
+        max-height: 80vh;
+    }
+
+    .table-container {
+        max-height: 60vh;
+        overflow-y: auto;
+        padding: 0 32px 32px 32px;
+        /* Added margins: left/right/bottom */
+    }
+
+    table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    th.mat-header-cell {
+        font-size: 12px;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #475569;
+        border-bottom: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: 16px 24px;
+        height: 48px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    td.mat-cell {
+        font-size: 14px;
+        padding: 16px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        color: #334155;
+    }
+
+    .empty-state {
+        padding: 64px 24px;
+        text-center: center;
+        color: #94a3b8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .empty-state mat-icon {
+        font-size: 64px;
+        height: 64px;
+        width: 64px;
+        opacity: 0.2;
+    }
+
+    /* Tabs customization */
+    :host ::ng-deep .mat-mdc-tab-header {
+        border-bottom: none;
+        background: #fff;
+        padding: 0 24px;
+    }
+</style>

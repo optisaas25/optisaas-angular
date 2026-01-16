@@ -6,8 +6,7 @@
             Nouveau Document
         </button>
         <mat-menu #createMenu="matMenu">
-            <button mat-menu-item [routerLink]="['/p/clients/factures/new']"
-                [queryParams]="{ clientId: clientId, type: 'DEVIS' }">
+            <button mat-menu-item (click)="createStandardizedDevis()">
                 <mat-icon>description</mat-icon> Nouveau Devis
             </button>
             <button mat-menu-item (click)="createAvoir()">
@@ -76,13 +75,11 @@
                                 <mat-icon>more_vert</mat-icon>
                             </button>
                             <mat-menu #menu="matMenu">
-                                <button mat-menu-item [routerLink]="['/p/clients/factures', facture.id]"
-                                    [queryParams]="{mode: 'view'}">
+                                <button mat-menu-item (click)="viewFacture(facture)">
                                     <mat-icon>visibility</mat-icon>
                                     <span>Voir</span>
                                 </button>
-                                <button mat-menu-item [routerLink]="['/p/clients/factures', facture.id]"
-                                    *ngIf="canEdit(facture)">
+                                <button mat-menu-item (click)="editFacture(facture)" *ngIf="canEdit(facture)">
                                     <mat-icon>edit</mat-icon>
                                     <span>Modifier</span>
                                 </button>

@@ -5,10 +5,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class FundingRequestsService {
     constructor(private prisma: PrismaService) { }
 
-    async findAll(centreId?: string) {
+    async findAll(centreId?: string, statut?: string) {
         return (this.prisma as any).demandeAlimentation.findMany({
             where: {
                 ...(centreId ? { journeeCaisse: { centreId } } : {}),
+                ...(statut ? { statut } : {}),
             },
             include: {
                 depense: {

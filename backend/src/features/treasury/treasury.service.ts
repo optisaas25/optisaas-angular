@@ -180,6 +180,231 @@ export class TreasuryService {
         });
     }
 
+    async getPortfolioAlerts(centreId?: string) {
+        const now = new Date();
+        const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const next48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+        console.log(`[ALERTS] Checking alerts for Centre: ${centreId}`);
+        console.log(`[ALERTS] Now: ${now.toISOString()}, Next24h: ${next24h.toISOString()}, Next48h: ${next48h.toISOString()}`);
+
+        const [incomingAlerts, outgoingAlerts, outgoingDepenseAlerts] = await Promise.all([
+            // 1. Encaissements (Incomings) < 24h
+            this.prisma.paiement.count({
+                where: {
+                    statut: { in: ['EN_ATTENTE', 'PORTEFEUILLE', 'REMIS_EN_BANQUE', 'EN_COURS'] },
+                    dateVersement: { lte: next24h },
+                    facture: {
+                        type: { not: 'AVOIR' },
+                        ...(centreId ? { centreId } : {})
+                    }
+                }
+            }),
+
+            // 2. Decaissements (Echeances) < 48h
+            this.prisma.echeancePaiement.count({
+                where: {
+                    statut: { in: ['EN_ATTENTE', 'PORTEFEUILLE'] },
+                    dateEcheance: { lte: next48h },
+                    ...(centreId ? {
+                        OR: [
+                            { depense: { centreId } },
+                            { factureFournisseur: { centreId } }
+                        ]
+                    } : {})
+                }
+            }),
+
+            // 3. Decaissements (Depenses directes sans Echeance) < 48h
+            // Catch standalone expenses like 'Programmed Virement' that don't have an Echeance record
+            this.prisma.depense.count({
+                where: {
+                    // Check for statuses that imply pending action. 
+                    // Note: ExpensesService might create OperationCaisse immediately for some, 
+                    // but if it's 'EN_ATTENTE' or has no explicit 'PAYE' status, we count it.
+                    statut: { not: { in: ['PAYEE', 'ENCAISSE', 'ANNULE', 'REJETE'] } },
+                    echeanceId: null, // Ensure we don't double count Echeances
+                    dateEcheance: { not: null, lte: next48h },
+                    ...(centreId ? { centreId } : {})
+                }
+            })
+        ]);
+
+        // --- DEBUG: Dump candidates to console ---
+        const debugDepenses = await this.prisma.depense.findMany({
+            where: {
+                dateEcheance: { not: null, lte: next48h, gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) }
+            },
+            select: { id: true, statut: true, dateEcheance: true, centreId: true, montant: true, categorie: true }
+        });
+        console.log(`[ALERTS-DEBUG] Broad Depense Search (now-24h to now+48h):`, debugDepenses.map(d =>
+            `[${d.categorie}] ${d.montant}DH Status=${d.statut} Date=${d.dateEcheance?.toISOString()} Centre=${d.centreId}`
+        ));
+
+        const debugEcheances = await this.prisma.echeancePaiement.findMany({
+            where: {
+                dateEcheance: { lte: next48h, gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) }
+            },
+            select: { id: true, statut: true, dateEcheance: true, montant: true }
+        });
+        console.log(`[ALERTS-DEBUG] Broad Echeance Search:`, debugEcheances.map(e =>
+            `${e.montant}DH Status=${e.statut} Date=${e.dateEcheance.toISOString()}`
+        ));
+        // ----------------------------------------
+
+        console.log(`[ALERTS] Found Incoming: ${incomingAlerts}, Outgoing Echeances: ${outgoingAlerts}, Outgoing Depenses: ${outgoingDepenseAlerts}`);
+
+        const totalOutgoing = outgoingAlerts + outgoingDepenseAlerts;
+        return { incoming: incomingAlerts, outgoing: totalOutgoing, total: incomingAlerts + totalOutgoing };
+    }
+
+    async getPortfolioAlertDetails(centreId?: string) {
+        console.log(`[ALERTS-DETAILS] Starting for centre=${centreId}`);
+        try {
+            const now = new Date();
+            const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            const next48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+            // Fetch Incomings
+            const incomingItems = await this.prisma.paiement.findMany({
+                where: {
+                    statut: { in: ['EN_ATTENTE', 'PORTEFEUILLE', 'REMIS_EN_BANQUE', 'EN_COURS'] },
+                    dateVersement: { lte: next24h },
+                    facture: {
+                        type: { not: 'AVOIR' },
+                        ...(centreId ? { centreId } : {})
+                    }
+                },
+                include: {
+                    facture: {
+                        include: { client: { select: { nom: true, prenom: true } } }
+                    }
+                },
+                orderBy: { dateVersement: 'asc' }
+            });
+
+            // Fetch Outgoing Echeances
+            const outgoingEcheances = await this.prisma.echeancePaiement.findMany({
+                where: {
+                    statut: { in: ['EN_ATTENTE', 'PORTEFEUILLE'] },
+                    dateEcheance: { lte: next48h },
+                    ...(centreId ? {
+                        OR: [
+                            { depense: { centreId } },
+                            { factureFournisseur: { centreId } }
+                        ]
+                    } : {})
+                },
+                include: {
+                    depense: { include: { fournisseur: { select: { nom: true } } } },
+                    factureFournisseur: { include: { fournisseur: { select: { nom: true } } } }
+                },
+                orderBy: { dateEcheance: 'asc' }
+            });
+
+            // Fetch Outgoing Direct Depenses
+            const outgoingDepenses = await this.prisma.depense.findMany({
+                where: {
+                    statut: { not: { in: ['PAYEE', 'ENCAISSE', 'ANNULE', 'REJETE'] } },
+                    echeanceId: null,
+                    dateEcheance: { not: null, lte: next48h },
+                    ...(centreId ? { centreId } : {})
+                },
+                include: {
+                    fournisseur: { select: { nom: true } }
+                },
+                orderBy: { dateEcheance: 'asc' }
+            });
+
+            console.log(`[ALERTS-DETAILS] Fetched: ${incomingItems.length} in, ${outgoingEcheances.length} ech, ${outgoingDepenses.length} dep`);
+
+            // Safe Mapping for Incoming
+            const formattedIncoming = incomingItems.map(p => {
+                try {
+                    const clientNom = p.facture?.client?.nom || '';
+                    const clientPrenom = p.facture?.client?.prenom || '';
+                    return {
+                        id: p.id,
+                        type: 'INCOMING',
+                        date: p.dateVersement,
+                        montant: p.montant,
+                        mode: p.mode,
+                        reference: p.reference,
+                        tiers: (clientNom + ' ' + clientPrenom).trim() || 'Client Inconnu',
+                        banque: p.banque,
+                        statut: p.statut,
+                        originId: p.id
+                    };
+                } catch (err) {
+                    console.error('Error mapping incoming item', p.id, err);
+                    return null;
+                }
+            }).filter(i => i !== null);
+
+            // Safe Mapping for Outgoing
+            const mappedEcheances = outgoingEcheances.map(e => {
+                try {
+                    const tiers = e.factureFournisseur?.fournisseur?.nom || e.depense?.fournisseur?.nom || 'Fournisseur Inconnu';
+                    return {
+                        id: e.id,
+                        type: 'OUTGOING',
+                        sourceType: 'ECHEANCE',
+                        date: e.dateEcheance,
+                        montant: e.montant,
+                        mode: e.type,
+                        reference: e.reference,
+                        tiers: tiers,
+                        banque: e.banque,
+                        statut: e.statut,
+                        originId: e.id
+                    };
+                } catch (err) {
+                    console.error('Error mapping outgoing echeance', e.id, err);
+                    return null;
+                }
+            }).filter(i => i !== null);
+
+            const mappedDepenses = outgoingDepenses.map(d => {
+                try {
+                    const tiers = d.fournisseur?.nom || d.description || 'Dépense Diverse';
+                    return {
+                        id: d.id,
+                        type: 'OUTGOING',
+                        sourceType: 'DEPENSE',
+                        date: d.dateEcheance,
+                        montant: d.montant,
+                        mode: d.modePaiement,
+                        reference: d.reference,
+                        tiers: tiers,
+                        banque: null,
+                        statut: d.statut,
+                        originId: d.id
+                    };
+                } catch (err) {
+                    console.error('Error mapping outgoing depense', d.id, err);
+                    return null;
+                }
+            }).filter(i => i !== null);
+
+            const formattedOutgoing = [...mappedEcheances, ...mappedDepenses].sort((a: any, b: any) => {
+                const dateA = a.date ? new Date(a.date).getTime() : 0;
+                const dateB = b.date ? new Date(b.date).getTime() : 0;
+                return dateA - dateB;
+            });
+
+            return {
+                incoming: formattedIncoming,
+                outgoing: formattedOutgoing
+            };
+
+        } catch (error) {
+            console.error('[ALERTS-DETAILS] CRITICAL ERROR:', error);
+            // Return empty instead of throwing to prevent UI crash, 
+            // but logging the error for debugging.
+            return { incoming: [], outgoing: [] };
+        }
+    }
+
     async getConsolidatedIncomings(filters: { clientId?: string; startDate?: string; endDate?: string; centreId?: string; mode?: string }) {
         const where: any = {
             statut: { not: 'ANNULE' }

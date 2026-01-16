@@ -8,10 +8,17 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSortModule } from '@angular/material/sort';
+import { MatInputModule } from '@angular/material/input';
 import { FinanceService } from '../../services/finance.service';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
+import { inject } from '@angular/core';
+import { FinanceMonitorService } from '../../services/finance-monitor.service';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { PortfolioAlertsDialogComponent } from './components/portfolio-alerts-dialog/portfolio-alerts-dialog.component';
 
 @Component({
   selector: 'app-portfolio-management',
@@ -24,10 +31,17 @@ import { FormsModule } from '@angular/forms';
     MatTableModule,
     MatTabsModule,
     MatChipsModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSortModule,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
     MatMenuModule,
     MatFormFieldModule,
     MatSelectModule,
-    FormsModule
+    FormsModule,
+    MatDialogModule
   ],
   template: `
     <div class="dashboard-wrapper">
@@ -55,6 +69,8 @@ import { FormsModule } from '@angular/forms';
             <mat-icon>refresh</mat-icon>
             Actualiser
           </button>
+          
+
         </div>
       </div>
 
@@ -352,9 +368,13 @@ export class PortfolioManagementComponent implements OnInit {
   items: any[] = [];
   statusFilter = 'ALL';
   modeFilter = 'CHEQUE,LCN';
-  activeTabId = 0;
   loading = false;
   totals = { inHand: 0, deposited: 0, paid: 0 };
+
+  // Inject monitor to show badge count on button, keeping monitor for now if needed else remove
+  // private monitor = inject(FinanceMonitorService);
+  // alertCount$ = this.monitor.getPortfolioAlertCount();
+  activeTabId = 0;
 
   currentMonth = new Date().getMonth() + 1;
   currentYear = new Date().getFullYear();
@@ -371,7 +391,8 @@ export class PortfolioManagementComponent implements OnInit {
 
   constructor(
     private financeService: FinanceService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {
     const startYear = 2024;
     const endYear = new Date().getFullYear() + 1;
@@ -459,4 +480,6 @@ export class PortfolioManagementComponent implements OnInit {
       error: () => this.snackBar.open('Erreur lors de la validation', 'OK')
     });
   }
+
+
 }

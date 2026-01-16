@@ -2,13 +2,13 @@
     <form [formGroup]="form" (ngSubmit)="save()">
 
         <!-- Header -->
-        <div class="header">
+        <div class="header" *ngIf="!embedded">
             <div class="title-section">
                 <h2>{{ displayTitle }}</h2>
             </div>
             <div class="actions">
                 <button type="button" mat-stroked-button color="warn" routerLink="/p/clients"
-                    *ngIf="!embedded && !isViewMode">Annuler</button>
+                    *ngIf="!isViewMode">Annuler</button>
 
                 <!-- Exchange Action -->
                 <button type="button" mat-raised-button color="accent" (click)="openExchangeDialog()"
@@ -36,11 +36,10 @@
                     <mat-icon>print</mat-icon> Imprimer
                 </button>
 
-                <button type="submit" mat-raised-button color="primary" [disabled]="form.invalid"
-                    *ngIf="!embedded && !isViewMode">
+                <button type="submit" mat-raised-button color="primary" [disabled]="form.invalid" *ngIf="!isViewMode">
                     <mat-icon>save</mat-icon> Enregistrer
                 </button>
-                <button type="button" mat-stroked-button routerLink="/p/clients" *ngIf="!embedded && isViewMode"
+                <button type="button" mat-stroked-button routerLink="/p/clients" *ngIf="isViewMode"
                     class="no-print">Retour</button>
             </div>
         </div>
@@ -113,7 +112,7 @@
                     <mat-form-field appearance="outline" class="w-full">
                         <mat-label>Numéro de série</mat-label>
                         <input matInput formControlName="numero" readonly class="font-bold text-blue-800"
-                            [placeholder]="(!id || id === 'new') ? 'NUMÉRO SERA GÉNÉRÉ' : 'SÉRIE INCONNUE'">
+                            [placeholder]="(!id || id === 'new') ? 'NUMÉRO SERA GÉNÉRÉ' : 'SANS NUMÉRO'">
                         <mat-icon matSuffix>pin</mat-icon>
                     </mat-form-field>
                 </div>
@@ -181,7 +180,7 @@
             </div>
 
             <div class="add-line-btn">
-                <button type="button" mat-button color="primary" (click)="addLine()" *ngIf="!isViewMode && !embedded">
+                <button type="button" mat-button color="primary" (click)="addLine()" *ngIf="!isViewMode">
                     <mat-icon>add</mat-icon> Ajouter une ligne
                 </button>
             </div>

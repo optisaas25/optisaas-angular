@@ -18,6 +18,16 @@ export class TreasuryController {
         );
     }
 
+    @Get('alerts')
+    getPortfolioAlerts(@Query('centreId') centreId?: string) {
+        return this.treasuryService.getPortfolioAlerts(centreId);
+    }
+
+    @Get('alerts/details')
+    getPortfolioAlertDetails(@Query('centreId') centreId?: string) {
+        return this.treasuryService.getPortfolioAlertDetails(centreId);
+    }
+
     @Get('consolidated-incomings')
     getConsolidatedIncomings(
         @Query('clientId') clientId?: string,

@@ -384,9 +384,7 @@ export class ClientDetailComponent implements OnInit {
   // --- Header Actions ---
 
   createFacture(): void {
-    this.router.navigate(['/p/clients/factures/new'], {
-      queryParams: { clientId: this.clientId }
-    });
+    this.router.navigate(['/p/clients', this.clientId, 'fiche-produit', 'new']);
   }
 
   // --- Attachment Methods ---

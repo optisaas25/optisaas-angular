@@ -1,0 +1,415 @@
+<div class="fiche-container">
+    <!-- Header -->
+    <div class="header">
+        <div class="client-info">
+            <div class="avatar-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+            </div>
+            <div class="client-details">
+                <div class="flex items-center gap-3">
+                    <h2>{{ clientDisplayName }}</h2>
+                    <span class="badge-numero" *ngIf="(linkedFacture$ | async) as f">
+                        {{ f.numero || 'N/A' }}
+                    </span>
+                    <span class="badge-numero-empty" *ngIf="!(linkedFacture$ | async) && ficheId && ficheId !== 'new'">
+                        SÉRIE EN ATTENTE
+                    </span>
+                </div>
+                <p *ngIf="client">
+                    <span class="opacity-75 uppercase text-xs font-bold">{{ client.typeClient || 'PARTICULIER' }}</span>
+                    <ng-container *ngIf="client.telephone"> • 📞 {{ client.telephone }}</ng-container>
+                    <ng-container *ngIf="client.ville"> • 📍 {{ client.ville }}</ng-container>
+                </p>
+                <p *ngIf="!client" class="text-gray-400 italic">Chargement du client...</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <!-- Back / Cancel Buttons -->
+            <button type="button" class="btn-secondary" (click)="goBack()" *ngIf="!isEditMode">
+                <mat-icon>arrow_back</mat-icon> Retour
+            </button>
+            <button type="button" class="btn-secondary" (click)="goBack()"
+                *ngIf="isEditMode && (!ficheId || ficheId === 'new')">
+                Annuler
+            </button>
+            <button type="button" class="btn-secondary" (click)="toggleEditMode()"
+                *ngIf="isEditMode && ficheId && ficheId !== 'new'">
+                Annuler
+            </button>
+            <!-- Edit / Save Buttons -->
+            <button type="button" class="btn-primary" (click)="toggleEditMode()"
+                *ngIf="!isEditMode && ficheId && ficheId !== 'new'">
+                <mat-icon>edit</mat-icon> Modifier
+            </button>
+            <button type="button" class="btn-primary" (click)="onSubmit()" [disabled]="ficheForm.invalid || loading"
+                *ngIf="isEditMode">
+                <mat-icon>save</mat-icon> {{ (ficheId && ficheId !== 'new') ? 'Mettre à jour' : 'Enregistrer' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs-nav">
+        <button type="button" class="tab-btn" [class.active]="activeTab === 0" (click)="setActiveTab(0)"
+            [disabled]="!isTabAccessible(0)" [class.disabled]="!isTabAccessible(0)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+            </svg>
+            Ordonnance
+        </button>
+        <button type="button" class="tab-btn" [class.active]="activeTab === 1" (click)="setActiveTab(1)"
+            [disabled]="!isTabAccessible(1)" [class.disabled]="!isTabAccessible(1)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z" />
+            </svg>
+            Montures et Verres
+        </button>
+        <button type="button" class="tab-btn" [class.active]="activeTab === 2" (click)="setActiveTab(2)"
+            [disabled]="!isTabAccessible(2)" [class.disabled]="!isTabAccessible(2)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
+            </svg>
+            Facturation
+        </button>
+
+        <div class="tab-spacer"></div>
+
+        <div class="vendeur-badge" *ngIf="getVendeurName()">
+            <mat-icon>account_circle</mat-icon>
+            <div class="vendeur-info">
+                <span class="vendeur-label">Vendeur</span>
+                <span class="vendeur-name">{{ getVendeurName() }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form Content -->
+    <div [formGroup]="ficheForm">
+
+        <!-- TAB 0: ORDONNANCE -->
+        <div class="tab-content" *ngIf="activeTab === 0" formGroupName="ordonnance">
+            <div class="tab-header">
+                <div class="icon-box">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3>Fiche Universelle - Ordonnance</h3>
+                    <p>Saisir ou importer les données de prescription</p>
+                </div>
+                <div class="header-actions-inline">
+                    <button type="button" class="btn-icon-success" (click)="openFileUpload()" *ngIf="isEditMode">
+                        <mat-icon>upload_file</mat-icon> Importer
+                    </button>
+                    <button type="button" class="btn-camera-stylish" (click)="openCamera()" *ngIf="isEditMode">
+                        <span class="icon-wrapper"><mat-icon>camera_alt</mat-icon></span>
+                        <span>Photo</span>
+                    </button>
+                    <input #fileInput type="file" accept="image/*,application/pdf" multiple class="hidden"
+                        (change)="onFilesSelected($event)">
+                </div>
+            </div>
+
+            <!-- Precription Files -->
+            <div class="prescription-files" *ngIf="prescriptionFiles.length > 0">
+                <h4>Documents</h4>
+                <div class="files-list">
+                    <div class="file-item" *ngFor="let file of prescriptionFiles; let i = index">
+                        <div class="file-info">
+                            <span class="file-name" (click)="viewFile(file)">{{ file.name }}</span>
+                            <span class="file-size">({{ formatFileSize(file.size) }})</span>
+                        </div>
+                        <div class="file-actions">
+                            <button type="button" (click)="viewFile(file)"><mat-icon>visibility</mat-icon></button>
+                            <button type="button" (click)="deleteFile(i)"
+                                *ngIf="isEditMode"><mat-icon>delete</mat-icon></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescription Form -->
+            <div class="prescription-details-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>Date de prescription</mat-label>
+                    <input matInput [matDatepicker]="pickerPres" formControlName="datePrescription">
+                    <mat-datepicker-toggle matSuffix [for]="pickerPres"></mat-datepicker-toggle>
+                    <mat-datepicker #pickerPres></mat-datepicker>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Prescripteur</mat-label>
+                    <input matInput formControlName="prescripteur" placeholder="Nom du médecin">
+                    <mat-icon matSuffix>person_outline</mat-icon>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                    <mat-label>Date de Contrôle</mat-label>
+                    <input matInput [matDatepicker]="pickerControle" formControlName="dateControle">
+                    <mat-datepicker-toggle matSuffix [for]="pickerControle"></mat-datepicker-toggle>
+                    <mat-datepicker #pickerControle></mat-datepicker>
+                </mat-form-field>
+            </div>
+
+            <div class="eyes-container">
+                <!-- OD -->
+                <div class="eye-card od-card" formGroupName="od">
+                    <div class="eye-header">OD - Œil Droit</div>
+                    <div class="eye-content">
+                        <div class="form-row">
+                            <div class="form-group"><label>Sphère</label><input type="text" formControlName="sphere"
+                                    (blur)="formatSphereValue('od', $event)"></div>
+                            <div class="form-group"><label>Cylindre</label><input type="text" formControlName="cylindre"
+                                    (blur)="formatCylindreValue('od', $event)"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Axe</label><input type="text" formControlName="axe"
+                                    (blur)="formatAxeValue('od', $event)"></div>
+                            <div class="form-group"><label>Addition</label><input type="text" formControlName="addition"
+                                    (blur)="formatAdditionValue('od', $event)"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Prisme</label><input type="text" formControlName="prisme"
+                                    (blur)="formatPrismeValue('od', $event)"></div>
+                            <div class="form-group"><label>Base</label><input type="text" formControlName="base"></div>
+                        </div>
+                        <div class="form-group full-width"><label>Écart Pupillaire (EP)</label><input type="text"
+                                formControlName="ep"></div>
+                    </div>
+                </div>
+                <!-- OG -->
+                <div class="eye-card og-card" formGroupName="og">
+                    <div class="eye-header">OG - Œil Gauche</div>
+                    <div class="eye-content">
+                        <div class="form-row">
+                            <div class="form-group"><label>Sphère</label><input type="text" formControlName="sphere"
+                                    (blur)="formatSphereValue('og', $event)"></div>
+                            <div class="form-group"><label>Cylindre</label><input type="text" formControlName="cylindre"
+                                    (blur)="formatCylindreValue('og', $event)"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Axe</label><input type="text" formControlName="axe"
+                                    (blur)="formatAxeValue('og', $event)"></div>
+                            <div class="form-group"><label>Addition</label><input type="text" formControlName="addition"
+                                    (blur)="formatAdditionValue('og', $event)"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Prisme</label><input type="text" formControlName="prisme"
+                                    (blur)="formatPrismeValue('og', $event)"></div>
+                            <div class="form-group"><label>Base</label><input type="text" formControlName="base"></div>
+                        </div>
+                        <div class="form-group full-width"><label>Écart Pupillaire (EP)</label><input type="text"
+                                formControlName="ep"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: MONTURES & VERRES -->
+        <div class="tab-content" *ngIf="activeTab === 1">
+            <div class="tab-header">
+                <div class="icon-box"><mat-icon>glasses</mat-icon></div>
+                <div>
+                    <h3>Monture & Verres</h3>
+                    <p>Sélectionner les équipements</p>
+                </div>
+                <div class="header-actions-inline">
+                    <mat-form-field appearance="outline" style="width: 250px;">
+                        <mat-label>Livraison Estimée</mat-label>
+                        <input matInput [matDatepicker]="pickerLiv" formControlName="dateLivraisonEstimee">
+                        <mat-datepicker-toggle matSuffix [for]="pickerLiv"></mat-datepicker-toggle>
+                        <mat-datepicker #pickerLiv></mat-datepicker>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <!-- Utils -->
+            <div class="flex justify-end mb-6" *ngIf="isEditMode">
+                <button type="button" class="btn-icon-primary" (click)="addEquipment()">
+                    <mat-icon>add_circle</mat-icon> Ajouter équipement
+                </button>
+            </div>
+
+            <!-- Main Equipment -->
+            <div class="mb-6">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <select [formControl]="$any(ficheForm.get('monture.typeEquipement'))"
+                                class="header-select main">
+                                <option *ngFor="let type of typesEquipement" [value]="type">{{ type }}</option>
+                            </select>
+                            <button type="button" class="btn-toggle" (click)="toggleMainEquipment()">
+                                {{ mainEquipmentExpanded ? 'Réduire' : 'Développer' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div *ngIf="mainEquipmentExpanded">
+                        <!-- Monture -->
+                        <div class="section-card mb-4" formGroupName="monture">
+                            <h4>Monture</h4>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="form-group col-span-2">
+                                    <label>Référence</label>
+                                    <div class="input-with-button">
+                                        <input type="text" formControlName="reference" placeholder="Code barre ou Ref">
+                                        <button type="button" class="btn-scan"
+                                            (click)="openStockSearch(-1)">Stock</button>
+                                    </div>
+                                </div>
+                                <div class="form-group"><label>Marque</label><input type="text"
+                                        formControlName="marque"></div>
+                                <div class="form-group"><label>Couleur</label><input type="text"
+                                        formControlName="couleur"></div>
+                                <div class="form-group"><label>Prix Monture</label><input type="text"
+                                        formControlName="prixMonture"></div>
+                            </div>
+                        </div>
+
+                        <!-- Verres -->
+                        <div class="section-card" formGroupName="verres">
+                            <div class="section-header">
+                                <h4>Verres</h4>
+                                <div class="section-actions">
+                                    <button type="button" class="btn-suggestion" (click)="checkSuggestion(-1)">IA
+                                        Suggestion</button>
+                                    <label class="checkbox-label"><input type="checkbox"
+                                            formControlName="differentODOG"> <span>Différents OD/OG</span></label>
+                                </div>
+                            </div>
+
+                            <!-- Suggestions Panel -->
+                            <div class="suggestions-panel" *ngIf="showSuggestions && activeSuggestionIndex === -1">
+                                <div *ngFor="let s of suggestions" class="suggestion-item">
+                                    <strong>{{ s.type }} - {{ s.matiere }}</strong>
+                                    <p>{{ s.raison }}</p>
+                                    <button (click)="applySuggestion(s)">Appliquer</button>
+                                </div>
+                                <button class="btn-close-suggestions" (click)="closeSuggestions()">Fermer</button>
+                            </div>
+
+                            <!-- Single Lens -->
+                            <div class="verres-single" *ngIf="!ficheForm.get('verres.differentODOG')?.value">
+                                <div class="grid grid-cols-3 gap-4">
+                                    <mat-form-field appearance="outline"><mat-label>Matière</mat-label><mat-select
+                                            formControlName="matiere"><mat-option *ngFor="let m of lensMaterials"
+                                                [value]="m">{{m}}</mat-option></mat-select></mat-form-field>
+                                    <mat-form-field appearance="outline"><mat-label>Indice</mat-label><mat-select
+                                            formControlName="indice"><mat-option *ngFor="let i of lensIndices"
+                                                [value]="i">{{i}}</mat-option></mat-select></mat-form-field>
+                                    <mat-form-field appearance="outline"><mat-label>Prix</mat-label><input matInput
+                                            formControlName="prixOD"></mat-form-field>
+                                </div>
+                            </div>
+
+                            <!-- Split Lens -->
+                            <div class="verres-split grid grid-cols-2 gap-4"
+                                *ngIf="ficheForm.get('verres.differentODOG')?.value">
+                                <div>
+                                    <h5>OD</h5>
+                                    <mat-form-field appearance="outline"
+                                        class="w-full"><mat-label>Matière</mat-label><mat-select
+                                            formControlName="matiereOD"><mat-option *ngFor="let m of lensMaterials"
+                                                [value]="m">{{m}}</mat-option></mat-select></mat-form-field>
+                                    <mat-form-field appearance="outline" class="w-full"><mat-label>Prix
+                                            OD</mat-label><input matInput formControlName="prixOD"></mat-form-field>
+                                </div>
+                                <div>
+                                    <h5>OG</h5>
+                                    <mat-form-field appearance="outline"
+                                        class="w-full"><mat-label>Matière</mat-label><mat-select
+                                            formControlName="matiereOG"><mat-option *ngFor="let m of lensMaterials"
+                                                [value]="m">{{m}}</mat-option></mat-select></mat-form-field>
+                                    <mat-form-field appearance="outline" class="w-full"><mat-label>Prix
+                                            OG</mat-label><input matInput formControlName="prixOG"></mat-form-field>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Added Equipments Loop -->
+            <div *ngFor="let eq of equipements.controls; let i = index">
+                <div class="section-card mb-4" [formGroup]="getEquipmentGroup(i)">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4>Équipement {{ i + 1 }}</h4>
+                        <button class="btn-delete" (click)="removeEquipment(i)" *ngIf="isEditMode">Supprimer</button>
+                    </div>
+                    <!-- (Simplified View for added items for brevity, full form mirrors main) -->
+                    <div formGroupName="monture" class="mb-2">
+                        <label>Monture</label>
+                        <input type="text" formControlName="reference" placeholder="Reference">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: FACTURATION -->
+        <div class="tab-content" *ngIf="activeTab === 2">
+            <div class="tab-header">
+                <div class="icon-box"><mat-icon>receipt</mat-icon></div>
+                <div>
+                    <h3>Facturation & Devis</h3>
+                    <p>Générer la facture ou le devis</p>
+                </div>
+            </div>
+
+            <!-- Linked Invoice -->
+            <div *ngIf="(linkedFacture$ | async) as facture">
+                <app-facture-form [factureId]="facture.id" [clientIdInput]="clientId" [embedded]="true"
+                    [isReadonly]="!isEditMode" (onSaved)="onInvoiceSaved($event)"></app-facture-form>
+            </div>
+
+            <!-- New Invoice Generator -->
+            <div *ngIf="!(linkedFacture$ | async)">
+                <app-facture-form [clientIdInput]="clientId" [ficheIdInput]="ficheId" [embedded]="true"
+                    [isReadonly]="!isEditMode" (onSaved)="onInvoiceSaved($event)"></app-facture-form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+    <div class="camera-modal" *ngIf="showCameraModal">
+        <div class="modal-content">
+            <video #videoElement autoplay playsinline></video>
+            <canvas #canvasElement class="hidden"></canvas>
+            <div class="camera-controls">
+                <button (click)="capturePhoto()" *ngIf="!capturedImage" class="btn-capture"></button>
+                <button (click)="saveCapturedPhoto()" *ngIf="capturedImage" class="btn-save">Enregistrer</button>
+                <button (click)="closeCameraModal()" class="btn-cancel">Annuler</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<ng-template #saveDialog>
+    <div class="save-choice-dialog">
+        <h2 mat-dialog-title>Enregistrer la Fiche</h2>
+        <mat-dialog-content>
+            <p>Quel document souhaitez-vous créer ?</p>
+            <div class="dialog-options">
+                <button mat-raised-button color="primary" [mat-dialog-close]="'DEVIS'">
+                    <mat-icon>description</mat-icon> <strong>DEVIS (Brouillon)</strong>
+                </button>
+                <button mat-raised-button color="accent" [mat-dialog-close]="'COMMANDE'">
+                    <mat-icon>inventory</mat-icon> <strong>COMMANDE (Stock)</strong>
+                </button>
+                <button mat-stroked-button [mat-dialog-close]="'FACTURE'">
+                    <mat-icon>receipt</mat-icon> <strong>FACTURE (Validé)</strong>
+                </button>
+            </div>
+        </mat-dialog-content>
+        <mat-dialog-actions align="end">
+            <button mat-button mat-dialog-close>Annuler</button>
+        </mat-dialog-actions>
+    </div>
+</ng-template>

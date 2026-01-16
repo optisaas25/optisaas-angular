@@ -21,6 +21,7 @@ import { PaiementService } from '../../services/paiement.service';
 import { PaymentDialogComponent, Payment } from '../../dialogs/payment-dialog/payment-dialog.component';
 import { LoyaltyService } from '../../services/loyalty.service';
 import { ClientManagementService } from '../../services/client.service';
+import { FicheService } from '../../services/fiche.service';
 import { numberToFrench } from '../../../../utils/number-to-text';
 import { PaymentListComponent } from '../../components/payment-list/payment-list.component';
 import { Store } from '@ngrx/store';
@@ -99,6 +100,7 @@ export class FactureFormComponent implements OnInit {
         private dialog: MatDialog,
         private store: Store,
         private salesControlService: SalesControlService,
+        private ficheService: FicheService,
         public cdr: ChangeDetectorRef
     ) {
         this.form = this.fb.group({
@@ -263,6 +265,12 @@ export class FactureFormComponent implements OnInit {
             if (Object.keys(patchData).length > 0) {
                 this.form.patchValue(patchData);
                 if (patchData.clientId) this.loadClientPoints(patchData.clientId);
+
+                // Redirection for NEW Devis
+                if (patchData.type === 'DEVIS' && patchData.clientId && !this.embedded) {
+                    this.router.navigate(['/p/clients', patchData.clientId, 'fiche-produit', 'new']);
+                    return;
+                }
             }
 
             if (sourceFactureId) {
@@ -362,6 +370,16 @@ export class FactureFormComponent implements OnInit {
     loadFacture(id: string) {
         this.factureService.findOne(id).subscribe({
             next: (facture) => {
+                // REDIRECTION SAFETY NET: If linked to a specialized fiche, go to that fiche form instead
+                if (!this.embedded && facture.ficheId) {
+                    this.ficheService.getFicheById(facture.ficheId).subscribe(fiche => {
+                        if (fiche) {
+                            const routePath = `fiche-${fiche.type.toLowerCase()}`;
+                            this.router.navigate(['/p/clients', facture.clientId, routePath, fiche.id]);
+                        }
+                    });
+                }
+
                 console.log('📄 Loaded facture:', facture);
                 console.log('📋 Nomenclature:', facture.proprietes?.nomenclature);
 
@@ -482,15 +500,19 @@ export class FactureFormComponent implements OnInit {
             map(facture => {
                 this.id = facture.id; // Update internal ID to prevent duplicates
 
+                console.log('✅ [FactureForm] Save successful. Returned:', facture);
+
                 // IMPORTANT: Update form with returned data (Official Number, New Status, etc.)
-                // This handles the Draft -> Valid ID swap seamlessly
-                if (facture.numero !== this.form.get('numero')?.value) {
-                    console.log('📝 [FactureForm] Patching generated number:', facture.numero);
+                // Use getRawValue() to check against current value even if disabled
+                const currentNumero = this.form.getRawValue().numero;
+                if (facture.numero && facture.numero !== currentNumero) {
+                    console.log(`📝 [FactureForm] Patching generated number: ${facture.numero} (was: ${currentNumero})`);
                     this.form.patchValue({
                         numero: facture.numero,
                         statut: facture.statut,
                     }, { emitEvent: true });
                 }
+
                 // Also update local currentFacture for displayTitle reactivity
                 this.currentFacture = { ...facture };
                 this.cdr.detectChanges(); // [FIX] Force UI update (Titles, Numbers)

@@ -12,6 +12,7 @@ export interface InstanceSale {
     facture: any;
     status: 'IN_TRANSIT' | 'READY' | 'CANCELLED' | 'UNKNOWN';
     products?: any[];
+    isTransferRelated?: boolean;
 }
 
 @Injectable({
@@ -141,6 +142,8 @@ export class InstanceSalesMonitorService {
         return this.store.select(UserCurrentCentreSelector).pipe(
             take(1),
             switchMap(center => {
+                let hasForeignSource = false;
+
                 const checks = items.map(item => {
                     let check$ = item.productId ?
                         this.productService.findOne(item.productId).pipe(catchError(() => of(null))) :
@@ -148,6 +151,11 @@ export class InstanceSalesMonitorService {
 
                     return check$.pipe(
                         switchMap(product => {
+                            // Detect if the original product reference is from another center
+                            if (product && product.entrepot?.centreId !== center.id) {
+                                hasForeignSource = true;
+                            }
+
                             if (product && product.entrepot?.centreId === center.id) {
                                 return of(product);
                             }
@@ -168,7 +176,7 @@ export class InstanceSalesMonitorService {
                 return forkJoin(checks).pipe(
                     map(products => {
                         const validProducts = products.filter(p => p !== null);
-                        if (validProducts.length === 0) return ({ facture, status: 'UNKNOWN' }) as InstanceSale;
+                        if (validProducts.length === 0) return ({ facture, status: 'UNKNOWN', isTransferRelated: hasForeignSource }) as InstanceSale;
 
                         const allReceived = validProducts.every(p =>
                             (p.entrepot?.centreId === center.id && (p.quantiteActuelle > 0 || p.statut === 'DISPONIBLE'))
@@ -192,7 +200,7 @@ export class InstanceSalesMonitorService {
                         else if (cancelled) status = 'CANCELLED';
                         else status = 'UNKNOWN';
 
-                        return ({ facture, status, products: validProducts }) as InstanceSale;
+                        return ({ facture, status, products: validProducts, isTransferRelated: hasForeignSource }) as InstanceSale;
                     })
                 );
             })
@@ -200,7 +208,11 @@ export class InstanceSalesMonitorService {
     }
 
     private showNotificationIfReady(sales: InstanceSale[]): void {
-        const newlyReady = sales.filter(s => s.status === 'READY' && !this.notifiedSales.has(s.facture.id));
+        const newlyReady = sales.filter(s =>
+            s.status === 'READY' &&
+            s.isTransferRelated && // ONLY notify if it was waiting for a transfer
+            !this.notifiedSales.has(s.facture.id)
+        );
         newlyReady.forEach(sale => {
             const snackBarRef = this.snackBar.open(
                 `✅ Produit reçu ! Vente ${sale.facture.numero} prête à valider.`,
