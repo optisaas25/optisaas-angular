@@ -91,6 +91,10 @@ export const routes: Routes = [
         path: 'personnel',
         loadChildren: () => import('./features/personnel-management/personnel-management.routes').then(m => m.personnelManagementRoutes),
       },
+      {
+        path: 'labs',
+        loadChildren: () => import('./features/labs/labs.routes').then(m => m.routes),
+      },
     ],
   },
   {

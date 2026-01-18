@@ -292,6 +292,12 @@ export const MENU: MenuItem[] = [
     roles: [4, 3],
   },
   {
+    label: 'Laboratoire OptiSaaS',
+    icon: 'science',
+    type: 'link',
+    route: 'labs',
+  },
+  {
     label: 'External Link 1',
     icon: 'credit_card',
     type: 'extLink',

@@ -42,15 +42,18 @@ export class ProductsController {
         @Query('typeArticle') typeArticle?: string,
         @Query('reference') reference?: string,
         @Query('codeBarres') codeBarres?: string,
-        @Headers('Tenant') centreId?: string
+        @Headers('Tenant') centreId?: string,
+        @Query('limit') limit?: string
     ) {
         const isGlobal = global === 'true';
+        const limitNum = limit ? parseInt(limit, 10) : undefined;
+
         return this.productsService.findAll(entrepotId, centreId, isGlobal, {
             marque,
             typeArticle,
             reference,
             codeBarres
-        });
+        }, limitNum);
     }
 
     @Get(':id')

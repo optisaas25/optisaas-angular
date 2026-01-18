@@ -35,6 +35,9 @@ export class ProductsService {
 
     async create(createProductDto: CreateProductDto) {
         try {
+            console.log('[PRODUCT-CREATE] Starting product creation');
+            console.log('[PRODUCT-CREATE] Payload keys:', Object.keys(createProductDto));
+
             const {
                 // Extract specific fields to store in JSON
                 categorie, genre, forme, matiere, couleurMonture, couleurBranches, calibre, pont, branche, typeCharniere, typeMonture, photoFace, photoProfil,
@@ -108,6 +111,8 @@ export class ProductsService {
             // Ensure codeBarres is present (fallback to codeInterne if missing to avoid Prisma error)
             const resolvedCodeBarres = codeBarres || (mainAndRelationalFields.codeInterne ? mainAndRelationalFields.codeInterne : null);
 
+            console.log('[PRODUCT-CREATE] Creating product with entrepotId:', mainAndRelationalFields.entrepotId);
+
             return await this.prisma.$transaction(async (tx) => {
                 const product = await tx.product.create({
                     data: {
@@ -132,16 +137,34 @@ export class ProductsService {
                     });
                 }
 
+                console.log('[PRODUCT-CREATE] ✅ Product created successfully:', product.id);
                 return product;
             });
 
         } catch (error) {
-            console.error('Error creating product:', error);
-            // Log deep details if available
-            if (error instanceof Error) {
-                console.error(error.stack);
+            console.error('[PRODUCT-CREATE] ❌ Error creating product:', error);
+
+            // Extract meaningful error message
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                console.error('[PRODUCT-CREATE] Prisma error code:', error.code);
+                console.error('[PRODUCT-CREATE] Prisma error meta:', error.meta);
+
+                if (error.code === 'P2002') {
+                    const target = (error.meta?.target as string[]) || [];
+                    throw new BadRequestException(`Conflit: Un produit avec ${target.join(', ')} existe déjà`);
+                } else if (error.code === 'P2003') {
+                    throw new BadRequestException(`Erreur de relation: Vérifiez que l'entrepôt existe`);
+                } else {
+                    throw new BadRequestException(`Erreur Prisma (${error.code}): ${error.message}`);
+                }
+            } else if (error instanceof BadRequestException || error instanceof NotFoundException) {
+                throw error; // Re-throw our custom errors
+            } else if (error instanceof Error) {
+                console.error('[PRODUCT-CREATE] Error stack:', error.stack);
+                throw new BadRequestException(`Erreur lors de la création: ${error.message}`);
+            } else {
+                throw new BadRequestException(`Erreur inconnue lors de la création du produit`);
             }
-            throw error; // Let NestJS handle the response, but now we have logs
         }
     }
 
@@ -149,7 +172,8 @@ export class ProductsService {
         entrepotId?: string,
         centreId?: string,
         globalSearch: boolean = false,
-        filters?: { marque?: string; typeArticle?: string; reference?: string; codeBarres?: string }
+        filters?: { marque?: string; typeArticle?: string; reference?: string; codeBarres?: string },
+        limit?: number
     ) {
         const where: any = {};
 
@@ -179,6 +203,7 @@ export class ProductsService {
         const products = await this.prisma.product.findMany({
             where,
             orderBy: { createdAt: 'desc' },
+            take: limit, // Apply limit if provided
             include: {
                 entrepot: {
                     include: {
@@ -215,99 +240,121 @@ export class ProductsService {
     }
 
     async update(id: string, updateProductDto: UpdateProductDto) {
-        // Logic to merge specificData if updated
-        // For simplicity, we might need to fetch existing specificData first if partial update hits specific fields
-        // But PartialType makes everything optional.
+        try {
+            console.log(`[PRODUCT-UPDATE] Starting update for product ID: ${id}`);
+            console.log(`[PRODUCT-UPDATE] Update payload keys:`, Object.keys(updateProductDto));
 
-        const {
-            // Monture
-            categorie, genre, forme, matiere, couleurMonture, couleurBranches, calibre, pont, branche, typeCharniere, typeMonture, photoFace, photoProfil,
-            // Verre
-            typeVerre, materiau, indiceRefraction, teinte, filtres, traitements, puissanceSph, puissanceCyl, axe, addition, diametre, base, courbure, fabricant, familleOptique,
-            // Lentille
-            typeLentille, usage, modeleCommercial, laboratoire, rayonCourbure, nombreParBoite, prixParBoite, prixParUnite, numeroLot, datePeremption, quantiteBoites, quantiteUnites,
-            // Accessoire
-            categorieAccessoire, sousCategorie,
-            specificData,
-            ...mainFields
-        } = updateProductDto;
+            // Logic to merge specificData if updated
+            const {
+                // Monture
+                categorie, genre, forme, matiere, couleurMonture, couleurBranches, calibre, pont, branche, typeCharniere, typeMonture, photoFace, photoProfil,
+                // Verre
+                typeVerre, materiau, indiceRefraction, teinte, filtres, traitements, puissanceSph, puissanceCyl, axe, addition, diametre, base, courbure, fabricant, familleOptique,
+                // Lentille
+                typeLentille, usage, modeleCommercial, laboratoire, rayonCourbure, nombreParBoite, prixParBoite, prixParUnite, numeroLot, datePeremption, quantiteBoites, quantiteUnites,
+                // Accessoire
+                categorieAccessoire, sousCategorie,
+                specificData,
+                ...mainFields
+            } = updateProductDto;
 
-        const specificFieldsUpdate = {
-            // Monture
-            ...(categorie && { categorie }),
-            ...(genre && { genre }),
-            ...(forme && { forme }),
-            ...(matiere && { matiere }),
-            ...(couleurMonture && { couleurMonture }),
-            ...(couleurBranches && { couleurBranches }),
-            ...(calibre && { calibre }),
-            ...(pont && { pont }),
-            ...(branche && { branche }),
-            ...(typeCharniere && { typeCharniere }),
-            ...(typeMonture && { typeMonture }),
-            ...(photoFace && { photoFace }),
-            ...(photoProfil && { photoProfil }),
+            const specificFieldsUpdate = {
+                // Monture
+                ...(categorie && { categorie }),
+                ...(genre && { genre }),
+                ...(forme && { forme }),
+                ...(matiere && { matiere }),
+                ...(couleurMonture && { couleurMonture }),
+                ...(couleurBranches && { couleurBranches }),
+                ...(calibre && { calibre }),
+                ...(pont && { pont }),
+                ...(branche && { branche }),
+                ...(typeCharniere && { typeCharniere }),
+                ...(typeMonture && { typeMonture }),
+                ...(photoFace && { photoFace }),
+                ...(photoProfil && { photoProfil }),
 
-            // Verre
-            ...(typeVerre && { typeVerre }),
-            ...(materiau && { materiau }),
-            ...(indiceRefraction && { indiceRefraction }),
-            ...(teinte && { teinte }),
-            ...(filtres && { filtres }),
-            ...(traitements && { traitements }),
-            ...(puissanceSph && { puissanceSph }),
-            ...(puissanceCyl && { puissanceCyl }),
-            ...(axe && { axe }),
-            ...(addition && { addition }),
-            ...(diametre && { diametre }),
-            ...(base && { base }),
-            ...(courbure && { courbure }),
-            ...(fabricant && { fabricant }),
-            ...(familleOptique && { familleOptique }),
+                // Verre
+                ...(typeVerre && { typeVerre }),
+                ...(materiau && { materiau }),
+                ...(indiceRefraction && { indiceRefraction }),
+                ...(teinte && { teinte }),
+                ...(filtres && { filtres }),
+                ...(traitements && { traitements }),
+                ...(puissanceSph && { puissanceSph }),
+                ...(puissanceCyl && { puissanceCyl }),
+                ...(axe && { axe }),
+                ...(addition && { addition }),
+                ...(diametre && { diametre }),
+                ...(base && { base }),
+                ...(courbure && { courbure }),
+                ...(fabricant && { fabricant }),
+                ...(familleOptique && { familleOptique }),
 
-            // Lentille
-            ...(typeLentille && { typeLentille }),
-            ...(usage && { usage }),
-            ...(modeleCommercial && { modeleCommercial }),
-            ...(laboratoire && { laboratoire }),
-            ...(rayonCourbure && { rayonCourbure }),
-            ...(nombreParBoite && { nombreParBoite }),
-            ...(prixParBoite && { prixParBoite }),
-            ...(prixParUnite && { prixParUnite }),
-            ...(numeroLot && { numeroLot }),
-            ...(datePeremption && { datePeremption }),
-            ...(quantiteBoites && { quantiteBoites }),
-            ...(quantiteUnites && { quantiteUnites }),
+                // Lentille
+                ...(typeLentille && { typeLentille }),
+                ...(usage && { usage }),
+                ...(modeleCommercial && { modeleCommercial }),
+                ...(laboratoire && { laboratoire }),
+                ...(rayonCourbure && { rayonCourbure }),
+                ...(nombreParBoite && { nombreParBoite }),
+                ...(prixParBoite && { prixParBoite }),
+                ...(prixParUnite && { prixParUnite }),
+                ...(numeroLot && { numeroLot }),
+                ...(datePeremption && { datePeremption }),
+                ...(quantiteBoites && { quantiteBoites }),
+                ...(quantiteUnites && { quantiteUnites }),
 
-            // Accessoire
-            ...(categorieAccessoire && { categorieAccessoire }),
-            ...(sousCategorie && { sousCategorie }),
-            ...specificData
-        };
+                // Accessoire
+                ...(categorieAccessoire && { categorieAccessoire }),
+                ...(sousCategorie && { sousCategorie }),
+                ...specificData
+            };
 
-        // If we have specific fields to update, we need to merge them with existing JSON
-        // or verify if Prisma's update handles merging Json (it usually replaces).
-        // Safer to fetch first if we want true deep merge, but for now we might just update main fields
-        // unless specific fields are provided.
+            let dataToUpdate: any = { ...mainFields };
 
-        // Strategy: If specific fields are present, we update the whole specificData object.
-        // Ideally we should merge.
-
-        let dataToUpdate: any = { ...mainFields };
-
-        if (Object.keys(specificFieldsUpdate).length > 0) {
-            // Fetch current to merge
-            const current = await this.prisma.product.findUnique({ where: { id } });
-            if (current) {
+            if (Object.keys(specificFieldsUpdate).length > 0) {
+                console.log(`[PRODUCT-UPDATE] Merging specific fields:`, Object.keys(specificFieldsUpdate));
+                // Fetch current to merge
+                const current = await this.prisma.product.findUnique({ where: { id } });
+                if (!current) {
+                    throw new NotFoundException(`Produit avec ID ${id} introuvable`);
+                }
                 const currentSpecific = current.specificData as object || {};
                 dataToUpdate.specificData = { ...currentSpecific, ...specificFieldsUpdate };
             }
-        }
 
-        return this.prisma.product.update({
-            where: { id },
-            data: dataToUpdate,
-        });
+            console.log(`[PRODUCT-UPDATE] Final update data keys:`, Object.keys(dataToUpdate));
+
+            const updatedProduct = await this.prisma.product.update({
+                where: { id },
+                data: dataToUpdate,
+            });
+
+            console.log(`[PRODUCT-UPDATE] ✅ Product updated successfully`);
+            return updatedProduct;
+
+        } catch (error) {
+            console.error(`[PRODUCT-UPDATE] ❌ Error updating product ${id}:`, error);
+
+            // Extract meaningful error message
+            if (error instanceof Prisma.PrismaClientKnownRequestError) {
+                // Handle specific Prisma errors
+                if (error.code === 'P2025') {
+                    throw new NotFoundException(`Produit avec ID ${id} introuvable`);
+                } else if (error.code === 'P2002') {
+                    throw new BadRequestException(`Conflit: Un produit avec ces données existe déjà`);
+                } else {
+                    throw new BadRequestException(`Erreur Prisma (${error.code}): ${error.message}`);
+                }
+            } else if (error instanceof NotFoundException || error instanceof BadRequestException) {
+                throw error; // Re-throw our custom errors
+            } else if (error instanceof Error) {
+                throw new BadRequestException(`Erreur lors de la mise à jour: ${error.message}`);
+            } else {
+                throw new BadRequestException(`Erreur inconnue lors de la mise à jour du produit`);
+            }
+        }
     }
 
     async remove(id: string) {

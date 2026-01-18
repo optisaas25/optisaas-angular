@@ -409,6 +409,7 @@ export interface ProductFilters {
     global?: boolean;
     reference?: string;
     codeBarres?: string;
+    limit?: number;
 }
 
 /**

@@ -46,6 +46,9 @@ export class ProductService {
             if (filters.codeBarres) {
                 params = params.set('codeBarres', filters.codeBarres);
             }
+            if (filters.limit) {
+                params = params.set('limit', filters.limit.toString());
+            }
         }
 
         return this.http.get<Product[]>(this.apiUrl, { params });

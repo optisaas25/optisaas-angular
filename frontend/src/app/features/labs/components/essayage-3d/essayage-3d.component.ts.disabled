@@ -1,0 +1,95 @@
+import { Component, ElementRef, ViewChild, AfterViewInit, Input } from '@angular/core';
+import * as THREE from 'three';
+// Note: GLTFLoader might need external install if not in project, but requested code had it
+// I will wrap in try/catch or assume system has it for now as per "PROD READY" snippet
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+@Component({
+    selector: 'optisass-essayage-3d',
+    standalone: true,
+    template: `
+    <div class="p-4 bg-white rounded-lg shadow-md">
+      <h2 class="text-xl font-bold mb-4">Essayage Monture 3D</h2>
+      <div class="scene-container border rounded bg-black">
+        <canvas #canvas></canvas>
+      </div>
+      <div class="mt-4 text-sm text-gray-600">
+        <p>Visage: {{ visageTexture || 'Défaut' }}</p>
+        <p>Monture 3D: {{ monture3D || 'Défaut' }}</p>
+      </div>
+    </div>
+  `,
+    styles: [`
+    .scene-container { width: 100%; height: 420px; position: relative; }
+    canvas { width: 100%; height: 100%; display: block; }
+  `]
+})
+export class Essayage3DComponent implements AfterViewInit {
+    @ViewChild('canvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+    @Input() visageTexture: string = 'assets/images/face-placeholder.jpg';
+    @Input() monture3D: string = 'assets/montures/monture-demo.glb';
+
+    scene!: THREE.Scene;
+    camera!: THREE.PerspectiveCamera;
+    renderer!: THREE.WebGLRenderer;
+    monture!: THREE.Object3D;
+
+    ngAfterViewInit() {
+        this.initScene();
+        this.loadVisage();
+        this.loadMonture();
+        this.animate();
+    }
+
+    initScene() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+        this.camera.position.z = 5;
+
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvasRef.nativeElement,
+            alpha: true,
+            antialias: true
+        });
+        this.renderer.setSize(420, 420);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambientLight);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(0, 1, 2);
+        this.scene.add(light);
+    }
+
+    loadVisage() {
+        try {
+            const texture = new THREE.TextureLoader().load(this.visageTexture);
+            const geometry = new THREE.PlaneGeometry(4, 4);
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+            const face = new THREE.Mesh(geometry, material);
+            this.scene.add(face);
+        } catch (e) {
+            console.error('Error loading face texture', e);
+        }
+    }
+
+    loadMonture() {
+        const loader = new GLTFLoader();
+        loader.load(this.monture3D, (gltf: any) => {
+            this.monture = gltf.scene;
+            this.monture.scale.set(1.1, 1.1, 1.1);
+            this.monture.position.set(0, 0.1, 0.2);
+            this.scene.add(this.monture);
+        }, undefined, (error: any) => {
+            console.warn('GLTFLoader error - asset probably missing:', error);
+        });
+    }
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        if (this.monture) {
+            this.monture.rotation.y += 0.002;
+        }
+        this.renderer.render(this.scene, this.camera);
+    }
+}

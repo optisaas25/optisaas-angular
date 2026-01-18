@@ -2,10 +2,11 @@ import { IsString, IsNotEmpty, IsOptional, IsNumber, IsEnum, IsArray, Min } from
 import { Type } from 'class-transformer';
 
 export enum ProductType {
-    MONTURE = 'monture',
-    VERRE = 'verre',
-    LENTILLE = 'lentille',
-    ACCESSOIRE = 'accessoire'
+    MONTURE_OPTIQUE = 'MONTURE_OPTIQUE',
+    MONTURE_SOLAIRE = 'MONTURE_SOLAIRE',
+    VERRE = 'VERRE',
+    LENTILLE = 'LENTILLE',
+    ACCESSOIRE = 'ACCESSOIRE'
 }
 
 export class CreateProductDto {

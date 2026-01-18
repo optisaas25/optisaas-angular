@@ -543,7 +543,24 @@ export class ProductFormComponent implements OnInit {
                     error: (error) => {
                         console.error('Error updating product:', error);
                         this.isSubmitting = false;
-                        alert('Une erreur est survenue lors de la mise à jour du produit. ' + (error.error?.message || ''));
+
+                        // Extract meaningful error message
+                        let errorMessage = 'Erreur inconnue';
+                        if (error.error) {
+                            if (typeof error.error === 'string') {
+                                errorMessage = error.error;
+                            } else if (error.error.message) {
+                                errorMessage = error.error.message;
+                            } else if (error.error.error) {
+                                errorMessage = error.error.error;
+                            } else {
+                                errorMessage = JSON.stringify(error.error);
+                            }
+                        } else if (error.message) {
+                            errorMessage = error.message;
+                        }
+
+                        alert('Une erreur est survenue lors de la mise à jour du produit.\n\n' + errorMessage);
                     }
                 });
             } else {
@@ -558,7 +575,24 @@ export class ProductFormComponent implements OnInit {
                     error: (error) => {
                         console.error('Error creating product:', error);
                         this.isSubmitting = false;
-                        alert('Une erreur est survenue lors de la création du produit. ' + (error.error?.message || ''));
+
+                        // Extract meaningful error message
+                        let errorMessage = 'Erreur inconnue';
+                        if (error.error) {
+                            if (typeof error.error === 'string') {
+                                errorMessage = error.error;
+                            } else if (error.error.message) {
+                                errorMessage = error.error.message;
+                            } else if (error.error.error) {
+                                errorMessage = error.error.error;
+                            } else {
+                                errorMessage = JSON.stringify(error.error);
+                            }
+                        } else if (error.message) {
+                            errorMessage = error.message;
+                        }
+
+                        alert('Une erreur est survenue lors de la création du produit.\n\n' + errorMessage);
                     }
                 });
             }

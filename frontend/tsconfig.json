@@ -3,34 +3,37 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": "src",
+    "baseUrl": ".",
     "paths": {
+      "app/*": [
+        "src/app/*"
+      ],
       "@app/services": [
-        "app/shared/services/index.ts"
+        "src/app/shared/services/index.ts"
       ],
       "@app/components": [
-        "app/shared/components/index.ts"
+        "src/app/shared/components/index.ts"
       ],
       "@app/directives": [
-        "app/shared/directives/index.ts"
+        "src/app/shared/directives/index.ts"
       ],
       "@app/pipes": [
-        "app/shared/pipes/index.ts"
+        "src/app/shared/pipes/index.ts"
       ],
       "@app/models": [
-        "app/shared/models/index.ts"
+        "src/app/shared/models/index.ts"
       ],
       "@app/enums": [
-        "app/shared/enums/index.ts"
+        "src/app/shared/enums/index.ts"
       ],
       "@app/helpers": [
-        "app/shared/helpers/index.ts"
+        "src/app/shared/helpers/index.ts"
       ],
       "@app/types": [
-        "app/shared/types/index.ts"
+        "src/app/shared/types/index.ts"
       ],
       "@app/config": [
-        "app/config/index.ts"
+        "src/app/config/index.ts"
       ]
     },
     "module": "ESNext",
@@ -46,7 +49,7 @@
     "strict": true,
     "skipLibCheck": true,
     "typeRoots": [
-      "node_modules/@types"
+      "./node_modules/@types"
     ],
     "lib": [
       "ESNext",
