@@ -62,3 +62,26 @@ vps_dumps/
 *.sql
 *.rar
 *.bak
+
+# Real env files (keep only the .example/.production.example templates)
+.env
+.env.*
+!.env.example
+!*.env.production.example
+
+# Debug dumps / ad-hoc scratch output (never commit real business data)
+*_dump.*
+*dump.json
+*dump.txt
+build_output*
+build_error*
+build_err*.txt
+*.crash.log
+results.json
+results_fixed.json
+api_response.json
+all_fiches.txt
+
+# Archived one-off debug/fix/query scripts and old status reports (kept locally, not versioned)
+_archive_debug_scripts/
+test_zip_contents/

@@ -8,20 +8,15 @@ import {
   Delete,
   Query,
   Headers,
-  UnauthorizedException,
 } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
-import { ConfigService } from '@nestjs/config';
 import { FacturesService } from './factures.service';
 import { CreateFactureDto } from './dto/create-facture.dto';
 import { UpdateFactureDto } from './dto/update-facture.dto';
+import { CurrentUser, RequestUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('factures')
 export class FacturesController {
-  constructor(
-    private readonly facturesService: FacturesService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly facturesService: FacturesService) {}
 
   @Post(':id/exchange')
   createExchange(
@@ -48,13 +43,12 @@ export class FacturesController {
   create(
     @Body() createFactureDto: CreateFactureDto,
     @Headers('Tenant') centreId: string,
-    @Headers('authorization') authHeader: string,
+    @CurrentUser() user: RequestUser,
   ) {
     if (centreId) {
       createFactureDto.centreId = centreId;
     }
-    const userId = this.getUserId(authHeader);
-    return this.facturesService.create(createFactureDto, userId);
+    return this.facturesService.create(createFactureDto, user.id);
   }
 
   @Get()
@@ -128,29 +122,15 @@ export class FacturesController {
   update(
     @Param('id') id: string,
     @Body() updateFactureDto: UpdateFactureDto,
-    @Headers('authorization') authHeader: string,
+    @CurrentUser() user: RequestUser,
   ) {
-    const userId = this.getUserId(authHeader);
     return this.facturesService.update(
       {
         where: { id },
         data: updateFactureDto,
       },
-      userId,
+      user.id,
     );
-  }
-
-  private getUserId(authHeader: string): string | undefined {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return undefined;
-    try {
-      const token = authHeader.split(' ')[1];
-      const secret =
-        this.configService.get<string>('JWT_SECRET') || 'your-very-secret-key';
-      const payload = jwt.verify(token, secret) as any;
-      return payload.sub;
-    } catch (e) {
-      return undefined;
-    }
   }
 
   @Delete(':id')

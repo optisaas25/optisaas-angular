@@ -42,7 +42,7 @@ export class MailerService {
       port,
       secure,
       auth: { user, pass },
-      tls: { rejectUnauthorized: false },
+      tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' },
       // Connection pooling for multiple emails
       pool: true,
       maxConnections: 3,

@@ -1,36 +1,29 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Query,
-  Headers,
-} from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
-import { ConfigService } from '@nestjs/config';
+import { Controller, Get, Post, Body, Param, Delete, Query } from '@nestjs/common';
 import { OperationCaisseService } from './operation-caisse.service';
 import { CreateOperationCaisseDto } from './dto/create-operation-caisse.dto';
+import { CurrentUser, RequestUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('operation-caisse')
 export class OperationCaisseController {
-  constructor(
-    private readonly operationCaisseService: OperationCaisseService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly operationCaisseService: OperationCaisseService) {}
+
+  /** The role query param cannot be trusted - derive it from the caller's own centreRoles instead. */
+  private resolveRole(user: RequestUser): string | undefined {
+    if (user.isSuperAdmin) return 'ADMIN';
+    return user.centreRoles
+      .find((cr) => cr.centreId === user.centreId)
+      ?.role?.toUpperCase();
+  }
 
   @Post()
   create(
     @Body() createOperationDto: CreateOperationCaisseDto,
-    @Query('userRole') userRole?: string,
-    @Headers('authorization') authHeader?: string,
+    @CurrentUser() user: RequestUser,
   ) {
-    const userId = this.getUserId(authHeader);
     return this.operationCaisseService.create(
       createOperationDto,
-      userRole,
-      userId,
+      this.resolveRole(user),
+      user.id,
     );
   }
 
@@ -61,27 +54,16 @@ export class OperationCaisseController {
       toJourneeId: string;
       utilisateur: string;
     },
-    @Headers('authorization') authHeader?: string,
+    @CurrentUser() user: RequestUser,
   ) {
-    const userId = this.getUserId(authHeader);
-    return this.operationCaisseService.transfer({ ...transferDto, userId });
-  }
-
-  private getUserId(authHeader?: string): string | undefined {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return undefined;
-    try {
-      const token = authHeader.split(' ')[1];
-      const secret =
-        this.configService.get<string>('JWT_SECRET') || 'your-very-secret-key';
-      const payload = jwt.verify(token, secret) as any;
-      return payload.sub;
-    } catch (e) {
-      return undefined;
-    }
+    return this.operationCaisseService.transfer({
+      ...transferDto,
+      userId: user.id,
+    });
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Query('userRole') userRole?: string) {
-    return this.operationCaisseService.remove(id, userRole);
+  remove(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    return this.operationCaisseService.remove(id, this.resolveRole(user));
   }
 }

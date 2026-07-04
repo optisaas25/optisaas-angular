@@ -215,8 +215,7 @@ export class MarketingService {
         secure: port === 465, // true for 465, false for other ports
         auth: { user, pass },
         tls: {
-          // Do not fail on invalid certs
-          rejectUnauthorized: false,
+          rejectUnauthorized: process.env.NODE_ENV === 'production',
         },
       });
 

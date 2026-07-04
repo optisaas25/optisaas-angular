@@ -7,20 +7,15 @@ import {
   Param,
   Delete,
   Query,
-  Headers,
 } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
-import { ConfigService } from '@nestjs/config';
 import { PaiementsService } from './paiements.service';
 import { CreatePaiementDto } from './dto/create-paiement.dto';
 import { UpdatePaiementDto } from './dto/update-paiement.dto';
+import { CurrentUser, RequestUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('paiements')
 export class PaiementsController {
-  constructor(
-    private readonly paiementsService: PaiementsService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly paiementsService: PaiementsService) {}
 
   @Get('do-repair')
   adminRepair() {
@@ -40,23 +35,9 @@ export class PaiementsController {
   @Post()
   create(
     @Body() createPaiementDto: CreatePaiementDto,
-    @Headers('authorization') authHeader: string,
+    @CurrentUser() user: RequestUser,
   ) {
-    const userId = this.getUserId(authHeader);
-    return this.paiementsService.create(createPaiementDto, userId);
-  }
-
-  private getUserId(authHeader: string): string | undefined {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return undefined;
-    try {
-      const token = authHeader.split(' ')[1];
-      const secret =
-        this.configService.get<string>('JWT_SECRET') || 'your-very-secret-key';
-      const payload = jwt.verify(token, secret) as any;
-      return payload.sub;
-    } catch (e) {
-      return undefined;
-    }
+    return this.paiementsService.create(createPaiementDto, user.id);
   }
 
   @Get()

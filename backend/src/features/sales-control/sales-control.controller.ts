@@ -1,23 +1,10 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Query,
-  UseGuards,
-  Headers,
-} from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
-import { ConfigService } from '@nestjs/config';
+import { Controller, Get, Post, Param, Query, Headers } from '@nestjs/common';
 import { SalesControlService } from './sales-control.service';
+import { CurrentUser, RequestUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('sales-control')
 export class SalesControlController {
-  constructor(
-    private readonly salesControlService: SalesControlService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly salesControlService: SalesControlService) {}
 
   @Get('brouillon-with-payments')
   async getBrouillonWithPayments(
@@ -110,10 +97,9 @@ export class SalesControlController {
   @Post('validate/:id')
   async validateInvoice(
     @Param('id') id: string,
-    @Headers('authorization') authHeader: string,
+    @CurrentUser() user: RequestUser,
   ) {
-    const userId = this.getUserId(authHeader);
-    return this.salesControlService.validateInvoice(id, userId);
+    return this.salesControlService.validateInvoice(id, user.id);
   }
 
   @Post('declare-gift/:id')
@@ -122,18 +108,4 @@ export class SalesControlController {
   }
 
   // Delete is handled by existing factures controller
-
-  private getUserId(authHeader: string): string | undefined {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return undefined;
-    try {
-      const token = authHeader.split(' ')[1];
-      const secret =
-        this.configService.get<string>('JWT_SECRET') || 'your-very-secret-key';
-      const payload = jwt.verify(token, secret) as any;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      return payload.sub as string;
-    } catch {
-      return undefined;
-    }
-  }
 }

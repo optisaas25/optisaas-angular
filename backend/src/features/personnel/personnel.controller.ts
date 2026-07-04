@@ -7,13 +7,10 @@ import {
   Param,
   Delete,
   Query,
-  UseGuards,
-  Headers,
   BadRequestException,
 } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
-import { ConfigService } from '@nestjs/config';
 import { PersonnelService } from './personnel.service';
+import { CurrentUser, RequestUser } from '../../common/decorators/current-user.decorator';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { AttendanceService } from './attendance.service';
@@ -32,7 +29,6 @@ export class PersonnelController {
     private readonly attendanceService: AttendanceService,
     private readonly commissionService: CommissionService,
     private readonly payrollService: PayrollService,
-    private readonly configService: ConfigService,
   ) {}
 
   // --- Employees ---
@@ -177,9 +173,9 @@ export class PersonnelController {
       reference?: string;
       dateEcheance?: string;
     },
-    @Headers('authorization') authHeader?: string,
+    @CurrentUser() user?: RequestUser,
   ) {
-    const userId = this.getUserId(authHeader) || body.userId;
+    const userId = user?.id || body.userId;
     return this.payrollService.markAsPaid(
       id,
       body.centreId,
@@ -189,19 +185,6 @@ export class PersonnelController {
       body.reference,
       body.dateEcheance,
     );
-  }
-
-  private getUserId(authHeader?: string): string | undefined {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) return undefined;
-    try {
-      const token = authHeader.split(' ')[1];
-      const secret =
-        this.configService.get<string>('JWT_SECRET') || 'your-very-secret-key';
-      const payload = jwt.verify(token, secret) as any;
-      return payload.sub;
-    } catch (e) {
-      return undefined;
-    }
   }
 
   @Get('payroll')

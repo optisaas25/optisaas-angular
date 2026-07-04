@@ -6,6 +6,7 @@
 # Logs
 logs
 *.log
+*.log.*
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
@@ -37,6 +38,9 @@ lerna-debug.log*
 
 # dotenv environment variable files
 .env
+.env.*
+!.env.example
+!.env.production.example
 .env.development.local
 .env.test.local
 .env.production.local
@@ -63,3 +67,23 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /scratch/
 /prisma/cleanup-*.ts
 /prisma/fix-*.ts
+
+# Ad-hoc debug/audit/query scripts and their output dumps (never commit real business data)
+*_dump.*
+*dump.json
+*dump.txt
+*_output.txt
+build-*.txt
+build_*.txt
+build_*.log
+*_errors*.txt
+*_results*.txt
+*.crash.log
+backend_crash*.log
+all_fiches.txt
+audit_*.txt
+audit-*.txt
+check_*.txt
+output*.txt
+logs.txt
+logs_for_migration.txt

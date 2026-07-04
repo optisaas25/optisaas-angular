@@ -14,8 +14,13 @@ export class StorageService implements OnModuleInit {
   constructor() {
     const endPoint = process.env.MINIO_ENDPOINT || 'localhost';
     const port = parseInt(process.env.MINIO_PORT || '9002', 10);
-    const accessKey = process.env.MINIO_ACCESS_KEY || 'minioadmin';
-    const secretKey = process.env.MINIO_SECRET_KEY || 'minioadmin';
+    const accessKey = process.env.MINIO_ACCESS_KEY;
+    const secretKey = process.env.MINIO_SECRET_KEY;
+    if (!accessKey || !secretKey) {
+      throw new Error(
+        'FATAL: MINIO_ACCESS_KEY and MINIO_SECRET_KEY environment variables are required (no default credentials allowed)',
+      );
+    }
     this.bucket = process.env.MINIO_BUCKET || 'optisaas';
     this.publicEndpoint =
       process.env.MINIO_PUBLIC_URL || `http://${endPoint}:${port}`;

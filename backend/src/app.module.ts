@@ -1,7 +1,11 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { existsSync } from 'fs';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { AuthGuard } from './common/guards/auth.guard';
+import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
+import { AuditMiddleware } from './common/middleware/audit.middleware';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { ClientsModule } from './features/clients/clients.module';
@@ -92,10 +96,12 @@ import { VerreBrandModule } from './features/verre-brand/verre-brand.module';
     VerreBrandModule,
   ],
   controllers: [DiagController, GlassParametersController],
-  providers: [],
+  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
+    consumer
+      .apply(LoggerMiddleware, RateLimitMiddleware, AuditMiddleware)
+      .forRoutes('*');
   }
 }

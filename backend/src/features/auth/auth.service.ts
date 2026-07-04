@@ -7,6 +7,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
+import { requireEnv } from '../../common/config/require-env';
 
 @Injectable()
 export class AuthService {
@@ -17,11 +18,8 @@ export class AuthService {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    this.jwtSecret =
-      this.configService.get<string>('JWT_SECRET') || 'your-very-secret-key';
-    this.refreshSecret =
-      this.configService.get<string>('REFRESH_SECRET') ||
-      'your-very-refresh-secret-key';
+    this.jwtSecret = requireEnv(this.configService, 'JWT_SECRET');
+    this.refreshSecret = requireEnv(this.configService, 'REFRESH_SECRET');
   }
 
   async login(email: string, pass: string) {

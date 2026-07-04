@@ -1,1 +1,0 @@
-import { PrismaClient } from '@prisma/client'; const prisma = new PrismaClient(); async function run() { const centreId = '6df7de62-498e-4784-b22f-7bbccc7fea36'; const avoirs = await prisma.facture.findMany({ where: { type: 'AVOIR' }}); console.log('Total Avoirs in DB (all centers):', avoirs.length); await prisma.$disconnect(); } run();

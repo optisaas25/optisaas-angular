@@ -44,24 +44,33 @@ async function bootstrap() {
   // Enable Gzip compression to significantly reduce network payload size
   app.use(compression());
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: false,
+      // Strip properties not declared on the DTO - prevents mass-assignment /
+      // property-injection (e.g. a client sneaking `role: 'admin'` into a body).
+      whitelist: true,
       transform: true,
       exceptionFactory: (errors) => {
         console.error('❌ Validation Errors:', JSON.stringify(errors, null, 2));
+        if (isProduction) {
+          // Don't leak DTO field names/constraints to the client in production.
+          return new BadRequestException('Invalid input data');
+        }
         return new BadRequestException(errors);
       },
     }),
   );
 
-  // Strict CORS: Only allow specific origins
+  // Strict CORS: Only allow specific origins, configurable via env instead of hardcoded IPs/domains
+  const envOrigins = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:4200',
-    'http://151.80.146.74:4201',
-    'http://151.80.146.74:4202',
-    'https://optisaas.pro',
-    'https://www.optisaas.pro',
+    ...envOrigins,
   ];
 
   app.enableCors({
@@ -82,8 +91,20 @@ async function bootstrap() {
   // LOG STARTUP TO FILE TO BE 100% SURE
   const fs = require('fs');
   const logFile = 'server.log';
-  fs.appendFileSync(
-    logFile,
+  const LOG_MAX_SIZE = 10 * 1024 * 1024; // 10MB - rotate instead of growing forever
+
+  function appendLog(message: string) {
+    try {
+      if (fs.existsSync(logFile) && fs.statSync(logFile).size > LOG_MAX_SIZE) {
+        fs.renameSync(logFile, `${logFile}.1`);
+      }
+      fs.appendFileSync(logFile, message);
+    } catch (e) {
+      // Never let logging crash the app
+    }
+  }
+
+  appendLog(
     `\n--- SERVER STARTUP: ${new Date().toISOString()} --- VERSION 3.0 (SECURITY HARDENED) ---\n`,
   );
 
@@ -92,18 +113,12 @@ async function bootstrap() {
   const originalConsoleError = console.error;
 
   console.log = (...args) => {
-    fs.appendFileSync(
-      logFile,
-      `[LOG] ${new Date().toISOString()}: ${args.join(' ')}\n`,
-    );
+    appendLog(`[LOG] ${new Date().toISOString()}: ${args.join(' ')}\n`);
     originalConsoleLog.apply(console, args);
   };
 
   console.error = (...args) => {
-    fs.appendFileSync(
-      logFile,
-      `[ERROR] ${new Date().toISOString()}: ${args.join(' ')}\n`,
-    );
+    appendLog(`[ERROR] ${new Date().toISOString()}: ${args.join(' ')}\n`);
     originalConsoleError.apply(console, args);
   };
 

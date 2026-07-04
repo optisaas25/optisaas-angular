@@ -28,12 +28,12 @@ export class AuditMiddleware implements NestMiddleware {
     const authHeader = headers.authorization;
     let userId = 'ANONYMOUS';
 
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ') && process.env.JWT_SECRET) {
       try {
         const token = authHeader.split(' ')[1];
         const decoded = require('jsonwebtoken').verify(
           token,
-          process.env.JWT_SECRET || 'your-very-secret-key',
+          process.env.JWT_SECRET,
         );
         userId = decoded.sub;
       } catch (e) {

@@ -1,45 +1,24 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  UnauthorizedException,
-  Req,
-  Headers,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import * as jwt from 'jsonwebtoken';
-import { ConfigService } from '@nestjs/config';
+import { Public } from '../../common/decorators/public.decorator';
+import { CurrentUser, RequestUser } from '../../common/decorators/current-user.decorator';
 
 @Controller() // The global prefix 'api' is already set in main.ts
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
+  @Public()
   @Post('login')
   async login(@Body() body: any) {
     return this.authService.login(body.email, body.password);
   }
 
   @Get('me')
-  async getMe(@Headers('authorization') authHeader: string) {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Token manquant');
-    }
-
-    const token = authHeader.split(' ')[1];
-    try {
-      const secret =
-        this.configService.get<string>('JWT_SECRET') || 'your-very-secret-key';
-      const payload = jwt.verify(token, secret) as any;
-      return this.authService.getCurrentUser(payload.sub);
-    } catch (e) {
-      throw new UnauthorizedException('Token invalide');
-    }
+  async getMe(@CurrentUser() user: RequestUser) {
+    return this.authService.getCurrentUser(user.id);
   }
 
+  @Public()
   @Post('refresh_token')
   async refresh(@Body() body: any) {
     return this.authService.refreshToken(body.refresh_token);

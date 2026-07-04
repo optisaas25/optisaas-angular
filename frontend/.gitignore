@@ -42,3 +42,12 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 /.next
+
+# Ad-hoc build/debug output (never commit these)
+build_output*
+build_err*
+build-error*
+build_error*
+temp_*.html
+refs.txt
+temp_refs.txt

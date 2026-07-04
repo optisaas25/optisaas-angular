@@ -34,11 +34,10 @@ export class OperationCaisseService {
       );
     }
 
-    // Check authorization for INTERNE operations
+    // Check authorization for INTERNE operations (deny by default if role unknown)
     if (
       createOperationDto.typeOperation === TypeOperation.INTERNE &&
-      userRole &&
-      !['RESPONSABLE', 'DIRECTION', 'ADMIN'].includes(userRole)
+      (!userRole || !['RESPONSABLE', 'DIRECTION', 'ADMIN'].includes(userRole))
     ) {
       throw new ForbiddenException(
         "Vous n'avez pas l'autorisation de créer des opérations internes",
@@ -294,8 +293,8 @@ export class OperationCaisseService {
       );
     }
 
-    // Check authorization - only RESPONSABLE, DIRECTION, ADMIN can delete
-    if (userRole && !['RESPONSABLE', 'DIRECTION', 'ADMIN'].includes(userRole)) {
+    // Check authorization - only RESPONSABLE, DIRECTION, ADMIN can delete (deny by default)
+    if (!userRole || !['RESPONSABLE', 'DIRECTION', 'ADMIN'].includes(userRole)) {
       throw new ForbiddenException(
         "Vous n'avez pas l'autorisation de supprimer des opérations",
       );

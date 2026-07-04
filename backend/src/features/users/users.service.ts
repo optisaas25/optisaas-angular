@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
@@ -46,9 +47,12 @@ export class UsersService {
         }
       }
 
-      // Hash password if provided, otherwise use default
-      const password = userData.password || 'password123';
-      const hashedPassword = await bcrypt.hash(password, 10);
+      if (!userData.password) {
+        throw new BadRequestException(
+          'Un mot de passe est requis pour créer un utilisateur.',
+        );
+      }
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
 
       const user = await tx.user.create({
         data: {
