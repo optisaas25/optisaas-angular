@@ -1,4 +1,4 @@
-import { Component, NgZone, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -9,8 +9,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Store } from '@ngrx/store';
 import { API_URL } from '../../../config/api.config';
-import { GetCurrentUser } from '../../../core/store/auth/auth.actions';
+import { GetCurrentUserSuccess } from '../../../core/store/auth/auth.actions';
 import { UserSelector } from '../../../core/store/auth/auth.selectors';
+import { AuthService } from '../../authentication/services/auth.service';
 
 @Component({
   selector: 'app-mfa-settings',
@@ -28,78 +29,78 @@ import { UserSelector } from '../../../core/store/auth/auth.selectors';
 })
 export class MfaSettingsComponent implements OnInit {
   protected user = this.store.selectSignal(UserSelector);
-  protected qrCodeDataUrl: string | null = null;
-  protected verificationCode = '';
-  protected loading = false;
+  protected qrCodeDataUrl = signal<string | null>(null);
+  protected verificationCode = signal('');
+  protected loading = signal(false);
 
   constructor(
     private http: HttpClient,
     private snackBar: MatSnackBar,
-    private ngZone: NgZone,
     private store: Store,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
-    this.store.dispatch(GetCurrentUser());
+    this.refreshCurrentUser();
+  }
+
+  /**
+   * Refreshes the current user in the store so mfaEnabled reflects the latest
+   * state. Dispatches GetCurrentUserSuccess directly instead of GetCurrentUser
+   * to avoid the app-wide "navigate to /p/clients" side effect tied to that
+   * action, which would otherwise bounce the user off this settings page.
+   */
+  private refreshCurrentUser(): void {
+    this.authService.getCurrentUser().subscribe((user) => {
+      this.store.dispatch(GetCurrentUserSuccess({ user }));
+    });
   }
 
   startSetup(): void {
-    this.loading = true;
+    this.loading.set(true);
     this.http.post<{ secret: string; qrCodeDataUrl: string }>(`${API_URL}/mfa/setup`, {}).subscribe({
       next: (res) => {
-        this.ngZone.run(() => {
-          this.qrCodeDataUrl = res.qrCodeDataUrl;
-          this.loading = false;
-        });
+        this.qrCodeDataUrl.set(res.qrCodeDataUrl);
+        this.loading.set(false);
       },
-      error: (err) => {
-        this.ngZone.run(() => {
-          this.snackBar.open("Erreur lors de l'initialisation du MFA", 'Fermer', { duration: 3000 });
-          this.loading = false;
-        });
+      error: () => {
+        this.snackBar.open("Erreur lors de l'initialisation du MFA", 'Fermer', { duration: 3000 });
+        this.loading.set(false);
       },
     });
   }
 
   confirmSetup(): void {
-    if (!this.verificationCode) return;
-    this.loading = true;
-    this.http.post(`${API_URL}/mfa/verify`, { token: this.verificationCode }).subscribe({
+    if (!this.verificationCode()) return;
+    this.loading.set(true);
+    this.http.post(`${API_URL}/mfa/verify`, { token: this.verificationCode() }).subscribe({
       next: () => {
-        this.ngZone.run(() => {
-          this.qrCodeDataUrl = null;
-          this.verificationCode = '';
-          this.loading = false;
-          this.snackBar.open('Authentification à deux facteurs activée', 'Fermer', { duration: 3000 });
-          this.store.dispatch(GetCurrentUser());
-        });
+        this.qrCodeDataUrl.set(null);
+        this.verificationCode.set('');
+        this.loading.set(false);
+        this.snackBar.open('Authentification à deux facteurs activée', 'Fermer', { duration: 3000 });
+        this.refreshCurrentUser();
       },
       error: (err) => {
-        this.ngZone.run(() => {
-          this.snackBar.open(err.error?.message || 'Code invalide', 'Fermer', { duration: 3000 });
-          this.loading = false;
-        });
+        this.snackBar.open(err.error?.message || 'Code invalide', 'Fermer', { duration: 3000 });
+        this.loading.set(false);
       },
     });
   }
 
   disable(): void {
-    if (!this.verificationCode) return;
-    this.loading = true;
-    this.http.post(`${API_URL}/mfa/disable`, { token: this.verificationCode }).subscribe({
+    if (!this.verificationCode()) return;
+    this.loading.set(true);
+    this.http.post(`${API_URL}/mfa/disable`, { token: this.verificationCode() }).subscribe({
       next: () => {
-        this.ngZone.run(() => {
-          this.verificationCode = '';
-          this.loading = false;
-          this.snackBar.open('Authentification à deux facteurs désactivée', 'Fermer', { duration: 3000 });
-          this.store.dispatch(GetCurrentUser());
-        });
+        this.verificationCode.set('');
+        this.loading.set(false);
+        this.snackBar.open('Authentification à deux facteurs désactivée', 'Fermer', { duration: 3000 });
+        this.refreshCurrentUser();
       },
       error: (err) => {
-        this.ngZone.run(() => {
-          this.snackBar.open(err.error?.message || 'Code invalide', 'Fermer', { duration: 3000 });
-          this.loading = false;
-        });
+        this.snackBar.open(err.error?.message || 'Code invalide', 'Fermer', { duration: 3000 });
+        this.loading.set(false);
       },
     });
   }
