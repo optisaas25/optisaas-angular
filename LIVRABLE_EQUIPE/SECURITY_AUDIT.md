@@ -5,6 +5,8 @@
 **Status**: 🔴 **CRITIQUE - Corrections Requises**  
 **Score Global**: 5.5/10
 
+> ⚠️ **Document historique, dépassé** - Conservé pour traçabilité. L'état réel et vérifié des correctifs (2026-07-05) est dans [`backend/SECURITY_GUIDE.md`](../backend/SECURITY_GUIDE.md). Ce document original listait des vulnérabilités qui, pour beaucoup, n'ont jamais été réellement corrigées malgré des affirmations contraires dans un autre document (`backend/SECURITY_GUIDE.md` v3.0, désormais réécrit) - notamment l'isolation multi-tenant, qui reposait sur un header client non vérifié, une faille plus grave que tout ce qui est listé ci-dessous.
+
 ---
 
 ## 📋 TABLE DES MATIÈRES
