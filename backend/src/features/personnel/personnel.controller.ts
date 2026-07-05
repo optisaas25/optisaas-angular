@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { PersonnelService } from './personnel.service';
 import { CurrentUser, RequestUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { AttendanceService } from './attendance.service';
@@ -32,6 +33,7 @@ export class PersonnelController {
   ) {}
 
   // --- Employees ---
+  @Roles('manager')
   @Post('employees')
   createEmployee(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.personnelService.create(createEmployeeDto);
@@ -47,6 +49,7 @@ export class PersonnelController {
     return this.personnelService.findOne(id);
   }
 
+  @Roles('manager')
   @Patch('employees/:id')
   updateEmployee(
     @Param('id') id: string,
@@ -56,6 +59,7 @@ export class PersonnelController {
     return this.personnelService.update(id, updateEmployeeDto);
   }
 
+  @Roles('manager')
   @Delete('employees/:id')
   removeEmployee(@Param('id') id: string) {
     return this.personnelService.remove(id);
@@ -81,11 +85,13 @@ export class PersonnelController {
   }
 
   // --- Commissions ---
+  @Roles('manager')
   @Post('commission-rules')
   createCommissionRule(@Body() dto: CreateCommissionRuleDto) {
     return this.commissionService.createRule(dto);
   }
 
+  @Roles('manager')
   @Post('commission-rules/bulk-upsert')
   upsertCommissionRulesBulk(@Body() rules: any[]) {
     console.log(
@@ -99,6 +105,7 @@ export class PersonnelController {
     return this.commissionService.getRules(centreId);
   }
 
+  @Roles('manager')
   @Patch('commission-rules/:id')
   updateCommissionRule(
     @Param('id') id: string,
@@ -107,11 +114,13 @@ export class PersonnelController {
     return this.commissionService.updateRule(id, dto);
   }
 
+  @Roles('manager')
   @Delete('commission-rules/:id')
   deleteCommissionRule(@Param('id') id: string) {
     return this.commissionService.deleteRule(id);
   }
 
+  @Roles('manager')
   @Delete('commission-rules/by-poste/:poste')
   deleteCommissionRulesByPoste(@Param('poste') poste: string) {
     console.log(
@@ -125,6 +134,7 @@ export class PersonnelController {
     return this.commissionService.getConfig();
   }
 
+  @Roles('manager')
   @Patch('commissions/config')
   updateCommissionConfig(
     @Body()
@@ -151,16 +161,19 @@ export class PersonnelController {
   }
 
   // --- Payroll ---
+  @Roles('admin')
   @Post('payroll/generate')
   generatePayroll(@Body() dto: GeneratePayrollDto) {
     return this.payrollService.generate(dto);
   }
 
+  @Roles('admin')
   @Post('payroll/:id/validate')
   validatePayroll(@Param('id') id: string) {
     return this.payrollService.validate(id);
   }
 
+  @Roles('admin')
   @Post('payroll/:id/pay')
   payPayroll(
     @Param('id') id: string,
@@ -200,11 +213,13 @@ export class PersonnelController {
     );
   }
 
+  @Roles('admin')
   @Patch('payroll/:id')
   updatePayroll(@Param('id') id: string, @Body() dto: UpdatePayrollDto) {
     return this.payrollService.update(id, dto);
   }
 
+  @Roles('admin')
   @Delete('payroll/:id')
   deletePayroll(@Param('id') id: string) {
     return this.payrollService.remove(id);
@@ -216,6 +231,7 @@ export class PersonnelController {
     return { url: relativeUrl };
   }
 
+  @Roles('manager')
   @Post('employees/:id/advance')
   recordAdvance(
     @Param('id') id: string,

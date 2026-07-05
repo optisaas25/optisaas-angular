@@ -10,7 +10,7 @@ export class AuthController {
   @Public()
   @Post('login')
   async login(@Body() body: any) {
-    return this.authService.login(body.email, body.password);
+    return this.authService.login(body.email, body.password, body.mfaToken);
   }
 
   @Get('me')
@@ -22,5 +22,20 @@ export class AuthController {
   @Post('refresh_token')
   async refresh(@Body() body: any) {
     return this.authService.refreshToken(body.refresh_token);
+  }
+
+  @Post('mfa/setup')
+  async setupMfa(@CurrentUser() user: RequestUser) {
+    return this.authService.setupMfa(user.id);
+  }
+
+  @Post('mfa/verify')
+  async verifyMfa(@CurrentUser() user: RequestUser, @Body() body: any) {
+    return this.authService.verifyAndEnableMfa(user.id, body.token);
+  }
+
+  @Post('mfa/disable')
+  async disableMfa(@CurrentUser() user: RequestUser, @Body() body: any) {
+    return this.authService.disableMfa(user.id, body.token);
   }
 }

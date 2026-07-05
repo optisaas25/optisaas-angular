@@ -2,12 +2,16 @@ import {
   Injectable,
   UnauthorizedException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
+import { generateSecret, generateURI, verify as verifyOtp } from 'otplib';
+import * as QRCode from 'qrcode';
 import { ConfigService } from '@nestjs/config';
 import { requireEnv } from '../../common/config/require-env';
+import { mapRoleToRoleId } from '../../common/auth/role.util';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +26,7 @@ export class AuthService {
     this.refreshSecret = requireEnv(this.configService, 'REFRESH_SECRET');
   }
 
-  async login(email: string, pass: string) {
+  async login(email: string, pass: string, mfaToken?: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
       include: { centreRoles: true, employee: true },
@@ -37,11 +41,73 @@ export class AuthService {
       throw new UnauthorizedException('Identifiants invalides');
     }
 
+    if (user.mfaEnabled) {
+      if (!mfaToken) {
+        return { mfaRequired: true };
+      }
+      const result = await verifyOtp({ secret: user.mfaSecret!, token: mfaToken });
+      if (!result.valid) {
+        throw new UnauthorizedException('Code de vérification invalide');
+      }
+    }
+
     const tokens = this.generateTokens(user);
     return {
       ...tokens,
       user: this.mapToCurrentUser(user),
     };
+  }
+
+  /** Generates a new TOTP secret and QR code for the user to scan; MFA stays disabled until verifyAndEnableMfa succeeds. */
+  async setupMfa(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Utilisateur non trouvé');
+
+    const secret = generateSecret();
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { mfaSecret: secret, mfaEnabled: false },
+    });
+
+    const otpauth = generateURI({ issuer: 'OptiSaaS', label: user.email, secret });
+    const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
+    return { secret, qrCodeDataUrl };
+  }
+
+  async verifyAndEnableMfa(userId: string, token: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.mfaSecret) {
+      throw new BadRequestException(
+        "La configuration MFA n'a pas été initialisée",
+      );
+    }
+    const result = await verifyOtp({ secret: user.mfaSecret, token });
+    if (!result.valid) {
+      throw new UnauthorizedException('Code de vérification invalide');
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { mfaEnabled: true },
+    });
+    return { success: true };
+  }
+
+  async disableMfa(userId: string, token: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user?.mfaEnabled || !user.mfaSecret) {
+      throw new BadRequestException(
+        "L'authentification à deux facteurs n'est pas activée",
+      );
+    }
+    const result = await verifyOtp({ secret: user.mfaSecret, token });
+    if (!result.valid) {
+      throw new UnauthorizedException('Code de vérification invalide');
+    }
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { mfaEnabled: false, mfaSecret: null },
+    });
+    return { success: true };
   }
 
   private generateTokens(user: any) {
@@ -67,41 +133,6 @@ export class AuthService {
     return this.mapToCurrentUser(user);
   }
 
-  // Maps a stored center role (string or numeric) to the numeric role id the
-  // frontend auth system expects: 1=employee, 2=manager, 3=admin, 4=superadmin.
-  private static readonly ROLE_NAME_TO_ID: Record<string, number> = {
-    superadmin: 4,
-    super_admin: 4,
-    admin: 3,
-    administrateur: 3,
-    administrator: 3,
-    manager: 2,
-    gerant: 2,
-    responsable: 2,
-    direction: 2,
-    employee: 1,
-    employe: 1,
-    vendeur: 1,
-    opticien: 1,
-    assistant: 1,
-    centre: 1,
-    comptable: 1,
-  };
-
-  private mapRoleToRoleId(role: unknown): number {
-    if (role === null || role === undefined) return 1;
-    if (typeof role === 'number') {
-      return role >= 1 && role <= 4 ? role : 1;
-    }
-    const raw = String(role).trim();
-    if (/^[1-4]$/.test(raw)) return Number(raw);
-    const normalized = raw
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-    return AuthService.ROLE_NAME_TO_ID[normalized] ?? 1;
-  }
-
   private mapToCurrentUser(user: any) {
     // Map backend User and UserCentreRole to frontend ICurrentUser
     return {
@@ -114,11 +145,12 @@ export class AuthService {
       is_callcenter: false,
       remember_token: '',
       menu_favoris: '',
+      mfaEnabled: user.mfaEnabled,
       centers: user.centreRoles.map((cr: any) => ({
         id: cr.centreId,
         name: cr.centreName,
         role: cr.role,
-        role_id: this.mapRoleToRoleId(cr.role),
+        role_id: mapRoleToRoleId(cr.role),
         active: true,
         migrated: false,
         entrepotIds: cr.entrepotIds,

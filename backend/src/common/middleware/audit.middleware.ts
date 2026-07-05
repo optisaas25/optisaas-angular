@@ -77,27 +77,23 @@ export class AuditMiddleware implements NestMiddleware {
           `${method} ${originalUrl} | User: ${userId} | Status: ${statusCode} | Duration: ${duration}ms | IP: ${ipAddress}`,
         );
 
-        // Log to database (async, non-blocking)
-        // Note: Requires AuditLog table in Prisma schema
-        // TODO: Uncomment after schema update
-        /*
-                try {
-                    await this.prisma.auditLog.create({
-                        data: {
-                            userId: userId !== 'ANONYMOUS' ? userId : null,
-                            action: auditEntry.action,
-                            resource: auditEntry.resource,
-                            method: auditEntry.method,
-                            statusCode: auditEntry.statusCode,
-                            ipAddress: auditEntry.ipAddress,
-                            changes: auditEntry.changes ? JSON.stringify(auditEntry.changes) : null,
-                            createdAt: auditEntry.timestamp,
-                        },
-                    });
-                } catch (error) {
-                    this.logger.error('Failed to save audit log:', error);
-                }
-                */
+        // Log to database (async, non-blocking - failure here must never break the request)
+        this.prisma.auditLog
+          .create({
+            data: {
+              userId: userId !== 'ANONYMOUS' ? userId : null,
+              action: auditEntry.action,
+              resource: auditEntry.resource,
+              method: auditEntry.method,
+              statusCode: auditEntry.statusCode,
+              ipAddress: auditEntry.ipAddress,
+              changes: auditEntry.changes ? JSON.stringify(auditEntry.changes) : null,
+              createdAt: auditEntry.timestamp,
+            },
+          })
+          .catch((error) => {
+            this.logger.error('Failed to save audit log:', error);
+          });
       }
     });
 

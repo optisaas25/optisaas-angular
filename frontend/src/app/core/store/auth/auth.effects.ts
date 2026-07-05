@@ -20,6 +20,7 @@ import {
   InitializeAuthState,
   Login,
   LoginError,
+  LoginMfaRequired,
   LoginSuccess,
   Logout,
   RefreshToken,
@@ -64,6 +65,9 @@ export class AuthEffects {
       exhaustMap((action) =>
         this.#authService.login(action.request).pipe(
           map((jwtTokens: IJwtTokens) => {
+            if (jwtTokens.mfaRequired) {
+              return LoginMfaRequired();
+            }
             this.#store.dispatch(LoginSuccess({ jwtTokens }));
             return GetCurrentUser();
           }),

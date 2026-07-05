@@ -12,6 +12,13 @@
       <input title="Input" aria-label="Input field" matInput type="password" autocomplete="current-password" formControlName="password" />
       <mat-error app-form-control-error [errors]="loginForm.controls.password.errors" />
     </mat-form-field>
+    @if (mfaRequired()) {
+    <mat-form-field appFieldControlLabel>
+      <mat-label>{{ 'authentication.mfaCode' | translate }}</mat-label>
+      <input title="Input" aria-label="Input field" matInput inputmode="numeric" autocomplete="one-time-code" formControlName="mfaToken" />
+      <mat-error app-form-control-error [errors]="loginForm.controls.mfaToken.errors" />
+    </mat-form-field>
+    }
     <button matButton (click)="gotToForgotPath()" type="button">
       {{ 'authentication.forgottenPassword' | translate }}
     </button>

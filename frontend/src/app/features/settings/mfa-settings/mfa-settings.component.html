@@ -1,0 +1,35 @@
+<mat-card>
+  <mat-card-content>
+    <h3 class="text-lg font-medium mb-4">Authentification à deux facteurs (2FA)</h3>
+
+    @if (user()?.mfaEnabled && !qrCodeDataUrl) {
+      <p>L'authentification à deux facteurs est <strong>activée</strong> sur ce compte.</p>
+      <div class="form-grid mt-4">
+        <mat-form-field appearance="outline">
+          <mat-label>Code de vérification (pour désactiver)</mat-label>
+          <input matInput inputmode="numeric" [(ngModel)]="verificationCode" />
+        </mat-form-field>
+      </div>
+      <button matButton="filled" class="tertiary" [disabled]="loading || !verificationCode" (click)="disable()">
+        Désactiver le 2FA
+      </button>
+    } @else if (qrCodeDataUrl) {
+      <p>Scannez ce QR code avec votre application d'authentification (Google Authenticator, Authy, etc.), puis saisissez le code généré pour confirmer.</p>
+      <img [src]="qrCodeDataUrl" alt="QR code MFA" class="my-4" width="200" height="200" />
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Code de vérification</mat-label>
+          <input matInput inputmode="numeric" [(ngModel)]="verificationCode" />
+        </mat-form-field>
+      </div>
+      <button matButton="filled" class="tertiary" [disabled]="loading || !verificationCode" (click)="confirmSetup()">
+        Confirmer et activer
+      </button>
+    } @else {
+      <p>L'authentification à deux facteurs n'est pas activée sur ce compte.</p>
+      <button matButton="filled" class="tertiary" [disabled]="loading" (click)="startSetup()">
+        Activer le 2FA
+      </button>
+    }
+  </mat-card-content>
+</mat-card>

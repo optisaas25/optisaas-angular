@@ -7,6 +7,7 @@ export const LoginSuccess = createAction(
   props<{ jwtTokens: IJwtTokens }>()
 );
 export const LoginError = createAction('[Auth] Login Error', props<{ errors: IWsError }>());
+export const LoginMfaRequired = createAction('[Auth] Login Mfa Required');
 export const Logout = createAction('[Auth] Logout', props<{ redirect?: boolean }>());
 export const InitializeAuthState = createAction('[Auth] Initialize Auth State');
 

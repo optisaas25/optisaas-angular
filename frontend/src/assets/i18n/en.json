@@ -188,6 +188,7 @@
     "invalidTenant": "Tenant not found",
     "404": "404",
     "connexion": "Login",
+    "mfaCode": "Verification code (authenticator app)",
     "forgottenPassword": "Forgotten password?",
     "goToLogin": "Back to login page",
     "login": "Username",

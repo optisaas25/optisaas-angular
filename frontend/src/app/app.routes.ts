@@ -55,6 +55,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/settings/loyalty-config/loyalty-config.component').then(m => m.LoyaltyConfigComponent),
       },
       {
+        path: 'settings/security',
+        loadComponent: () => import('./features/settings/mfa-settings/mfa-settings.component').then(m => m.MfaSettingsComponent),
+      },
+      {
         path: 'settings/caisses',
         loadComponent: () => import('./features/finance/caisse/pages/caisse-list/caisse-list.component').then(m => m.CaisseListComponent),
         data: { mode: 'management' }

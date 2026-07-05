@@ -28,13 +28,15 @@ Pour partager l'état de votre base de données avec d'autres membres de l'équi
 
 ### 1. Exporter vos données
 Si vous avez ajouté des données et que vous voulez les partager :
+- Définissez `DB_BACKUP_PASSPHRASE` (un mot de passe fort, à garder dans un gestionnaire de mots de passe - ne le communiquez jamais par le même canal que le fichier).
 - Lancez `./docker-db-export.bat` (Windows) ou `./docker-db-export.sh` (Linux/Mac).
-- Un fichier `dump.sql` sera créé à la racine du projet.
-- Partagez ce fichier `dump.sql` (via Git, Slack, ou autre).
+- Un fichier chiffré `dump.sql.enc` sera créé à la racine du projet.
+- Partagez `dump.sql.enc` par Slack/email/drive d'équipe, **jamais via Git** (ce dépôt contient des données clients/médicales réelles - un dump commis par erreur a déjà fuité publiquement une fois).
 
 ### 2. Importer les données d'un collègue
-Pour récupérer les données contenues dans un fichier `dump.sql` :
-- Placez le fichier `dump.sql` à la racine de votre projet.
+Pour récupérer les données contenues dans un fichier `dump.sql.enc` :
+- Placez le fichier `dump.sql.enc` à la racine de votre projet.
+- Définissez `DB_BACKUP_PASSPHRASE` avec le mot de passe communiqué par la personne qui a exporté.
 - Lancez `./docker-db-import.bat` (Windows) ou `./docker-db-import.sh` (Linux/Mac).
 - **Note** : Cela écrasera vos données locales dans le container Docker.
 

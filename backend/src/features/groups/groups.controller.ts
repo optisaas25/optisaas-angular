@@ -12,11 +12,13 @@ import {
 import { GroupsService } from './groups.service';
 import { CreateGroupeDto } from './dto/create-groupe.dto';
 import { UpdateGroupeDto } from './dto/update-groupe.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('groups')
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
 
+  @Roles('admin')
   @Post()
   create(@Body(ValidationPipe) createGroupeDto: CreateGroupeDto) {
     return this.groupsService.create(createGroupeDto);
@@ -32,6 +34,7 @@ export class GroupsController {
     return this.groupsService.findOne(id);
   }
 
+  @Roles('admin')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -40,6 +43,7 @@ export class GroupsController {
     return this.groupsService.update(id, updateGroupeDto);
   }
 
+  @Roles('admin')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.groupsService.remove(id);

@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+const DEV_SEED_PASSWORD = 'Optisaas2026!';
 
 async function main() {
     console.log('🌱 Starting seeding...');
@@ -65,13 +67,16 @@ async function main() {
         },
     ];
 
+    const hashedPassword = await bcrypt.hash(DEV_SEED_PASSWORD, 10);
+
     for (const data of usersData) {
         const user = await prisma.user.upsert({
             where: { email: data.email },
-            update: {},
+            update: { password: hashedPassword },
             create: {
                 ...data,
                 statut: 'actif',
+                password: hashedPassword,
             },
         });
 

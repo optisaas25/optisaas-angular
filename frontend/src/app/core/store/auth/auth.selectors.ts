@@ -18,6 +18,11 @@ export const UserRoleSelector = createSelector(
 
 export const UserErrorSelector = createSelector(selectAuth, (state: AuthState) => state.errors);
 
+export const MfaRequiredSelector = createSelector(
+  selectAuth,
+  (state: AuthState) => state.mfaRequired
+);
+
 export const JwtTokensSelector = createSelector(selectAuth, (state: AuthState) => state.jwtTokens);
 
 export const RefreshTokenInProgressSelector = createSelector(

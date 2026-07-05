@@ -13,6 +13,7 @@ import {
   GetCurrentUserSuccess,
   InitializeAuthState,
   LoginError,
+  LoginMfaRequired,
   LoginSuccess,
   RefreshTokenError,
   RefreshTokenSuccess,
@@ -29,6 +30,7 @@ export interface AuthState {
   user: ICurrentUser;
   currentCenter: ICenter;
   errors?: IWsError;
+  mfaRequired: boolean;
 }
 
 export const initialAuthState: AuthState = {
@@ -37,13 +39,13 @@ export const initialAuthState: AuthState = {
   user: new CurrentUser(),
   currentCenter: null,
   errors: null,
+  mfaRequired: false,
 } as const satisfies AuthState;
 
 const featureReducer = createReducer(
   initialAuthState,
   on(
     GetCurrentUserSuccess,
-    LoginSuccess,
     RefreshTokenSuccess,
     UpdateMenuFavorisSuccess,
     UpdateMenuFavorisError,
@@ -54,6 +56,15 @@ const featureReducer = createReducer(
       ...action,
     })
   ),
+  on(LoginSuccess, (state, action) => ({
+    ...state,
+    ...action,
+    mfaRequired: false,
+  })),
+  on(LoginMfaRequired, (state) => ({
+    ...state,
+    mfaRequired: true,
+  })),
   on(InitializeAuthState, () => ({
     ...initialAuthState,
   })),

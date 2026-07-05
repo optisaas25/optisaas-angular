@@ -62,8 +62,9 @@ vps_dumps/
 *.zip
 
 
-# Database backups
+# Database backups (even encrypted ones - distribute via a dedicated channel, not git)
 *.sql
+*.sql.enc
 *.rar
 *.bak
 

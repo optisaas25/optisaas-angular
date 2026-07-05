@@ -2,7 +2,9 @@ import { Controller, Get, Query, Res } from '@nestjs/common';
 import { AccountingService } from './accounting.service';
 import { ExportSageDto } from './dto/export-sage.dto';
 import type { Response } from 'express';
+import { Roles } from '../../common/decorators/roles.decorator';
 
+@Roles('manager')
 @Controller('accounting')
 export class AccountingController {
   constructor(private accountingService: AccountingService) {}

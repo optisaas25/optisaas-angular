@@ -4,6 +4,7 @@ import { existsSync } from 'fs';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AuthGuard } from './common/guards/auth.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
 import { AuditMiddleware } from './common/middleware/audit.middleware';
 
@@ -96,7 +97,10 @@ import { VerreBrandModule } from './features/verre-brand/verre-brand.module';
     VerreBrandModule,
   ],
   controllers: [DiagController, GlassParametersController],
-  providers: [{ provide: APP_GUARD, useClass: AuthGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

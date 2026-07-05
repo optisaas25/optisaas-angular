@@ -12,6 +12,7 @@ export interface ICurrentUser {
   menu_favoris: string;
   centers: ICenter[];
   employee?: any;
+  mfaEnabled?: boolean;
 }
 
 export class CurrentUser implements ICurrentUser {
@@ -25,6 +26,7 @@ export class CurrentUser implements ICurrentUser {
   remember_token: string;
   menu_favoris: string;
   centers: ICenter[];
+  mfaEnabled?: boolean;
 
   constructor() {
     this.id = null;
@@ -36,5 +38,6 @@ export class CurrentUser implements ICurrentUser {
     this.remember_token = null;
     this.menu_favoris = null;
     this.centers = [];
+    this.mfaEnabled = false;
   }
 }

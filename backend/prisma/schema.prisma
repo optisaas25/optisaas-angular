@@ -322,6 +322,22 @@ model MouvementStock {
   @@index([verreMarqueId])
 }
 
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  resource   String
+  method     String
+  statusCode Int
+  ipAddress  String
+  changes    String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([resource])
+}
+
 model User {
   id               String             @id @default(uuid())
   nom              String
@@ -334,7 +350,9 @@ model User {
   statut           String             @default("actif")
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  password         String             @default("$2b$10$vYpY.oP6y9G8v6z2X3G2.O7h2/Gk8v6z2X3G2.O7h2/Gk8v6z2X3")
+  password         String
+  mfaSecret        String?
+  mfaEnabled       Boolean            @default(false)
   depensesCrees    Depense[]          @relation("CreePar")
   depensesValides  Depense[]          @relation("ValidePar")
   employee         Employee?

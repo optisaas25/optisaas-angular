@@ -248,6 +248,12 @@ export const MENU: MenuItem[] = [
         route: 'settings/loyalty',
       },
       {
+        label: 'Sécurité (2FA)',
+        icon: 'security',
+        type: 'subchild',
+        route: 'settings/security',
+      },
+      {
         label: 'Groupes & Entrepôts',
         icon: 'warehouse',
         type: 'subchild',

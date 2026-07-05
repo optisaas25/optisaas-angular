@@ -188,6 +188,7 @@
     "invalidTenant": "Tenant introuvable",
     "404": "404",
     "connexion": "Connexion",
+    "mfaCode": "Code de vérification (application d'authentification)",
     "forgottenPassword": "Mot de passe oublié ?",
     "goToLogin": "Retour à la page d'authentification",
     "login": "Identifiant",

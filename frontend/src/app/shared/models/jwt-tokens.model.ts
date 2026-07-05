@@ -1,6 +1,7 @@
 export interface IJwtTokens {
   token: string;
   refresh_token: string;
+  mfaRequired?: boolean;
 }
 
 export class JwtTokens implements IJwtTokens {
