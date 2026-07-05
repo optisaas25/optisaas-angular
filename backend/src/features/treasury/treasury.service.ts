@@ -578,8 +578,10 @@ export class TreasuryService {
         ...sqlBase.params,
       ),
       this.prisma.$queryRawUnsafe<any[]>(
-        `${sqlBase.query} ORDER BY date DESC LIMIT ${limit} OFFSET ${skip}`,
+        `${sqlBase.query} ORDER BY date DESC LIMIT $${sqlBase.params.length + 1} OFFSET $${sqlBase.params.length + 2}`,
         ...sqlBase.params,
+        limit,
+        skip,
       ),
     ]);
 
@@ -631,8 +633,10 @@ export class TreasuryService {
         ...sqlBase.params,
       ),
       this.prisma.$queryRawUnsafe<any[]>(
-        `${sqlBase.query} ORDER BY date DESC LIMIT ${limit} OFFSET ${skip}`,
+        `${sqlBase.query} ORDER BY date DESC LIMIT $${sqlBase.params.length + 1} OFFSET $${sqlBase.params.length + 2}`,
         ...sqlBase.params,
+        limit,
+        skip,
       ),
     ]);
 

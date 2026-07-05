@@ -1,5 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { existsSync } from 'fs';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
@@ -7,6 +8,7 @@ import { AuthGuard } from './common/guards/auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { RateLimitMiddleware } from './common/middleware/rate-limit.middleware';
 import { AuditMiddleware } from './common/middleware/audit.middleware';
+import { AuditRetentionService } from './common/audit/audit-retention.service';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { ClientsModule } from './features/clients/clients.module';
@@ -54,6 +56,7 @@ import { VerreBrandModule } from './features/verre-brand/verre-brand.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     StorageModule,
     PrismaModule,
     GroupsModule,
@@ -100,6 +103,7 @@ import { VerreBrandModule } from './features/verre-brand/verre-brand.module';
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    AuditRetentionService,
   ],
 })
 export class AppModule implements NestModule {
