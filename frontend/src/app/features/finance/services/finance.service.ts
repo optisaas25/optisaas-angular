@@ -313,9 +313,31 @@ export class FinanceService {
         return this.http.post<TiersPayantClaim>(`${this.apiUrl}/tiers-payant`, dto);
     }
 
-    lookupFactureForTiersPayant(numero: string): Observable<{ factureId: string; numero: string; totalTTC: number; clientNom: string; conventionId: string }> {
+    lookupFactureForTiersPayant(numero: string): Observable<{
+        factureId: string;
+        numero: string;
+        totalTTC: number;
+        clientNom: string;
+        conventionId: string;
+        conventionNom: string | null;
+        remiseType: 'PERCENTAGE' | 'FLAT_AMOUNT' | null;
+        remiseValeur: number | null;
+        plafondRemboursement: number | null;
+        montantSuggere: number;
+    }> {
         const params = new HttpParams().set('numero', numero);
-        return this.http.get<{ factureId: string; numero: string; totalTTC: number; clientNom: string; conventionId: string }>(`${this.apiUrl}/tiers-payant/lookup-facture`, { params });
+        return this.http.get<{
+            factureId: string;
+            numero: string;
+            totalTTC: number;
+            clientNom: string;
+            conventionId: string;
+            conventionNom: string | null;
+            remiseType: 'PERCENTAGE' | 'FLAT_AMOUNT' | null;
+            remiseValeur: number | null;
+            plafondRemboursement: number | null;
+            montantSuggere: number;
+        }>(`${this.apiUrl}/tiers-payant/lookup-facture`, { params });
     }
 
     updateTiersPayantClaim(id: string, dto: Partial<TiersPayantClaim>): Observable<TiersPayantClaim> {

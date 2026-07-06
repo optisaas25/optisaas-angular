@@ -74,7 +74,16 @@
           }
 
           @if (lookupResult(); as result) {
-            <p>Client: <strong>{{ result.clientNom }}</strong> — Total facture: <strong>{{ result.totalTTC }} DH</strong></p>
+            <p>Client: <strong>{{ result.clientNom }}</strong> — Total facture: <strong>{{ result.totalTTC }} DH</strong> — Organisme: <strong>{{ result.conventionNom || '—' }}</strong></p>
+            @if (result.remiseType) {
+              <p class="text-xs text-gray-500">
+                Calcul: {{ result.remiseType === 'PERCENTAGE' ? (result.remiseValeur + '% du total') : (result.remiseValeur + ' DH forfait') }}
+                @if (result.plafondRemboursement != null) {
+                  , plafonné à {{ result.plafondRemboursement }} DH
+                }
+                → montant suggéré {{ result.montantSuggere }} DH (modifiable ci-dessous)
+              </p>
+            }
             <div class="form-grid mt-2">
               <mat-form-field appearance="outline">
                 <mat-label>Montant pris en charge par l'organisme</mat-label>

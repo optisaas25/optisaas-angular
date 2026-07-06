@@ -70,7 +70,17 @@ export class TiersPayantListComponent implements OnInit {
 
   protected showCreateForm = signal(false);
   protected lookupNumero = signal('');
-  protected lookupResult = signal<{ factureId: string; numero: string; totalTTC: number; clientNom: string } | null>(null);
+  protected lookupResult = signal<{
+    factureId: string;
+    numero: string;
+    totalTTC: number;
+    clientNom: string;
+    conventionNom: string | null;
+    remiseType: 'PERCENTAGE' | 'FLAT_AMOUNT' | null;
+    remiseValeur: number | null;
+    plafondRemboursement: number | null;
+    montantSuggere: number;
+  } | null>(null);
   protected lookupError = signal<string | null>(null);
   protected lookupLoading = signal(false);
   protected createMontant = signal(0);
@@ -161,7 +171,7 @@ export class TiersPayantListComponent implements OnInit {
     this.financeService.lookupFactureForTiersPayant(this.lookupNumero()).subscribe({
       next: (res) => {
         this.lookupResult.set(res);
-        this.createMontant.set(res.totalTTC);
+        this.createMontant.set(res.montantSuggere);
         this.lookupLoading.set(false);
       },
       error: (err) => {

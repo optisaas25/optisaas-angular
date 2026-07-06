@@ -49,6 +49,26 @@ function maskOrganismeConfig(config: {
   };
 }
 
+/**
+ * Reimbursement owed by the organisme for a facture, applying the
+ * Convention's remise (% or flat amount per dossier) then capping it at the
+ * organisme's plafondRemboursement, if one is configured. Whatever isn't
+ * covered remains the client's responsibility (montantPartClient).
+ */
+function computeMontantPriseEnCharge(
+  totalTTC: number,
+  convention: { remiseType: string; remiseValeur: number },
+  plafondRemboursement: number | null | undefined,
+): number {
+  const base =
+    convention.remiseType === 'PERCENTAGE'
+      ? (totalTTC * convention.remiseValeur) / 100
+      : convention.remiseValeur;
+  const capped =
+    plafondRemboursement != null ? Math.min(base, plafondRemboursement) : base;
+  return Math.max(0, Math.min(capped, totalTTC));
+}
+
 @Injectable()
 export class TiersPayantService {
   constructor(private prisma: PrismaService) {}
@@ -137,12 +157,26 @@ export class TiersPayantService {
       );
     }
 
+    const convention = await this.prisma.convention.findUnique({
+      where: { id: facture.client.conventionId },
+      include: { organismeConfig: true },
+    });
+    const plafondRemboursement = convention?.organismeConfig?.plafondRemboursement ?? null;
+    const montantSuggere = convention
+      ? computeMontantPriseEnCharge(facture.totalTTC, convention, plafondRemboursement)
+      : facture.totalTTC;
+
     return {
       factureId: facture.id,
       numero: facture.numero,
       totalTTC: facture.totalTTC,
       clientNom: `${facture.client.prenom || ''} ${facture.client.nom || ''}`.trim(),
       conventionId: facture.client.conventionId,
+      conventionNom: convention?.nom ?? null,
+      remiseType: convention?.remiseType ?? null,
+      remiseValeur: convention?.remiseValeur ?? null,
+      plafondRemboursement,
+      montantSuggere,
     };
   }
 
