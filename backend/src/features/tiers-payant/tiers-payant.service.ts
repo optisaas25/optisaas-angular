@@ -6,10 +6,116 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTiersPayantClaimDto } from './dto/create-tiers-payant-claim.dto';
 import { UpdateTiersPayantClaimDto } from './dto/update-tiers-payant-claim.dto';
+import { UpdateOrganismeConfigDto } from './dto/update-organisme-config.dto';
+import {
+  encryptJsonField,
+  decryptJsonField,
+} from '../../common/crypto/field-encryption.util';
+
+type RawApiCredentials = {
+  apiEndpoint?: string;
+  apiKey?: string;
+  apiSecret?: string;
+  notes?: string;
+};
+
+/**
+ * apiCredentials never round-trips to the client in full once set - only
+ * whether it's configured and the (non-secret) endpoint are exposed. This is
+ * inert storage for a future telesubmission integration, not wired to any
+ * outbound call today.
+ */
+function maskOrganismeConfig(config: {
+  plafondRemboursement: number | null;
+  apiCredentials: unknown;
+} | null) {
+  if (!config) {
+    return { plafondRemboursement: null, apiCredentials: null };
+  }
+  const decrypted = decryptJsonField(config.apiCredentials) as
+    | RawApiCredentials
+    | null
+    | undefined;
+  return {
+    plafondRemboursement: config.plafondRemboursement,
+    apiCredentials: decrypted
+      ? {
+          apiEndpoint: decrypted.apiEndpoint || null,
+          notes: decrypted.notes || null,
+          hasApiKey: !!decrypted.apiKey,
+          hasApiSecret: !!decrypted.apiSecret,
+        }
+      : null,
+  };
+}
 
 @Injectable()
 export class TiersPayantService {
   constructor(private prisma: PrismaService) {}
+
+  async listOrganismes() {
+    const conventions = await this.prisma.convention.findMany({
+      include: { organismeConfig: true },
+      orderBy: { nom: 'asc' },
+    });
+    return conventions.map(({ organismeConfig, ...convention }) => ({
+      ...convention,
+      ...maskOrganismeConfig(organismeConfig),
+    }));
+  }
+
+  async getOrganismeConfig(conventionId: string) {
+    const convention = await this.prisma.convention.findUnique({
+      where: { id: conventionId },
+      include: { organismeConfig: true },
+    });
+    if (!convention) {
+      throw new NotFoundException('Organisme (convention) introuvable');
+    }
+    return maskOrganismeConfig(convention.organismeConfig);
+  }
+
+  async upsertOrganismeConfig(
+    conventionId: string,
+    dto: UpdateOrganismeConfigDto,
+  ) {
+    const convention = await this.prisma.convention.findUnique({
+      where: { id: conventionId },
+      include: { organismeConfig: true },
+    });
+    if (!convention) {
+      throw new NotFoundException('Organisme (convention) introuvable');
+    }
+
+    const data: Record<string, unknown> = {};
+    if (dto.plafondRemboursement !== undefined) {
+      data.plafondRemboursement = dto.plafondRemboursement;
+    }
+    if (dto.apiCredentials !== undefined) {
+      // The client never sees a previously-set apiKey/apiSecret again (only
+      // hasApiKey/hasApiSecret booleans), so it can't resend them. Blank
+      // fields here mean "leave unchanged", not "clear" - merge onto the
+      // existing decrypted value instead of overwriting it wholesale.
+      const current =
+        (decryptJsonField(
+          convention.organismeConfig?.apiCredentials,
+        ) as RawApiCredentials | null | undefined) || {};
+      const merged: RawApiCredentials = {
+        apiEndpoint: dto.apiCredentials.apiEndpoint ?? current.apiEndpoint,
+        apiKey: dto.apiCredentials.apiKey || current.apiKey,
+        apiSecret: dto.apiCredentials.apiSecret || current.apiSecret,
+        notes: dto.apiCredentials.notes ?? current.notes,
+      };
+      data.apiCredentials = encryptJsonField(merged);
+    }
+
+    const updated = await this.prisma.tiersPayantOrganismeConfig.upsert({
+      where: { conventionId },
+      create: { conventionId, ...data },
+      update: data,
+    });
+    return maskOrganismeConfig(updated);
+  }
 
   async lookupFacture(numero: string) {
     const facture = await this.prisma.facture.findUnique({

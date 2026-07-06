@@ -222,6 +222,34 @@ export interface Convention {
     };
 }
 
+export interface OrganismeApiCredentialsInput {
+    apiEndpoint?: string;
+    apiKey?: string;
+    apiSecret?: string;
+    notes?: string;
+}
+
+/** Never carries the real apiKey/apiSecret back from the API - only whether they're set. */
+export interface OrganismeApiCredentialsMasked {
+    apiEndpoint: string | null;
+    notes: string | null;
+    hasApiKey: boolean;
+    hasApiSecret: boolean;
+}
+
+/** Reimbursement-side settings for an organisme (Convention) - separate from the billing/remise rule. */
+export interface OrganismeConfig {
+    plafondRemboursement: number | null;
+    apiCredentials: OrganismeApiCredentialsMasked | null;
+}
+
+export interface OrganismeConfigInput {
+    plafondRemboursement?: number | null;
+    apiCredentials?: OrganismeApiCredentialsInput;
+}
+
+export type OrganismeListItem = Convention & OrganismeConfig;
+
 export type TiersPayantStatut = 'BROUILLON' | 'SOUMISE' | 'EN_ATTENTE' | 'REMBOURSEE' | 'REJETEE';
 
 export interface TiersPayantClaim {

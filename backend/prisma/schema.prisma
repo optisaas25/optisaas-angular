@@ -453,6 +453,7 @@ model Convention {
   remiseForfaitaire         Boolean  @default(false)
   clients                   Client[]
   tiersPayantClaims         TiersPayantClaim[]
+  organismeConfig           TiersPayantOrganismeConfig?
 }
 
 model TiersPayantClaim {
@@ -477,6 +478,21 @@ model TiersPayantClaim {
   @@index([conventionId])
   @@index([clientId])
   @@index([statut])
+}
+
+/**
+ * Reimbursement-side settings for an organisme (plafond, future telesubmission
+ * credentials) - kept separate from Convention, which only governs the
+ * patient-billing discount (remise) rule and has no notion of a cap.
+ */
+model TiersPayantOrganismeConfig {
+  id                    String     @id @default(uuid())
+  conventionId          String     @unique
+  plafondRemboursement  Float?
+  apiCredentials        Json?
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  convention            Convention @relation(fields: [conventionId], references: [id], onDelete: Cascade)
 }
 
 model Depense {

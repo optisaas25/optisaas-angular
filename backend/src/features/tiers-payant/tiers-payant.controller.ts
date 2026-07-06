@@ -14,6 +14,7 @@ import { TiersPayantService } from './tiers-payant.service';
 import { TiersPayantPdfService } from './tiers-payant-pdf.service';
 import { CreateTiersPayantClaimDto } from './dto/create-tiers-payant-claim.dto';
 import { UpdateTiersPayantClaimDto } from './dto/update-tiers-payant-claim.dto';
+import { UpdateOrganismeConfigDto } from './dto/update-organisme-config.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 
 @Roles('manager')
@@ -41,6 +42,24 @@ export class TiersPayantController {
   @Get('lookup-facture')
   lookupFacture(@Query('numero') numero: string) {
     return this.tiersPayantService.lookupFacture(numero);
+  }
+
+  @Get('organismes')
+  listOrganismes() {
+    return this.tiersPayantService.listOrganismes();
+  }
+
+  @Get('organismes/:conventionId/config')
+  getOrganismeConfig(@Param('conventionId') conventionId: string) {
+    return this.tiersPayantService.getOrganismeConfig(conventionId);
+  }
+
+  @Patch('organismes/:conventionId/config')
+  updateOrganismeConfig(
+    @Param('conventionId') conventionId: string,
+    @Body() dto: UpdateOrganismeConfigDto,
+  ) {
+    return this.tiersPayantService.upsertOrganismeConfig(conventionId, dto);
   }
 
   @Get(':id')

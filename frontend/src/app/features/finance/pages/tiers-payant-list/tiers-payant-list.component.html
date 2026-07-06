@@ -1,3 +1,43 @@
+<mat-card class="mb-4">
+  <mat-card-content>
+    <h3 class="text-lg font-medium mb-4">Organismes conventionnés</h3>
+    <table mat-table [dataSource]="organismes()">
+      <ng-container matColumnDef="nom">
+        <th mat-header-cell *matHeaderCellDef>Organisme</th>
+        <td mat-cell *matCellDef="let org">{{ org.nom }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="plafond">
+        <th mat-header-cell *matHeaderCellDef>Plafond de remboursement</th>
+        <td mat-cell *matCellDef="let org">{{ org.plafondRemboursement != null ? org.plafondRemboursement + ' DH' : 'Non défini' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="api">
+        <th mat-header-cell *matHeaderCellDef>Identifiants API</th>
+        <td mat-cell *matCellDef="let org">
+          {{ org.apiCredentials?.hasApiKey || org.apiCredentials?.hasApiSecret ? 'Configurés' : 'Non configurés' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let org">
+          <button matButton="outlined" (click)="openOrganismeConfig(org)">
+            <mat-icon>settings</mat-icon>
+            Configurer
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="['nom', 'plafond', 'api', 'actions']"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['nom', 'plafond', 'api', 'actions'];"></tr>
+    </table>
+    @if (organismes().length === 0) {
+      <p class="text-center py-4">Aucun organisme (convention) enregistré</p>
+    }
+  </mat-card-content>
+</mat-card>
+
 <mat-card>
   <mat-card-content>
     <div class="flex justify-between items-center mb-4">

@@ -2,7 +2,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from '../../../config/api.config';
-import { Supplier, Expense, SupplierInvoice, ExpenseDTO, SupplierInvoiceDTO, FundingRequest, BonLivraison, BonLivraisonDTO, BonLivraisonListResponse, Convention, TiersPayantClaim } from '../models/finance.models';
+import { Supplier, Expense, SupplierInvoice, ExpenseDTO, SupplierInvoiceDTO, FundingRequest, BonLivraison, BonLivraisonDTO, BonLivraisonListResponse, Convention, TiersPayantClaim, OrganismeConfig, OrganismeConfigInput, OrganismeListItem } from '../models/finance.models';
 
 @Injectable({
     providedIn: 'root'
@@ -286,6 +286,19 @@ export class FinanceService {
 
     deleteConvention(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/conventions/${id}`);
+    }
+
+    // --- Organismes (réglages tiers-payant : plafond, identifiants API futurs) ---
+    getOrganismes(): Observable<OrganismeListItem[]> {
+        return this.http.get<OrganismeListItem[]>(`${this.apiUrl}/tiers-payant/organismes`);
+    }
+
+    getOrganismeConfig(conventionId: string): Observable<OrganismeConfig> {
+        return this.http.get<OrganismeConfig>(`${this.apiUrl}/tiers-payant/organismes/${conventionId}/config`);
+    }
+
+    updateOrganismeConfig(conventionId: string, dto: OrganismeConfigInput): Observable<OrganismeConfig> {
+        return this.http.patch<OrganismeConfig>(`${this.apiUrl}/tiers-payant/organismes/${conventionId}/config`, dto);
     }
 
     // --- Tiers-payant ---

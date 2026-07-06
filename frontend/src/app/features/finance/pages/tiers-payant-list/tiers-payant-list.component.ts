@@ -12,8 +12,10 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FinanceService } from '../../services/finance.service';
-import { Convention, TiersPayantClaim, TiersPayantStatut } from '../../models/finance.models';
+import { Convention, OrganismeListItem, TiersPayantClaim, TiersPayantStatut } from '../../models/finance.models';
+import { OrganismeConfigDialogComponent } from '../../components/organisme-config-dialog/organisme-config-dialog.component';
 
 const STATUT_LABELS: Record<TiersPayantStatut, string> = {
   BROUILLON: 'Brouillon',
@@ -40,6 +42,7 @@ const STATUT_LABELS: Record<TiersPayantStatut, string> = {
     MatChipsModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
   ],
   templateUrl: './tiers-payant-list.component.html',
 })
@@ -59,6 +62,7 @@ export class TiersPayantListComponent implements OnInit {
 
   protected claims = signal<TiersPayantClaim[]>([]);
   protected conventions = signal<Convention[]>([]);
+  protected organismes = signal<OrganismeListItem[]>([]);
   protected loading = signal(false);
   protected filterStatut = signal('');
   protected filterConventionId = signal('');
@@ -77,11 +81,33 @@ export class TiersPayantListComponent implements OnInit {
   constructor(
     private financeService: FinanceService,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
   ) {}
 
   ngOnInit(): void {
     this.loadConventions();
+    this.loadOrganismes();
     this.loadClaims();
+  }
+
+  loadOrganismes(): void {
+    this.financeService.getOrganismes().subscribe({
+      next: (data) => this.organismes.set(data),
+      error: () => {},
+    });
+  }
+
+  openOrganismeConfig(organisme: OrganismeListItem): void {
+    const ref = this.dialog.open(OrganismeConfigDialogComponent, {
+      width: '600px',
+      maxHeight: '90vh',
+      data: { organisme },
+    });
+    ref.afterClosed().subscribe((result) => {
+      if (result) {
+        this.loadOrganismes();
+      }
+    });
   }
 
   statutLabel(statut: string): string {
