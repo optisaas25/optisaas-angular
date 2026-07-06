@@ -2,7 +2,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from '../../../config/api.config';
-import { Supplier, Expense, SupplierInvoice, ExpenseDTO, SupplierInvoiceDTO, FundingRequest, BonLivraison, BonLivraisonDTO, BonLivraisonListResponse, Convention } from '../models/finance.models';
+import { Supplier, Expense, SupplierInvoice, ExpenseDTO, SupplierInvoiceDTO, FundingRequest, BonLivraison, BonLivraisonDTO, BonLivraisonListResponse, Convention, TiersPayantClaim } from '../models/finance.models';
 
 @Injectable({
     providedIn: 'root'
@@ -286,6 +286,40 @@ export class FinanceService {
 
     deleteConvention(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/conventions/${id}`);
+    }
+
+    // --- Tiers-payant ---
+    getTiersPayantClaims(filters?: { statut?: string; conventionId?: string }): Observable<TiersPayantClaim[]> {
+        let params = new HttpParams();
+        if (filters?.statut) params = params.set('statut', filters.statut);
+        if (filters?.conventionId) params = params.set('conventionId', filters.conventionId);
+        return this.http.get<TiersPayantClaim[]>(`${this.apiUrl}/tiers-payant`, { params });
+    }
+
+    createTiersPayantClaim(dto: { factureId: string; montantPriseEnCharge: number; notes?: string }): Observable<TiersPayantClaim> {
+        return this.http.post<TiersPayantClaim>(`${this.apiUrl}/tiers-payant`, dto);
+    }
+
+    lookupFactureForTiersPayant(numero: string): Observable<{ factureId: string; numero: string; totalTTC: number; clientNom: string; conventionId: string }> {
+        const params = new HttpParams().set('numero', numero);
+        return this.http.get<{ factureId: string; numero: string; totalTTC: number; clientNom: string; conventionId: string }>(`${this.apiUrl}/tiers-payant/lookup-facture`, { params });
+    }
+
+    updateTiersPayantClaim(id: string, dto: Partial<TiersPayantClaim>): Observable<TiersPayantClaim> {
+        return this.http.patch<TiersPayantClaim>(`${this.apiUrl}/tiers-payant/${id}`, dto);
+    }
+
+    deleteTiersPayantClaim(id: string): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/tiers-payant/${id}`);
+    }
+
+    exportTiersPayantClaim(id: string): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/tiers-payant/${id}/export`, { responseType: 'blob' });
+    }
+
+    exportTiersPayantClaimsBatch(ids: string[]): Observable<Blob> {
+        const params = new HttpParams().set('ids', ids.join(','));
+        return this.http.get(`${this.apiUrl}/tiers-payant/export/batch`, { params, responseType: 'blob' });
     }
 }
 

@@ -79,6 +79,10 @@ export const routes: Routes = [
     {
         path: 'banque',
         loadComponent: () => import('./pages/banque-releve/banque-releve.component').then(m => m.BanqueReleveComponent)
+    },
+    {
+        path: 'tiers-payant',
+        loadComponent: () => import('./pages/tiers-payant-list/tiers-payant-list.component').then(m => m.TiersPayantListComponent)
     }
 ];
 

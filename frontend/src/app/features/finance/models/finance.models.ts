@@ -221,3 +221,25 @@ export interface Convention {
         clients: number;
     };
 }
+
+export type TiersPayantStatut = 'BROUILLON' | 'SOUMISE' | 'EN_ATTENTE' | 'REMBOURSEE' | 'REJETEE';
+
+export interface TiersPayantClaim {
+    id: string;
+    factureId: string;
+    conventionId: string;
+    clientId: string;
+    montantTotalTTC: number;
+    montantPriseEnCharge: number;
+    montantPartClient: number;
+    statut: TiersPayantStatut;
+    referenceOrganisme?: string;
+    dateSoumission?: string;
+    dateReglement?: string;
+    notes?: string;
+    createdAt: string;
+    updatedAt: string;
+    facture: { id: string; numero: string; dateEmission: string; totalTTC: number };
+    convention: { id: string; nom: string };
+    client: { id: string; nom: string; prenom: string };
+}

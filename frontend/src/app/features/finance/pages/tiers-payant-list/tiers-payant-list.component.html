@@ -1,0 +1,149 @@
+<mat-card>
+  <mat-card-content>
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-medium">Dossiers Tiers-Payant</h3>
+      <div class="flex gap-2">
+        @if (selectedCount() > 0) {
+          <button matButton="outlined" (click)="exportSelected()">
+            <mat-icon>download</mat-icon>
+            Exporter la sélection ({{ selectedCount() }})
+          </button>
+        }
+        <button matButton="filled" class="tertiary" (click)="toggleCreateForm()">
+          <mat-icon>add</mat-icon>
+          Nouveau dossier
+        </button>
+      </div>
+    </div>
+
+    @if (showCreateForm()) {
+      <mat-card class="mb-4">
+        <mat-card-content>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Numéro de facture</mat-label>
+              <input matInput [ngModel]="lookupNumero()" (ngModelChange)="lookupNumero.set($event)" (keydown.enter)="searchFacture()" />
+            </mat-form-field>
+            <button matButton="outlined" [disabled]="lookupLoading() || !lookupNumero()" (click)="searchFacture()">
+              Rechercher
+            </button>
+          </div>
+
+          @if (lookupError()) {
+            <p class="text-error">{{ lookupError() }}</p>
+          }
+
+          @if (lookupResult(); as result) {
+            <p>Client: <strong>{{ result.clientNom }}</strong> — Total facture: <strong>{{ result.totalTTC }} DH</strong></p>
+            <div class="form-grid mt-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Montant pris en charge par l'organisme</mat-label>
+                <input matInput type="number" [ngModel]="createMontant()" (ngModelChange)="createMontant.set($event)" />
+              </mat-form-field>
+            </div>
+            <p>Part client restante: <strong>{{ result.totalTTC - createMontant() }} DH</strong></p>
+            <button matButton="filled" class="tertiary" [disabled]="creating()" (click)="submitCreate()">
+              Créer le dossier
+            </button>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <div class="search-form-grid mb-4">
+      <mat-form-field appearance="outline">
+        <mat-label>Statut</mat-label>
+        <mat-select [ngModel]="filterStatut()" (ngModelChange)="filterStatut.set($event); onFilterChange()">
+          <mat-option value="">Tous</mat-option>
+          @for (opt of statutOptions; track opt[0]) {
+            <mat-option [value]="opt[0]">{{ opt[1] }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Organisme / Convention</mat-label>
+        <mat-select [ngModel]="filterConventionId()" (ngModelChange)="filterConventionId.set($event); onFilterChange()">
+          <mat-option value="">Tous</mat-option>
+          @for (conv of conventions(); track conv.id) {
+            <mat-option [value]="conv.id">{{ conv.nom }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (loading()) {
+      <mat-spinner diameter="32" />
+    } @else {
+      <table mat-table [dataSource]="claims()">
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let claim">
+            <mat-checkbox [checked]="isSelected(claim.id)" (change)="toggleSelect(claim.id)" />
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="numero">
+          <th mat-header-cell *matHeaderCellDef>Facture</th>
+          <td mat-cell *matCellDef="let claim">{{ claim.facture.numero }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="client">
+          <th mat-header-cell *matHeaderCellDef>Client</th>
+          <td mat-cell *matCellDef="let claim">{{ claim.client.prenom }} {{ claim.client.nom }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="convention">
+          <th mat-header-cell *matHeaderCellDef>Organisme</th>
+          <td mat-cell *matCellDef="let claim">{{ claim.convention.nom }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="montantTotalTTC">
+          <th mat-header-cell *matHeaderCellDef>Total</th>
+          <td mat-cell *matCellDef="let claim">{{ claim.montantTotalTTC }} DH</td>
+        </ng-container>
+
+        <ng-container matColumnDef="montantPriseEnCharge">
+          <th mat-header-cell *matHeaderCellDef>Pris en charge</th>
+          <td mat-cell *matCellDef="let claim">{{ claim.montantPriseEnCharge }} DH</td>
+        </ng-container>
+
+        <ng-container matColumnDef="montantPartClient">
+          <th mat-header-cell *matHeaderCellDef>Part client</th>
+          <td mat-cell *matCellDef="let claim">{{ claim.montantPartClient }} DH</td>
+        </ng-container>
+
+        <ng-container matColumnDef="statut">
+          <th mat-header-cell *matHeaderCellDef>Statut</th>
+          <td mat-cell *matCellDef="let claim">
+            <mat-form-field appearance="outline" class="status-select">
+              <mat-select [ngModel]="claim.statut" (ngModelChange)="updateStatut(claim, $event)">
+                @for (opt of statutOptions; track opt[0]) {
+                  <mat-option [value]="opt[0]">{{ opt[1] }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let claim">
+            <button matIconButton (click)="exportOne(claim)" title="Exporter">
+              <mat-icon>download</mat-icon>
+            </button>
+            <button matIconButton (click)="deleteClaim(claim)" title="Supprimer">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      @if (claims().length === 0) {
+        <p class="text-center py-4">Aucun dossier tiers-payant</p>
+      }
+    }
+  </mat-card-content>
+</mat-card>

@@ -56,6 +56,7 @@ model Client {
   pointsHistory        PointsHistory[]
   rewardRedemptions    RewardRedemption[]
   virtualTryons        VirtualTryon[]
+  tiersPayantClaims    TiersPayantClaim[]
 
   @@index([nom, prenom])
   @@index([telephone])
@@ -123,6 +124,7 @@ model Facture {
   operationsCaisse OperationCaisse[]
   paiements        Paiement[]
   pointsHistory    PointsHistory[]
+  tiersPayantClaim TiersPayantClaim?
 
   @@index([centreId])
   @@index([vendeurId])
@@ -450,6 +452,31 @@ model Convention {
   montantForfaitaireVerre   Float    @default(0)
   remiseForfaitaire         Boolean  @default(false)
   clients                   Client[]
+  tiersPayantClaims         TiersPayantClaim[]
+}
+
+model TiersPayantClaim {
+  id                   String     @id @default(uuid())
+  factureId            String     @unique
+  conventionId         String
+  clientId             String
+  montantTotalTTC      Float
+  montantPriseEnCharge Float
+  montantPartClient    Float
+  statut               String     @default("BROUILLON")
+  referenceOrganisme   String?
+  dateSoumission       DateTime?
+  dateReglement        DateTime?
+  notes                String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  facture              Facture    @relation(fields: [factureId], references: [id])
+  convention           Convention @relation(fields: [conventionId], references: [id])
+  client               Client     @relation(fields: [clientId], references: [id])
+
+  @@index([conventionId])
+  @@index([clientId])
+  @@index([statut])
 }
 
 model Depense {

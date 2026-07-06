@@ -167,6 +167,12 @@ export const MENU: MenuItem[] = [
         type: 'subchild',
         route: 'finance/banque',
       },
+      {
+        label: 'Tiers-Payant',
+        icon: 'health_and_safety',
+        type: 'subchild',
+        route: 'finance/tiers-payant',
+      },
     ],
   },
   {
