@@ -5,6 +5,40 @@ import { FacturesService } from '../factures/factures.service';
 import { Prisma } from '@prisma/client';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import {
+  encryptJsonField,
+  decryptJsonField,
+} from '../../common/crypto/field-encryption.util';
+
+/** Client fields that carry medical/insurance PII and are encrypted at rest. */
+const ENCRYPTED_CLIENT_FIELDS = ['dossierMedical', 'couvertureSociale'] as const;
+
+function encryptClientData<T extends Record<string, unknown>>(data: T): T {
+  const result = { ...data };
+  for (const field of ENCRYPTED_CLIENT_FIELDS) {
+    if (field in result) {
+      (result as Record<string, unknown>)[field] = encryptJsonField(
+        result[field],
+      );
+    }
+  }
+  return result;
+}
+
+function decryptClient<T extends Record<string, unknown> | null>(
+  client: T,
+): T {
+  if (!client) return client;
+  const result = { ...client };
+  for (const field of ENCRYPTED_CLIENT_FIELDS) {
+    if (field in result) {
+      (result as Record<string, unknown>)[field] = decryptJsonField(
+        result[field],
+      );
+    }
+  }
+  return result;
+}
 
 @Injectable()
 export class ClientsService {
@@ -46,14 +80,16 @@ export class ClientsService {
     }
 
     const client = await this.prisma.client.create({
-      data: createClientDto as unknown as Prisma.ClientCreateInput,
+      data: encryptClientData(
+        createClientDto as unknown as Record<string, unknown>,
+      ) as unknown as Prisma.ClientCreateInput,
     });
 
     if (client.parrainId) {
       await this.loyaltyService.awardReferralBonus(client.parrainId, client.id);
     }
 
-    return client;
+    return decryptClient(client);
   }
 
   async findAll(nom?: string, centreId?: string) {
@@ -71,13 +107,14 @@ export class ClientsService {
       ];
     }
 
-    return this.prisma.client.findMany({
+    const clients = await this.prisma.client.findMany({
       where: whereClause,
       orderBy: { dateCreation: 'desc' },
       include: {
         centre: true, // Optional: verification
       },
     });
+    return clients.map((c) => decryptClient(c));
   }
 
   async search(filters: {
@@ -147,7 +184,7 @@ export class ClientsService {
       };
     }
 
-    return this.prisma.client.findMany({
+    const clients = await this.prisma.client.findMany({
       where: whereClause,
       orderBy: { dateCreation: 'desc' },
       include: {
@@ -156,6 +193,7 @@ export class ClientsService {
         conventionData: true,
       },
     });
+    return clients.map((c) => decryptClient(c));
   }
 
   async findOne(id: string) {
@@ -169,14 +207,17 @@ export class ClientsService {
       },
     });
 
-    return client;
+    return decryptClient(client);
   }
 
   async update(id: string, updateClientDto: UpdateClientDto) {
-    return this.prisma.client.update({
+    const client = await this.prisma.client.update({
       where: { id },
-      data: updateClientDto as unknown as Prisma.ClientUpdateInput,
+      data: encryptClientData(
+        updateClientDto as unknown as Record<string, unknown>,
+      ) as unknown as Prisma.ClientUpdateInput,
     });
+    return decryptClient(client);
   }
 
   async remove(id: string) {
