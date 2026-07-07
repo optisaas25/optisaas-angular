@@ -2,7 +2,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_URL } from '../../../config/api.config';
-import { Supplier, Expense, SupplierInvoice, ExpenseDTO, SupplierInvoiceDTO, FundingRequest, BonLivraison, BonLivraisonDTO, BonLivraisonListResponse, Convention, TiersPayantClaim, OrganismeConfig, OrganismeConfigInput, OrganismeListItem } from '../models/finance.models';
+import { Supplier, Expense, SupplierInvoice, ExpenseDTO, SupplierInvoiceDTO, FundingRequest, BonLivraison, BonLivraisonDTO, BonLivraisonListResponse, Convention, TiersPayantClaim, OrganismeConfig, OrganismeConfigInput, OrganismeListItem, TiersPayantFactureSuggestion } from '../models/finance.models';
 
 @Injectable({
     providedIn: 'root'
@@ -311,6 +311,11 @@ export class FinanceService {
 
     createTiersPayantClaim(dto: { factureId: string; montantPriseEnCharge: number; notes?: string }): Observable<TiersPayantClaim> {
         return this.http.post<TiersPayantClaim>(`${this.apiUrl}/tiers-payant`, dto);
+    }
+
+    searchFacturesForTiersPayant(query: string): Observable<TiersPayantFactureSuggestion[]> {
+        const params = new HttpParams().set('q', query);
+        return this.http.get<TiersPayantFactureSuggestion[]>(`${this.apiUrl}/tiers-payant/search-factures`, { params });
     }
 
     lookupFactureForTiersPayant(numero: string): Observable<{

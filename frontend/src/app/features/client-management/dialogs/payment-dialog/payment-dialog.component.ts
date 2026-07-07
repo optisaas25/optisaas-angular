@@ -14,10 +14,14 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { OcrService } from '../../../../core/services/ocr.service';
 import { FileUploadService } from '../../../../core/services/file-upload.service';
+import { FinanceService } from '../../../finance/services/finance.service';
+import { OrganismeListItem } from '../../../finance/models/finance.models';
 
 export interface PaymentDialogData {
     resteAPayer: number;
     client?: any;
+    /** Total TTC de la facture, pour estimer la prise en charge de l'organisme même après des paiements partiels antérieurs. */
+    factureTotalTTC?: number;
 }
 
 export interface Payment {
@@ -85,15 +89,23 @@ export class PaymentDialogComponent {
     fileName: string | null = null;
     fileSize: number | null = null;
 
+    // Couverture sociale / tiers payant
+    organismeCouverture: OrganismeListItem | null = null;
+    montantCouvertEstime: number | null = null;
+    montantRestantApresCouverture: number | null = null;
+    couverturePartielle = false;
+
     constructor(
         private fb: FormBuilder,
         public dialogRef: MatDialogRef<PaymentDialogComponent>,
         @Inject(MAT_DIALOG_DATA) public data: PaymentDialogData,
         private ocrService: OcrService,
         private dialog: MatDialog,
-        private fileUploadService: FileUploadService
+        private fileUploadService: FileUploadService,
+        private financeService: FinanceService
     ) {
         this.maxAmount = data.resteAPayer;
+        this.loadOrganismeCouverture();
 
         this.form = this.fb.group({
             date: [new Date(), Validators.required],
@@ -140,16 +152,54 @@ export class PaymentDialogComponent {
             const type = this.data.client.couvertureSociale.type || '';
             const num = this.data.client.couvertureSociale.numeroAdhesion || '';
             const prefilledText = [type, num].filter(Boolean).join(' / ');
-            
+
             if (prefilledText && !refControl?.value) {
                 refControl?.setValue(prefilledText);
             }
+
+            if (this.montantCouvertEstime != null) {
+                this.form.get('montant')?.setValue(this.montantCouvertEstime);
+            }
         }
-        
+
         // Logic will be handled in template heavily, but validators here:
         if (['CHEQUE', 'LCN', 'VIREMENT'].includes(mode)) {
             // Maybe require things?
         }
+    }
+
+    /**
+     * Charge l'organisme lié à la couverture sociale du client (distinct de la
+     * Convention de remise facturation) et estime la part prise en charge par
+     * rapport au total de la facture, plafonnée par la config de l'organisme.
+     */
+    private loadOrganismeCouverture(): void {
+        const organismeId = this.data.client?.couvertureSociale?.organismeId;
+        if (!organismeId) {
+            return;
+        }
+        this.financeService.getOrganismes().subscribe({
+            next: (organismes) => {
+                const organisme = organismes.find(o => o.id === organismeId);
+                if (!organisme) {
+                    return;
+                }
+                this.organismeCouverture = organisme;
+
+                const totalTTC = this.data.factureTotalTTC ?? this.maxAmount;
+                const base = organisme.remiseType === 'PERCENTAGE'
+                    ? (totalTTC * organisme.remiseValeur) / 100
+                    : organisme.remiseValeur;
+                const capped = organisme.plafondRemboursement != null
+                    ? Math.min(base, organisme.plafondRemboursement)
+                    : base;
+                const montantCouvert = Math.max(0, Math.min(capped, this.maxAmount));
+                this.montantCouvertEstime = Math.round(montantCouvert * 100) / 100;
+                this.montantRestantApresCouverture = Math.round((totalTTC - montantCouvert) * 100) / 100;
+                this.couverturePartielle = montantCouvert < totalTTC;
+            },
+            error: () => {},
+        });
     }
 
     checkIdentity(name: string) {

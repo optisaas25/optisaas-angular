@@ -7,6 +7,7 @@ import {
   IsDate,
   IsBoolean,
   IsObject,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -54,8 +55,9 @@ export class CreateClientDto {
   @IsOptional()
   telephone?: string;
 
-  @IsEmail()
   @IsOptional()
+  @ValidateIf((o) => o.email !== '')
+  @IsEmail()
   email?: string;
 
   @IsString()

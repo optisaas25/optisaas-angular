@@ -2828,7 +2828,8 @@ export class MontureFormComponent implements OnInit, OnDestroy {
 
             const formatCorrection = (c: any) => {
                 let s = '';
-                if (c.sphere && c.sphere !== '0' && c.sphere !== '+0.00') s += (c.sphere.startsWith('+') || c.sphere.startsWith('-') ? c.sphere : '+' + c.sphere) + ' ';
+                const sphere = c.sphere != null ? String(c.sphere) : '';
+                if (sphere && sphere !== '0' && sphere !== '+0.00') s += (sphere.startsWith('+') || sphere.startsWith('-') ? sphere : '+' + sphere) + ' ';
                 if (c.cylindre && c.cylindre !== '0' && c.cylindre !== '+0.00') s += `(${c.cylindre}) `;
                 if (c.axe && c.axe !== '0°') s += `${c.axe} `;
                 if (c.addition && c.addition !== '0' && c.addition !== '+0.00') s += `ADD ${c.addition}`;

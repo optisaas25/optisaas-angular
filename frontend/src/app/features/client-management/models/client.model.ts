@@ -105,6 +105,8 @@ export interface CouvertureSociale {
     actif: boolean;
     type?: TypeCouverture;
     numeroAdhesion?: string;
+    /** Organisme assureur (ex: AXA Assurance, CNOPS) qui prend en charge le remboursement (tiers payant) - distinct de la Convention de remise facturation. */
+    organismeId?: string;
 }
 
 export enum CorrectionVisuelle {

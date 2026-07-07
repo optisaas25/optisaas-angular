@@ -13,8 +13,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { FinanceService } from '../../services/finance.service';
-import { Convention, OrganismeListItem, TiersPayantClaim, TiersPayantStatut } from '../../models/finance.models';
+import { Convention, OrganismeListItem, TiersPayantClaim, TiersPayantFactureSuggestion, TiersPayantStatut } from '../../models/finance.models';
 import { OrganismeConfigDialogComponent } from '../../components/organisme-config-dialog/organisme-config-dialog.component';
 
 const STATUT_LABELS: Record<TiersPayantStatut, string> = {
@@ -43,6 +44,7 @@ const STATUT_LABELS: Record<TiersPayantStatut, string> = {
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './tiers-payant-list.component.html',
 })
@@ -85,6 +87,8 @@ export class TiersPayantListComponent implements OnInit {
   protected lookupLoading = signal(false);
   protected createMontant = signal(0);
   protected creating = signal(false);
+  protected suggestions = signal<TiersPayantFactureSuggestion[]>([]);
+  private suggestionsDebounce?: ReturnType<typeof setTimeout>;
 
   protected selectedCount = computed(() => this.selectedIds().size);
 
@@ -161,10 +165,40 @@ export class TiersPayantListComponent implements OnInit {
     this.lookupResult.set(null);
     this.lookupError.set(null);
     this.createMontant.set(0);
+    this.suggestions.set([]);
   }
+
+  onNumeroInput(value: string): void {
+    this.lookupNumero.set(value);
+    this.lookupResult.set(null);
+    this.lookupError.set(null);
+    clearTimeout(this.suggestionsDebounce);
+    if (value.trim().length < 2) {
+      this.suggestions.set([]);
+      return;
+    }
+    this.suggestionsDebounce = setTimeout(() => {
+      this.financeService.searchFacturesForTiersPayant(value).subscribe({
+        next: (res) => this.suggestions.set(res),
+        error: () => this.suggestions.set([]),
+      });
+    }, 250);
+  }
+
+  selectSuggestion(suggestion: TiersPayantFactureSuggestion): void {
+    this.lookupNumero.set(suggestion.numero);
+    this.suggestions.set([]);
+    this.searchFacture();
+  }
+
+  protected displayFactureSuggestion = (value: string | TiersPayantFactureSuggestion | null): string => {
+    if (!value) return '';
+    return typeof value === 'string' ? value : value.numero;
+  };
 
   searchFacture(): void {
     if (!this.lookupNumero()) return;
+    this.suggestions.set([]);
     this.lookupLoading.set(true);
     this.lookupError.set(null);
     this.lookupResult.set(null);

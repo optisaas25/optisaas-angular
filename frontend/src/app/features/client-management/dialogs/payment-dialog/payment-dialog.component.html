@@ -5,6 +5,19 @@
     </h2>
 
     <mat-dialog-content>
+        <div class="coverage-banner" *ngIf="organismeCouverture" [class.coverage-partielle]="couverturePartielle">
+            <mat-icon>{{ couverturePartielle ? 'info' : 'verified' }}</mat-icon>
+            <span *ngIf="couverturePartielle">
+                Paiement partiel détecté : {{ organismeCouverture.nom }} plafonne la prise en charge à
+                {{ organismeCouverture.plafondRemboursement }} DH. Montant estimé couvert :
+                <strong>{{ montantCouvertEstime }} DH</strong> — Reste à la charge du client :
+                <strong>{{ montantRestantApresCouverture }} DH</strong> (choisissez un mode de paiement pour ce reste après avoir enregistré la prise en charge).
+            </span>
+            <span *ngIf="!couverturePartielle">
+                Prise en charge totale estimée par {{ organismeCouverture.nom }} : <strong>{{ montantCouvertEstime }} DH</strong>
+            </span>
+        </div>
+
         <form [formGroup]="form">
             <div class="form-grid">
                 <!-- Date -->

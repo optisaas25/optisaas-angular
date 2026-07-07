@@ -815,7 +815,8 @@ export class PaymentListComponent implements OnInit {
             maxWidth: '90vw',
             data: {
                 resteAPayer: resteAPayer,
-                client: this.fullClient || facture.client
+                client: this.fullClient || facture.client,
+                factureTotalTTC: facture.totalTTC
             }
         });
 

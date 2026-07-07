@@ -250,6 +250,14 @@ export interface OrganismeConfigInput {
 
 export type OrganismeListItem = Convention & OrganismeConfig;
 
+export interface TiersPayantFactureSuggestion {
+    factureId: string;
+    numero: string;
+    totalTTC: number;
+    clientNom: string;
+    hasOrganisme: boolean;
+}
+
 export type TiersPayantStatut = 'BROUILLON' | 'SOUMISE' | 'EN_ATTENTE' | 'REMBOURSEE' | 'REJETEE';
 
 export interface TiersPayantClaim {

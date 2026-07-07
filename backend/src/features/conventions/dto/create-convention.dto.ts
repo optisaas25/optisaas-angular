@@ -4,6 +4,7 @@ import {
   IsEmail,
   IsNumber,
   IsBoolean,
+  ValidateIf,
 } from 'class-validator';
 
 export enum RemiseType {
@@ -24,6 +25,7 @@ export class CreateConventionDto {
   contact?: string;
 
   @IsOptional()
+  @ValidateIf((o) => o.email !== '')
   @IsEmail()
   email?: string;
 

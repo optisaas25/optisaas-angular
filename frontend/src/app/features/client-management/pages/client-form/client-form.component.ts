@@ -288,6 +288,7 @@ export class ClientFormComponent implements OnInit {
               updates.couvertureSocialeActif = true;
               updates.couvertureSocialeType = principalAny.couvertureSociale.type;
               updates.couvertureSocialeNumero = principalAny.couvertureSociale.numeroAdhesion;
+              updates.couvertureSocialeOrganismeId = principalAny.couvertureSociale.organismeId;
             }
           } else {
             // OTHER LINKS: Conditional based on checkboxes
@@ -307,6 +308,7 @@ export class ClientFormComponent implements OnInit {
                 updates.couvertureSocialeActif = true;
                 updates.couvertureSocialeType = principalAny.couvertureSociale.type;
                 updates.couvertureSocialeNumero = principalAny.couvertureSociale.numeroAdhesion;
+                updates.couvertureSocialeOrganismeId = principalAny.couvertureSociale.organismeId;
               }
             }
           }
@@ -353,6 +355,7 @@ export class ClientFormComponent implements OnInit {
       couvertureSocialeActif: [false],
       couvertureSocialeType: [null],
       couvertureSocialeNumero: [''],
+      couvertureSocialeOrganismeId: [null],
 
       // Dossier médical
       dossierMedical: this.fb.group({
@@ -699,7 +702,8 @@ export class ClientFormComponent implements OnInit {
         this.clientForm.patchValue({
           couvertureSocialeActif: client.couvertureSociale.actif,
           couvertureSocialeType: client.couvertureSociale.type,
-          couvertureSocialeNumero: client.couvertureSociale.numeroAdhesion
+          couvertureSocialeNumero: client.couvertureSociale.numeroAdhesion,
+          couvertureSocialeOrganismeId: client.couvertureSociale.organismeId || null
         });
         this.toggleCouvertureSocialeFields(true);
       }
@@ -828,7 +832,8 @@ export class ClientFormComponent implements OnInit {
         couvertureSociale: formValue.couvertureSocialeActif ? {
           actif: true,
           type: formValue.couvertureSocialeType,
-          numeroAdhesion: formValue.couvertureSocialeNumero
+          numeroAdhesion: formValue.couvertureSocialeNumero,
+          organismeId: formValue.couvertureSocialeOrganismeId || undefined
         } : undefined,
         dossierMedical: formValue.dossierMedical,
         groupeFamille: formValue.roleFamille ? {

@@ -50,6 +50,20 @@ function maskOrganismeConfig(config: {
 }
 
 /**
+ * The organisme that reimburses a client (tiers payant) is driven by their
+ * Couverture Sociale (mutuelle/CNSS/RAMED enrollment), not by the Convention
+ * used to price their invoices - a client can be insured by one and billed
+ * under an unrelated shop discount agreement, or neither.
+ */
+function getOrganismeId(client: { couvertureSociale: unknown }): string | null {
+  const decrypted = decryptJsonField(client.couvertureSociale) as
+    | { organismeId?: string }
+    | null
+    | undefined;
+  return decrypted?.organismeId || null;
+}
+
+/**
  * Reimbursement owed by the organisme for a facture, applying the
  * Convention's remise (% or flat amount per dossier) then capping it at the
  * organisme's plafondRemboursement, if one is configured. Whatever isn't
@@ -137,6 +151,35 @@ export class TiersPayantService {
     return maskOrganismeConfig(updated);
   }
 
+  /**
+   * Suggests factures for the "Nouveau dossier" search box - excludes
+   * factures that already have a claim. Whether the client has an organisme
+   * (via Couverture Sociale) is surfaced as a flag rather than filtered out,
+   * since gating on it silently hides every result until clients have been
+   * linked to one.
+   */
+  async searchFactures(query: string) {
+    if (!query || query.trim().length < 2) {
+      return [];
+    }
+    const factures = await this.prisma.facture.findMany({
+      where: {
+        numero: { contains: query, mode: 'insensitive' },
+        tiersPayantClaim: null,
+      },
+      include: { client: true },
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+    });
+    return factures.map((f) => ({
+      factureId: f.id,
+      numero: f.numero,
+      totalTTC: f.totalTTC,
+      clientNom: `${f.client.prenom || ''} ${f.client.nom || ''}`.trim(),
+      hasOrganisme: !!getOrganismeId(f.client),
+    }));
+  }
+
   async lookupFacture(numero: string) {
     const facture = await this.prisma.facture.findUnique({
       where: { numero },
@@ -146,9 +189,10 @@ export class TiersPayantService {
     if (!facture) {
       throw new NotFoundException('Facture introuvable');
     }
-    if (!facture.client.conventionId) {
+    const organismeId = getOrganismeId(facture.client);
+    if (!organismeId) {
       throw new BadRequestException(
-        "Ce client n'est rattaché à aucune convention/mutuelle",
+        "Ce client n'a pas d'organisme de couverture sociale renseigné (onglet Couverture Sociale de sa fiche)",
       );
     }
     if (facture.tiersPayantClaim) {
@@ -158,7 +202,7 @@ export class TiersPayantService {
     }
 
     const convention = await this.prisma.convention.findUnique({
-      where: { id: facture.client.conventionId },
+      where: { id: organismeId },
       include: { organismeConfig: true },
     });
     const plafondRemboursement = convention?.organismeConfig?.plafondRemboursement ?? null;
@@ -171,7 +215,7 @@ export class TiersPayantService {
       numero: facture.numero,
       totalTTC: facture.totalTTC,
       clientNom: `${facture.client.prenom || ''} ${facture.client.nom || ''}`.trim(),
-      conventionId: facture.client.conventionId,
+      conventionId: organismeId,
       conventionNom: convention?.nom ?? null,
       remiseType: convention?.remiseType ?? null,
       remiseValeur: convention?.remiseValeur ?? null,
@@ -194,9 +238,10 @@ export class TiersPayantService {
         'Un dossier tiers-payant existe déjà pour cette facture',
       );
     }
-    if (!facture.client.conventionId) {
+    const organismeId = getOrganismeId(facture.client);
+    if (!organismeId) {
       throw new BadRequestException(
-        "Ce client n'est rattaché à aucune convention/mutuelle",
+        "Ce client n'a pas d'organisme de couverture sociale renseigné (onglet Couverture Sociale de sa fiche)",
       );
     }
     if (dto.montantPriseEnCharge > facture.totalTTC) {
@@ -208,7 +253,7 @@ export class TiersPayantService {
     return this.prisma.tiersPayantClaim.create({
       data: {
         factureId: dto.factureId,
-        conventionId: facture.client.conventionId,
+        conventionId: organismeId,
         clientId: facture.clientId,
         montantTotalTTC: facture.totalTTC,
         montantPriseEnCharge: dto.montantPriseEnCharge,

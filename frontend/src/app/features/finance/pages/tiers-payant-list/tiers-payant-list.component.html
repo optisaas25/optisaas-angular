@@ -62,7 +62,18 @@
           <div class="form-grid">
             <mat-form-field appearance="outline">
               <mat-label>Numéro de facture</mat-label>
-              <input matInput [ngModel]="lookupNumero()" (ngModelChange)="lookupNumero.set($event)" (keydown.enter)="searchFacture()" />
+              <input matInput [ngModel]="lookupNumero()" (ngModelChange)="onNumeroInput($event)" (keydown.enter)="searchFacture()" [matAutocomplete]="factureAuto" />
+              <mat-autocomplete #factureAuto="matAutocomplete" [displayWith]="displayFactureSuggestion" (optionSelected)="selectSuggestion($event.option.value)">
+                @for (s of suggestions(); track s.factureId) {
+                  <mat-option [value]="s">
+                    {{ s.numero }} — {{ s.clientNom }} ({{ s.totalTTC }} DH)
+                    @if (!s.hasOrganisme) {
+                      <span class="text-xs text-error"> — client sans organisme (couverture sociale)</span>
+                    }
+                  </mat-option>
+                }
+              </mat-autocomplete>
+              <mat-hint>Tapez au moins 2 caractères du numéro de facture</mat-hint>
             </mat-form-field>
             <button matButton="outlined" [disabled]="lookupLoading() || !lookupNumero()" (click)="searchFacture()">
               Rechercher

@@ -1007,7 +1007,8 @@ export class FactureFormComponent implements OnInit {
                 maxWidth: '90vw',
                 data: {
                     resteAPayer: this.resteAPayer,
-                    client: this.client
+                    client: this.client,
+                    factureTotalTTC: this.totalTTC
                 }
             });
 

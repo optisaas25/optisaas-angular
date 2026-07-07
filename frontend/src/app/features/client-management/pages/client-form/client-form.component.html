@@ -429,6 +429,16 @@
                                     <mat-label>Numéro d'adhésion</mat-label>
                                     <input matInput formControlName="couvertureSocialeNumero" title="Numéro d'adhésion" placeholder="N° Adhésion">
                                 </mat-form-field>
+                                <mat-form-field appearance="outline">
+                                    <mat-label>Organisme (assureur)</mat-label>
+                                    <mat-select aria-label="Select field" formControlName="couvertureSocialeOrganismeId">
+                                        <mat-option [value]="null">Non précisé</mat-option>
+                                        @for (conv of conventions(); track conv.id) {
+                                        <mat-option [value]="conv.id">{{ conv.nom }}</mat-option>
+                                        }
+                                    </mat-select>
+                                    <mat-hint>Organisme qui rembourse le client (tiers payant) - distinct de la convention de remise</mat-hint>
+                                </mat-form-field>
                             </div>
                             }
                         </div>

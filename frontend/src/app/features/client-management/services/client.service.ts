@@ -70,8 +70,8 @@ export class ClientManagementService {
     createClient(clientData: ClientCreate): Observable<Client> {
         // Validation CIN unique via Backend (simulation via getClients pour l'instant ou gestion erreur backend)
         // Pour l'instant on laisse le backend gérer l'unicité ou on fait une pré-vérification
-        if (clientData.typeClient === TypeClient.PARTICULIER && 'cin' in clientData) {
-            return this.verifyCinUnique(clientData.cin as string).pipe(
+        if (clientData.typeClient === TypeClient.PARTICULIER && (clientData as any).cin) {
+            return this.verifyCinUnique((clientData as any).cin as string).pipe(
                 switchMap(isUnique => {
                     if (!isUnique) {
                         return throwError(() => new Error('Un client avec ce CIN existe déjà'));
@@ -87,7 +87,7 @@ export class ClientManagementService {
      * Mettre à jour un client existant
      */
     updateClient(id: string, clientData: Partial<Client>): Observable<Client> {
-        if (clientData.typeClient === TypeClient.PARTICULIER && 'numeroPieceIdentite' in clientData) {
+        if (clientData.typeClient === TypeClient.PARTICULIER && (clientData as any).numeroPieceIdentite) {
             return this.verifyCinUnique((clientData as any).numeroPieceIdentite!, id).pipe(
                 switchMap(isUnique => {
                     if (!isUnique) {
@@ -112,12 +112,15 @@ export class ClientManagementService {
      * Note: Idéalement, créer un endpoint backend dédié /clients/check-cin
      */
     verifyCinUnique(cin: string, excludeId?: string): Observable<boolean> {
+        if (!cin) {
+            return of(true);
+        }
         return this.getClients().pipe(
             map(clients => {
                 const exists = clients.some(c =>
                     c.id !== excludeId &&
                     c.typeClient === TypeClient.PARTICULIER &&
-                    'numeroPieceIdentite' in c &&
+                    !!c.numeroPieceIdentite &&
                     c.numeroPieceIdentite === cin
                 );
                 return !exists;

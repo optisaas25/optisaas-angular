@@ -44,6 +44,11 @@ export class TiersPayantController {
     return this.tiersPayantService.lookupFacture(numero);
   }
 
+  @Get('search-factures')
+  searchFactures(@Query('q') q: string) {
+    return this.tiersPayantService.searchFactures(q);
+  }
+
   @Get('organismes')
   listOrganismes() {
     return this.tiersPayantService.listOrganismes();

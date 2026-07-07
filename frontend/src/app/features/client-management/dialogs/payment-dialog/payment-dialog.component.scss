@@ -25,6 +25,31 @@
         overflow-x: hidden;
     }
 
+    .coverage-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        background: #ecfdf5;
+        color: #065f46;
+        font-size: 13px;
+        line-height: 1.5;
+
+        mat-icon {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        &.coverage-partielle {
+            background: #fffbeb;
+            color: #92400e;
+        }
+    }
+
     .form-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
